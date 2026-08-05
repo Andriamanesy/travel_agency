@@ -1,0 +1,7 @@
+version: "2"
+authtoken: TON_AUTHTOKEN_ICI
+tunnels:
+  travel_agency:
+    proto: http
+    addr: 8080
+    domain: ton-domaine.ngrok-free.app # (Si tu en as un)
