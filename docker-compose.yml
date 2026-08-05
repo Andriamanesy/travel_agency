@@ -23,7 +23,7 @@ services:
     container_name: travel_backend
     restart: always
     env_file:
-      - ./database/.env.db   # Charge les mêmes identifiants BDD
+      - ./database/.env  # Charge les mêmes identifiants BDD
     environment:
       DB_HOST: database
       DB_PORT: 5432
