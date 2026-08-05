@@ -6,3 +6,11 @@ services:
       - "8080:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
+
+  backend:
+    build: ./backend
+    container_name: travel_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
