@@ -1,49 +1,135 @@
-# Travel Management System
+Exactement, vous avez tout à fait raison ! Si on reste strictement sur la règle du "sans framework", Express n'a pas sa place dans la stack. Le backend doit reposer uniquement sur le module natif `http` de Node.js.
 
-## Description
+Voici le `README.md` corrigé et mis à jour :
 
-Application web complète de gestion d'une agence de voyage.
+```markdown
+# 🌍 TravelMS (Travel Management System)
 
-Projet réalisé sans framework afin de comprendre les fondamentaux du Web.
+Plateforme professionnelle de gestion de voyages conçue de manière incrémentale, sans l'utilisation de frameworks, pour maîtriser l'ensemble de la chaîne technique (de l'infrastructure système au code applicatif).
 
-## Stack
+---
 
-Frontend:
-- HTML5
-- CSS3
-- JavaScript Vanilla
+## 🏗️ Architecture Technique
 
-Backend:
-- Node.js natif
+L'infrastructure repose sur un environnement virtualisé et conteneurisé de bout en bout :
 
-Database:
-- PostgreSQL
+```text
+Windows
+└── VMware (Ubuntu Server)
+      └── Docker Compose
+            ├── Nginx (Reverse Proxy & Static Server)
+            ├── Frontend (HTML, CSS, Vanilla JS)
+            ├── Backend (Node.js natif)
+            └── PostgreSQL (Base de données relationnelle)
 
-Infrastructure:
-- Docker
-- Nginx
-- Ubuntu Server
+```
 
-## Objectifs pédagogiques
+### Stack Technologique
 
-- Comprendre HTTP
-- Créer une API REST
-- Comprendre l'architecture client/serveur
-- Maîtriser Docker
-- Apprendre le déploiement serveur
+* **Infrastructure :** VMware, Ubuntu Server, Docker, Docker Compose
+* **Web Server & Reverse Proxy :** Nginx
+* **Frontend :** HTML5, CSS3, JavaScript (Vanilla, sans framework)
+* **Backend :** Node.js (Modules natifs, ex: `http`)
+* **Base de données :** PostgreSQL
 
-## Architecture
+---
 
-Navigateur
-    |
-    |
-  Nginx
-    |
-    ├── Frontend
-    |
-    └── Backend
-          |
-          |
-      PostgreSQL
+## 🗺️ Feuille de Route (Roadmap & Versions)
+
+Le projet évolue à travers des versions progressives, simulant le cycle de vie d'un produit logiciel en entreprise.
+
+### Phase 0 : Fondations & Connectivité (3 Couches & Page d'Accueil)
+
+* **Version 0.1 — Hello World** : Mise en place de Nginx, diffusion de la page d'accueil statique (HTML/CSS) et intégration du favicon.
+* **Version 0.2 — API** : Premier endpoint `GET /api/hello` géré par le serveur HTTP natif de Node.js et consommé en `fetch()` par le frontend.
+* **Version 0.3 — PostgreSQL** : Connexion à la base de données et lecture dynamique des messages par le backend.
+
+### Phase 1 : Gestion des Utilisateurs & Sécurité
+
+* **Version 1.0 — Authentification** : Modules d'inscription, connexion et déconnexion.
+* **Version 1.1 — Profil** : Affichage des informations utilisateur.
+* **Version 1.2 — Modification du profil** : Mise à jour des données personnelles.
+* **Version 1.3 — Mot de passe** : Fonctionnalité de changement de mot de passe.
+* **Version 1.4 — Récupération** : Gestion du mot de passe oublié (simulation d'e-mail).
+* **Version 1.5 — Vérification** : Processus de validation par e-mail.
+
+### Phase 2 : Contrôle d'Accès & Rôles
+
+* **Version 2.0 — RBAC (Role-Based Access Control)** : Gestion des rôles distincts (**Admin**, **Agent**, **Client**) avec des permissions granulaires.
+
+### Phase 3 : Catalogue Métier & CRUD
+
+* **Version 3.0 — Destinations** : CRUD complet (Créer, Lire, Mettre à jour, Supprimer, Lister).
+* **Version 3.1 — Catégories** : Gestion des catégories de voyage.
+* **Version 3.2 — Circuits touristiques** : Gestion des circuits.
+* **Version 3.3 — Hôtels** : Gestion du parc hôtelier.
+* **Version 3.4 — Guides** : Gestion des accompagnateurs.
+* **Version 3.5 — Réservations** : Implémentation du tunnel de réservation.
+
+### Phase 4 : Recherche, Filtres & Performance
+
+* **Version 4.0 — Moteur de recherche** : Recherche globale sur les destinations, circuits et hôtels.
+* **Version 4.1 — Filtres avancés** : Filtrage par prix, pays, durée et type.
+* **Version 4.2 — Pagination** : Optimisation de l'affichage des grands volumes de données.
+
+### Phase 5 : Fonctionnalités Avancées & Exploitation
+
+* **Version 5.0 — Upload de fichiers** : Gestion des images pour les destinations, hôtels et profils.
+* **Version 6.0 — Dashboard** : Statistiques et indicateurs clés de performance (KPIs) pour les réservations et utilisateurs.
+* **Version 7.0 — Journal d'audit (Logs)** : Traçabilité complète des actions critiques (connexions, modifications, suppressions).
+* **Version 8.0 — Paramétrage global** : Gestion multilingue, devises, fuseaux horaires et personnalisation.
+* **Version 9.0 — Documentation API** : Documentation technique de chaque endpoint (`GET`, `POST`, `PUT`, `DELETE`).
+* **Version 10.0 — Production & DevOps** : Conteneurisation finale, automatisation par scripts shell et stratégies de sauvegarde.
+
+---
+
+## 📋 Backlog Produit (Epics)
+
+Le projet est structuré selon les epics métiers suivants :
+
+* **Epic 1 — Authentification :** Inscription, Connexion, Profil, Récupération de mot de passe, Vérification e-mail.
+* **Epic 2 — Administration :** Gestion des utilisateurs, Rôles, Permissions, Journal d'activité (Logs).
+* **Epic 3 — Catalogue :** Destinations, Circuits, Hôtels, Guides, Médias/Images, Catégories.
+* **Epic 4 — Réservations :** Tunnel de commande, Modification, Annulation, Historique client.
+* **Epic 5 — Recherche & Ergonomie :** Moteur de recherche, Filtres multicritères, Tris, Pagination.
+* **Epic 6 — Infrastructure & DevOps :** Docker, Nginx, Stratégie de backup/restore, Monitoring.
+
+---
+
+## 🚀 Guide de Démarrage Rapide
+
+### Prérequis
+
+* Ubuntu Server (via VMware)
+* Docker & Docker Compose installés
+
+### Déploiement et Gestion
+
+Le projet intègre une boîte à outils DevOps dans le dossier `devops/scripts/` :
+
+* **Démarrer l'application :**
+```bash
+./devops/scripts/start.sh
+
+```
 
 
+* **Déployer les mises à jour (Git pull + Build) :**
+```bash
+./devops/scripts/deploy.sh
+
+```
+
+
+* **Vérifier l'état de santé des services :**
+```bash
+./devops/scripts/healthcheck.sh
+
+```
+
+
+* **Sauvegarder la base de données :**
+```bash
+./devops/scripts/backup.sh
+
+```
