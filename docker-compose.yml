@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   database:
     image: postgres:16-alpine
     container_name: travel_db
     restart: always
     env_file:
-      - ./database/.env.db   # Variables : POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+      - ./database/.env.db   # ✅ OK
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
@@ -23,17 +21,16 @@ services:
     container_name: travel_backend
     restart: always
     env_file:
-      - ./database/.env  # Charge les mêmes identifiants BDD
+      - ./database/.env.db   # 🔄 CORRIGÉ : pointe vers .env.db au lieu de .env
     environment:
       DB_HOST: database
       DB_PORT: 5432
-      # Récupère automatiquement les valeurs chargées par .env.db
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
     depends_on:
       database:
-        condition: service_healthy   # Wait condition pour éviter les crashs au boot
+        condition: service_healthy
     networks:
       - travel_network
 
