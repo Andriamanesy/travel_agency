@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
-            statusEl.textContent = "Couche 1 & 2 connectées !";
+            statusEl.textContent = "Frontend  & Backend connectées !";
             apiMessageEl.textContent = data.message;
         })
         .catch(error => {
