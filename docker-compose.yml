@@ -25,12 +25,13 @@ services:
       - database
 
   frontend:
-    image: nginx:alpine
-    container_name: travel_frontend
-    ports:
-      - "8080:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
+      image: nginx:alpine
+      container_name: travel_frontend
+      ports:
+        - "8080:80"
+      volumes:
+        - ./frontend:/usr/share/nginx/html:ro
+        - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   pgdata:
