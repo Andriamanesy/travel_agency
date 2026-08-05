@@ -2,6 +2,9 @@
 set -e
 
 echo "🛑 Arrêt de l'application..."
-cd /opt/travel_agency
+
+# Se positionner automatiquement à la racine du projet
+cd "$(dirname "$0")/../.."
+
 docker compose down
 echo "✅ Stack Docker arrêtée proprement !"
