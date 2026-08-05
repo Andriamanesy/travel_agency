@@ -1,29 +1,39 @@
 const http = require('http');
+const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
 
-const server = http.createServer((req, res) => {
-    // En-têtes pour autoriser le JSON et le CORS si besoin
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+// Connexion à la base de données Docker
+const pool = new Pool({
+    host: process.env.DB_HOST || 'database',
+    user: process.env.DB_USER || 'travel_user',
+    password: process.env.DB_PASSWORD || 'travel_password',
+    database: process.env.DB_NAME || 'travel_db',
+    port: 5432,
+});
 
-    // Route /api/health
-    if (req.url === '/api/health' && req.method === 'GET') {
-        res.writeHead(200);
-        res.end(JSON.stringify({ status: 'OK', message: 'Backend Node.js natif est en ligne !' }));
-    } 
-    // Route /api/hello
-    else if (req.url === '/api/hello' && req.method === 'GET') {
-        res.writeHead(200);
-        res.end(JSON.stringify({ message: 'Hello World depuis le Backend ! 🚀' }));
-    } 
-    // Route non trouvée
-    else {
+const server = http.createServer(async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+
+    if (req.url === '/api/hello' && req.method === 'GET') {
+        try {
+            // Requête SQL pour récupérer le message "Hello World" en BDD
+            const result = await pool.query('SELECT message FROM greetings LIMIT 1');
+            const dbMessage = result.rows[0]?.message || 'Hello World !';
+            
+            res.writeHead(200);
+            res.end(JSON.stringify({ message: dbMessage }));
+        } catch (err) {
+            console.error('Erreur SQL :', err);
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: 'Erreur de connexion à la base de données' }));
+        }
+    } else {
         res.writeHead(404);
-        res.end(JSON.stringify({ error: 'Route introuvable' }));
+        res.end(JSON.stringify({ error: 'Route non trouvée' }));
     }
 });
 
 server.listen(PORT, () => {
-    console.log(`Serveur Backend à l'écoute sur le port ${PORT}`);
+    console.log(`Backend démarré sur le port ${PORT}`);
 });

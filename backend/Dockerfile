@@ -2,10 +2,15 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copie du package.json (si présent) et des sources
+# 1. Copie des fichiers de configuration
 COPY package*.json ./
+
+# 2. Installation des dépendances (crucial pour installer 'pg')
+RUN npm install
+
+# 3. Copie du code source
 COPY src/ ./src/
 
 EXPOSE 3000
 
-CMD ["node", "src/server.js"]
+CMD ["npm", "start"]
