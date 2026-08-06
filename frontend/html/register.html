@@ -8,7 +8,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-800 font-sans">
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-800 font-sans relative">
 
     <!-- En-tête -->
     <header class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-50">
@@ -45,19 +45,19 @@
                 <p class="text-slate-500 text-sm" data-i18n="register.subtitle">Commencez votre voyage avec TravelMS</p>
             </div>
 
-            <form id="register-form" class="space-y-5">
+            <form id="register-form" class="space-y-4">
                 <div>
-                    <label for="name" class="block text-sm font-semibold text-slate-700 mb-2" data-i18n="register.name_label">Nom complet</label>
+                    <label for="name" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.name_label">Nom complet</label>
                     <input type="text" id="name" name="name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" data-i18n-placeholder="register.name_placeholder" placeholder="Jean Dupont" required autocomplete="name">
                 </div>
 
                 <div>
-                    <label for="email" class="block text-sm font-semibold text-slate-700 mb-2" data-i18n="register.email_label">Adresse email</label>
+                    <label for="email" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.email_label">Adresse email</label>
                     <input type="email" id="email" name="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" data-i18n-placeholder="register.email_placeholder" placeholder="jean.dupont@exemple.com" required autocomplete="email">
                 </div>
 
                 <div>
-                    <label for="password" class="block text-sm font-semibold text-slate-700 mb-2" data-i18n="register.password_label">Mot de passe</label>
+                    <label for="password" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.password_label">Mot de passe</label>
                     <div class="relative">
                         <input type="password" id="password" required 
                             class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" 
@@ -72,7 +72,24 @@
                     </div>
                 </div>
 
-                <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-600/20 transition duration-200 mt-2" data-i18n="register.submit">Créer mon compte et voyager</button>
+                <div>
+                    <label for="confirm-password" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.confirm_password_label">Confirmer le mot de passe</label>
+                    <input type="password" id="confirm-password" required 
+                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" 
+                        data-i18n-placeholder="register.password_placeholder" placeholder="••••••••" autocomplete="new-password">
+                </div>
+
+                <!-- Case à cocher obligatoire et non cochée par défaut -->
+                <div class="flex items-start space-x-3 pt-1">
+                    <input type="checkbox" id="terms" name="terms" required class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                    <label for="terms" class="text-xs text-slate-600 leading-relaxed">
+                        <span data-i18n="register.terms_prefix">J'accepte les</span> 
+                        <button type="button" id="openTermsModal" class="text-blue-600 font-semibold hover:underline cursor-pointer focus:outline-none" data-i18n="register.terms_link">conditions générales d'utilisation</button> 
+                        <span data-i18n="register.terms_suffix">et la politique de confidentialité.</span>
+                    </label>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-600/20 transition duration-200 mt-3" data-i18n="register.submit">Créer mon compte et voyager</button>
             </form>
 
             <p class="text-center text-xs text-slate-400 mt-4" data-i18n="register.security">🔒 Vos données sont protégées et sécurisées.</p>
@@ -84,12 +101,34 @@
         </div>
     </main>
 
+    <!-- FENÊTRE MODALE POUR LIRE LES CONDITIONS -->
+    <div id="termsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl space-y-4 max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                <h3 class="text-xl font-bold text-slate-900" data-i18n="modal.title">Conditions Générales d'Utilisation</h3>
+                <button type="button" id="closeTermsModal" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="overflow-y-auto space-y-3 text-sm text-slate-600 pr-2">
+                <p data-i18n="modal.p1">Bienvenue sur TravelMS. En créant un compte sur notre plateforme, vous acceptez de respecter les règles et conditions d'utilisation énoncées ci-dessous.</p>
+                <h4 class="font-bold text-slate-800" data-i18n="modal.h1">1. Utilisation du service</h4>
+                <p data-i18n="modal.p2">TravelMS s'engage à vous fournir une plateforme sécurisée pour la gestion de vos réservations et voyages à Madagascar. Vos données personnelles sont traitées conformément aux normes de sécurité en vigueur.</p>
+                <h4 class="font-bold text-slate-800" data-i18n="modal.h2">2. Compte utilisateur</h4>
+                <p data-i18n="modal.p3">Vous êtes responsable du maintien de la confidentialité de votre mot de passe et de votre compte. Toute action effectuée depuis votre session est réputée de votre fait.</p>
+                <h4 class="font-bold text-slate-800" data-i18n="modal.h3">3. Protection des données</h4>
+                <p data-i18n="modal.p4">Les informations collectées lors de votre inscription (Nom, Email) sont strictement utilisées pour le bon fonctionnement du service et ne sont jamais partagées à des tiers non autorisés.</p>
+            </div>
+            <div class="pt-4 border-t border-slate-100 flex justify-end">
+                <button type="button" id="acceptTermsBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition" data-i18n="modal.btn">J'ai compris et j'accepte</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Pied de page -->
     <footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm mt-auto">
         <p>&copy; <span id="current-year"></span> TravelMS. <span data-i18n="footer.rights">Tous droits réservés.</span></p>
     </footer>
 
-    <!-- Script de gestion (Multi-langue, Œil magique, Toast, Soumission API) -->
+    <!-- Script de gestion -->
     <script>
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
@@ -107,13 +146,27 @@
                 "register.email_label": "Adresse email",
                 "register.email_placeholder": "jean.dupont@exemple.com",
                 "register.password_label": "Mot de passe",
+                "register.confirm_password_label": "Confirmer le mot de passe",
                 "register.password_placeholder": "••••••••",
+                "register.terms_prefix": "J'accepte les",
+                "register.terms_link": "conditions générales d'utilisation",
+                "register.terms_suffix": "et la politique de confidentialité.",
                 "register.submit": "Créer mon compte et voyager",
                 "register.submitting": "Création en cours...",
                 "register.security": "🔒 Vos données sont protégées et sécurisées.",
                 "register.has_account": "Déjà un compte ?",
                 "register.success_msg": "Compte créé avec succès ! Redirection...",
+                "register.password_mismatch": "Les mots de passe ne correspondent pas.",
                 "register.error_default": "Une erreur est survenue lors de l'inscription.",
+                "modal.title": "Conditions Générales d'Utilisation",
+                "modal.p1": "Bienvenue sur TravelMS. En créant un compte sur notre plateforme, vous acceptez de respecter les règles et conditions d'utilisation énoncées ci-dessous.",
+                "modal.h1": "1. Utilisation du service",
+                "modal.p2": "TravelMS s'engage à vous fournir une plateforme sécurisée pour la gestion de vos réservations et voyages à Madagascar. Vos données personnelles sont traitées conformément aux normes de sécurité en vigueur.",
+                "modal.h2": "2. Compte utilisateur",
+                "modal.p3": "Vous êtes responsable du maintien de la confidentialité de votre mot de passe et de votre compte. Toute action effectuée depuis votre session est réputée de votre fait.",
+                "modal.h3": "3. Protection des données",
+                "modal.p4": "Les informations collectées lors de votre inscription (Nom, Email) sont strictement utilisées pour le bon fonctionnement du service et ne sont jamais partagées à des tiers non autorisés.",
+                "modal.btn": "J'ai compris et j'accepte",
                 "footer.rights": "Tous droits réservés."
             },
             en: {
@@ -129,13 +182,27 @@
                 "register.email_label": "Email address",
                 "register.email_placeholder": "john.doe@example.com",
                 "register.password_label": "Password",
+                "register.confirm_password_label": "Confirm password",
                 "register.password_placeholder": "••••••••",
+                "register.terms_prefix": "I accept the",
+                "register.terms_link": "terms of service",
+                "register.terms_suffix": "and the privacy policy.",
                 "register.submit": "Create my account & travel",
                 "register.submitting": "Creating account...",
                 "register.security": "🔒 Your data is protected and secure.",
                 "register.has_account": "Already have an account?",
                 "register.success_msg": "Account created successfully! Redirecting...",
+                "register.password_mismatch": "Passwords do not match.",
                 "register.error_default": "An error occurred during registration.",
+                "modal.title": "Terms of Service",
+                "modal.p1": "Welcome to TravelMS. By creating an account, you agree to comply with the terms and conditions outlined below.",
+                "modal.h1": "1. Use of Service",
+                "modal.p2": "TravelMS provides a secure platform for managing your travel bookings in Madagascar.",
+                "modal.h2": "2. User Account",
+                "modal.p3": "You are responsible for maintaining the confidentiality of your account password.",
+                "modal.h3": "3. Data Protection",
+                "modal.p4": "Collected information is used exclusively for platform functionality.",
+                "modal.btn": "I understand and accept",
                 "footer.rights": "All rights reserved."
             },
             es: {
@@ -151,13 +218,27 @@
                 "register.email_label": "Correo electrónico",
                 "register.email_placeholder": "juan.perez@ejemplo.com",
                 "register.password_label": "Contraseña",
+                "register.confirm_password_label": "Confirmar contraseña",
                 "register.password_placeholder": "••••••••",
+                "register.terms_prefix": "Acepto los",
+                "register.terms_link": "términos de servicio",
+                "register.terms_suffix": "y la política de privacidad.",
                 "register.submit": "Crear mi cuenta y viajar",
                 "register.submitting": "Creando cuenta...",
                 "register.security": "🔒 Tus datos están protegidos y seguros.",
                 "register.has_account": "¿Ya tienes una cuenta?",
                 "register.success_msg": "¡Cuenta creada con éxito! Redirigiendo...",
+                "register.password_mismatch": "Las contraseñas no coinciden.",
                 "register.error_default": "Ocurrió un error durante el registro.",
+                "modal.title": "Términos de Servicio",
+                "modal.p1": "Bienvenido a TravelMS.",
+                "modal.h1": "1. Uso del servicio",
+                "modal.p2": "TravelMS ofrece una plataforma segura.",
+                "modal.h2": "2. Cuenta de usuario",
+                "modal.p3": "Eres responsable de tu contraseña.",
+                "modal.h3": "3. Protección de datos",
+                "modal.p4": "Los datos se utilizan exclusivamente.",
+                "modal.btn": "Entendido y acepto",
                 "footer.rights": "Todos los derechos reservados."
             },
             ru: {
@@ -173,13 +254,27 @@
                 "register.email_label": "Электронная почта",
                 "register.email_placeholder": "ivan@example.com",
                 "register.password_label": "Пароль",
+                "register.confirm_password_label": "Подтвердите пароль",
                 "register.password_placeholder": "••••••••",
+                "register.terms_prefix": "Я принимаю",
+                "register.terms_link": "условия обслуживания",
+                "register.terms_suffix": "и политику конфиденциальности.",
                 "register.submit": "Создать аккаунт и путешествовать",
                 "register.submitting": "Создание аккаунта...",
                 "register.security": "🔒 Ваши данные защищены и в безопасности.",
                 "register.has_account": "Уже есть аккаунт?",
                 "register.success_msg": "Аккаунт успешно создан! Перенаправление...",
+                "register.password_mismatch": "Пароли не совпадают.",
                 "register.error_default": "Произошла ошибка при регистрации.",
+                "modal.title": "Условия обслуживания",
+                "modal.p1": "Добро пожаловать в TravelMS.",
+                "modal.h1": "1. Использование сервиса",
+                "modal.p2": "TravelMS предоставляет безопасную платформу.",
+                "modal.h2": "2. Аккаунт пользователя",
+                "modal.p3": "Вы несете ответственность за безопасность пароля.",
+                "modal.h3": "3. Защита данных",
+                "modal.p4": "Информация используется строго по назначению.",
+                "modal.btn": "Я понял и принимаю",
                 "footer.rights": "Все права защищены."
             },
             it: {
@@ -195,13 +290,27 @@
                 "register.email_label": "Indirizzo email",
                 "register.email_placeholder": "mario.rossi@esempio.com",
                 "register.password_label": "Password",
+                "register.confirm_password_label": "Conferma password",
                 "register.password_placeholder": "••••••••",
+                "register.terms_prefix": "Accetto i",
+                "register.terms_link": "termini di servizio",
+                "register.terms_suffix": "e l'informativa sulla privacy.",
                 "register.submit": "Crea il mio account e viaggia",
                 "register.submitting": "Creazione in corso...",
                 "register.security": "🔒 I tuoi dati sono protetti e sicuri.",
                 "register.has_account": "Hai già un account?",
                 "register.success_msg": "Account creato con successo! Reindirizzamento...",
+                "register.password_mismatch": "Le password non coincidono.",
                 "register.error_default": "Si è verificato un errore durante la registrazione.",
+                "modal.title": "Termini di Servizio",
+                "modal.p1": "Benvenuto su TravelMS.",
+                "modal.h1": "1. Uso del servizio",
+                "modal.p2": "TravelMS offre una piattaforma sicura.",
+                "modal.h2": "2. Account utente",
+                "modal.p3": "Sei responsabile della tua password.",
+                "modal.h3": "3. Protezione dei dati",
+                "modal.p4": "I dati sono utilizzati esclusivamente.",
+                "modal.btn": "Ho capito e accetto",
                 "footer.rights": "Tutti i diritti riservati."
             },
             zh: {
@@ -217,13 +326,27 @@
                 "register.email_label": "电子邮箱",
                 "register.email_placeholder": "zhangsan@example.com",
                 "register.password_label": "密码",
+                "register.confirm_password_label": "确认密码",
                 "register.password_placeholder": "••••••••",
+                "register.terms_prefix": "我接受",
+                "register.terms_link": "服务条款",
+                "register.terms_suffix": "与隐私政策。",
                 "register.submit": "创建账号并旅行",
                 "register.submitting": "正在创建...",
                 "register.security": "🔒 您的数据受到保护和安全保障。",
                 "register.has_account": "已有账号？",
                 "register.success_msg": "账号创建成功！正在重定向...",
+                "register.password_mismatch": "两次输入的密码不一致。",
                 "register.error_default": "注册过程中发生错误。",
+                "modal.title": "服务条款",
+                "modal.p1": "欢迎来到 TravelMS。",
+                "modal.h1": "1. 服务使用",
+                "modal.p2": "TravelMS 为您的旅行提供安全平台。",
+                "modal.h2": "2. 用户账号",
+                "modal.p3": "您有责任保护您的账号密码安全。",
+                "modal.h3": "3. 数据保护",
+                "modal.p4": "收集的信息仅用于平台功能。",
+                "modal.btn": "我已了解并接受",
                 "footer.rights": "保留所有权利。"
             }
         };
@@ -255,6 +378,33 @@
 
         document.getElementById('langSwitch').addEventListener('change', (e) => {
             setLanguage(e.target.value);
+        });
+
+        // Gestion de la modale des CGU
+        const termsModal = document.getElementById('termsModal');
+        const openTermsModal = document.getElementById('openTermsModal');
+        const closeTermsModal = document.getElementById('closeTermsModal');
+        const acceptTermsBtn = document.getElementById('acceptTermsBtn');
+        const termsCheckbox = document.getElementById('terms');
+
+        openTermsModal.addEventListener('click', () => {
+            termsModal.classList.remove('hidden');
+        });
+
+        closeTermsModal.addEventListener('click', () => {
+            termsModal.classList.add('hidden');
+        });
+
+        acceptTermsBtn.addEventListener('click', () => {
+            termsCheckbox.checked = true; // Coche automatiquement la case quand l'utilisateur valide la lecture
+            termsModal.classList.add('hidden');
+        });
+
+        // Fermer la modale en cliquant en dehors
+        termsModal.addEventListener('click', (e) => {
+            if (e.target === termsModal) {
+                termsModal.classList.add('hidden');
+            }
         });
 
         // 1. Gestion de l'Œil magique
@@ -316,9 +466,23 @@
             const name = document.getElementById('name').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const termsChecked = termsCheckbox.checked;
             const submitBtn = document.getElementById('submit-btn');
 
             const currentLang = localStorage.getItem('travelms_lang') || 'fr';
+
+            // Double vérification de sécurité (mot de passe + conditions cochées)
+            if (password !== confirmPassword) {
+                showToast(translations[currentLang]["register.password_mismatch"] || "Les mots de passe ne correspondent pas.", "error");
+                return;
+            }
+
+            if (!termsChecked) {
+                showToast("Veuillez accepter les conditions générales d'utilisation.", "error");
+                return;
+            }
+
             submitBtn.textContent = translations[currentLang]["register.submitting"];
             submitBtn.disabled = true;
 
