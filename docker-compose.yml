@@ -33,6 +33,8 @@ services:
         condition: service_healthy
     networks:
       - travel-net
+    volumes:
+      - ./uploads:/app/uploads
     restart: unless-stopped
 
   frontend:
