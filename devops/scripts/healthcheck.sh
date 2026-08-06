@@ -9,7 +9,7 @@ else
 fi
 
 # Test Backend API (Port 3000)
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/hello | grep -q "200"; then
+if docker exec travel_backend node -e "fetch('http://localhost:3000/hello').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"; then
     echo "🟢 Backend API (Port 3000) : OK"
 else
     echo "🔴 Backend API (Port 3000) : INACCESSIBLE"
