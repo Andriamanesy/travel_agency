@@ -264,8 +264,10 @@ if (loginForm) {
 
             showToast(translations[currentLang]["login.success_msg"], "success");
 
+            // URL absolue : la redirection reste fiable quel que soit le chemin
+            // depuis lequel la page de connexion a été ouverte.
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                window.location.assign('/dashboard.html');
             }, 1200);
 
         } catch (err) {
