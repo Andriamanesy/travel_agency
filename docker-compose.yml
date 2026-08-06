@@ -1,5 +1,5 @@
 services:
-  database:
+  db:
     image: postgres:15-alpine
     container_name: travel_db
     environment:
@@ -25,17 +25,16 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      DB_HOST: database
-      DB_USER: ${DB_USER:-${POSTGRES_USER:-briandri}}
-      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-Economie@2021}}
-      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-travel_agency_db}}
-      # URL publique utilisée dans les liens de vérification et de réinitialisation.
+      DB_HOST: db
+      DB_USER: ${DB_USER:-briandri}
+      DB_PASSWORD: ${DB_PASSWORD:-Economie@2021}
+      DB_NAME: ${DB_NAME:-travel_agency_db}
+      DATABASE_URL: postgresql://${DB_USER:-briandri}:${DB_PASSWORD:-Economie@2021}@db:5432/${DB_NAME:-travel_agency_db}
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://192.168.88.226:8080}
-      # Secret long et aléatoire obligatoire : ne jamais fournir de valeur par défaut.
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Définissez JWT_ACCESS_SECRET avant le déploiement}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
     depends_on:
-      database:
+      db:
         condition: service_healthy
     networks:
       - travel-net
