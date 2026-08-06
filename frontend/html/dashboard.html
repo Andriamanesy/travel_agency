@@ -96,24 +96,40 @@
     <script>
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
-        // 1. Vérification de la session utilisateur au chargement
+        // 1. Vérification de la session utilisateur et du token au chargement
         const storedUser = localStorage.getItem('travelms_user') || localStorage.getItem('user');
+        const token = localStorage.getItem('token');
 
-        if (!storedUser) {
+        if (!storedUser || !token) {
+            // Si l'utilisateur ou le token est absent, redirection vers le login
             window.location.href = 'login.html';
         } else {
-            const user = JSON.parse(storedUser);
-            const userName = user.name || 'Voyageur';
-            document.getElementById('userNameDisplay').textContent = `Bonjour, ${userName}`;
-            document.getElementById('welcomeTitle').textContent = `Heureux de vous revoir, ${userName} !`;
+            try {
+                const user = JSON.parse(storedUser);
+                const userName = user.name || 'Voyageur';
+                document.getElementById('userNameDisplay').textContent = `Bonjour, ${userName}`;
+                
+                const welcomeTitle = document.getElementById('welcomeTitle');
+                if (welcomeTitle) {
+                    welcomeTitle.textContent = `Heureux de vous revoir, ${userName} !`;
+                }
+            } catch (e) {
+                // En cas de données corrompues dans le localStorage
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
         }
 
-        // 2. Gestion du bouton de déconnexion
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('travelms_user');
-            localStorage.removeItem('user');
-            window.location.href = 'login.html';
-        });
+        // 2. Gestion propre du bouton de déconnexion
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('travelms_user');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            });
+        }
 
         // 3. Fonction Toast pour les notifications
         function showToast(message, type = 'success') {

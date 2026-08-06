@@ -434,10 +434,11 @@
         });
 
         // Gestion de la session utilisateur avec compatibilité multi-langue
-        const storedUser = localStorage.getItem('travelms_user');
+        const storedUser = localStorage.getItem('travelms_user') || localStorage.getItem('user');
+        const token = localStorage.getItem('token');
         const authNav = document.getElementById('authNav');
 
-        if (storedUser) {
+        if (storedUser && token) {
             authNav.innerHTML = `
                 <a href="dashboard.html" class="font-medium text-slate-700 hover:text-blue-600 transition flex items-center space-x-2">
                     <span>👤 <span data-i18n="nav.dashboard">Mon Tableau de bord</span></span>
@@ -448,7 +449,9 @@
             setLanguage(savedLang);
 
             document.getElementById('logoutHomeBtn').addEventListener('click', () => {
+                localStorage.removeItem('token');
                 localStorage.removeItem('travelms_user');
+                localStorage.removeItem('user');
                 window.location.reload();
             });
         }

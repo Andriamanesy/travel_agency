@@ -324,15 +324,21 @@
                     throw new Error(data.error || data.message || translations[currentLang]["login.error_default"]);
                 }
 
-                // Enregistrement du token d'authentification
+                // 1. Enregistrement du token JWT
                 if (data.token) {
                     localStorage.setItem('token', data.token);
                 }
 
+                // 2. Enregistrement de l'objet utilisateur (requis par le Dashboard)
+                // Si l'API renvoie data.user, on l'utilise, sinon on crée un objet par défaut avec l'email
+                const userData = data.user || { name: email.split('@')[0], email: email };
+                localStorage.setItem('travelms_user', JSON.stringify(userData));
+                localStorage.setItem('user', JSON.stringify(userData));
+
                 showToast(translations[currentLang]["login.success_msg"], "success");
 
                 setTimeout(() => {
-                    window.location.href = 'index.html'; // Redirection vers l'accueil ou le dashboard
+                    window.location.href = 'dashboard.html'; // Remplacez par index.html si c'est votre page d'accueil
                 }, 1200);
 
             } catch (err) {
