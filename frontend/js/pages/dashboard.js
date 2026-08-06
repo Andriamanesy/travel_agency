@@ -1,7 +1,7 @@
     // 1. CONFIGURATION CENTRALE
     // L'API et les avatars sont relayés par Nginx sur le même domaine.
     // Une URL relative évite CORS et ne dépend d'aucun port exposé.
-const API_BASE_URL = window.TravelConfig.apiBaseUrl;
+const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
     const token = localStorage.getItem('token');
     let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
 

@@ -1,5 +1,5 @@
 (() => {
-    const API_BASE_URL = window.TravelConfig.apiBaseUrl;
+    const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
     const form = document.getElementById('change-password-form');
     const submitButton = document.getElementById('submit-btn');
     const message = document.getElementById('form-message');

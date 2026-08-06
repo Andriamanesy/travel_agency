@@ -1,5 +1,5 @@
-    // CONFIGURATION CENTRALE DE L'API (proxy Nginx, même origine)
-const API_BASE_URL = window.TravelConfig.apiBaseUrl;
+    // Configuration centrale de l'API (normalisée sur /api)
+    const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
 
     document.getElementById('current-year').textContent = new Date().getFullYear();
 

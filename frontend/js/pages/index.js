@@ -249,7 +249,7 @@
         if (select) select.value = lang;
     }
 
-    const API_BASE_URL = window.TravelConfig?.apiBaseUrl || '';
+    const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
     const savedLang = localStorage.getItem('travelms_lang') || 'fr';
     setLanguage(savedLang);
 

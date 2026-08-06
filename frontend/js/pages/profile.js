@@ -1,5 +1,5 @@
     // Nginx relaie /api vers le backend : rester sur la même origine.
-const API_BASE_URL = window.TravelConfig.apiBaseUrl;
+    const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
 
     document.getElementById('current-year').textContent = new Date().getFullYear();
 
