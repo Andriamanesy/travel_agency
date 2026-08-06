@@ -19,15 +19,17 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build: ./backend
-    container_name: travel_backend
-    environment:
-      PORT: 3000
-      DB_HOST: database
-      DB_USER: travel_user
-      DB_PASSWORD: travel_password
-      DB_NAME: travel_db
+    backend:
+        build: ./backend
+        container_name: travel_backend
+        ports:
+          - "3000:3000"
+        environment:
+          PORT: 3000
+          DB_HOST: database
+          DB_USER: travel_user
+          DB_PASSWORD: travel_password
+          DB_NAME: travel_db
     depends_on:
       database:
         condition: service_healthy

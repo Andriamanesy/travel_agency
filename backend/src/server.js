@@ -3,12 +3,20 @@ const url = require('url');
 const crypto = require('crypto');
 const { Pool } = require('pg');
 
-// Configuration de la connexion PostgreSQL
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgres://user:password@localhost:5432/travelms'
-});
+// Configuration robuste de la connexion PostgreSQL
+const pool = new Pool(
+    process.env.DATABASE_URL
+        ? { connectionString: process.env.DATABASE_URL }
+        : {
+              host: process.env.DB_HOST || 'localhost',
+              user: process.env.DB_USER || 'travel_user',
+              password: process.env.DB_PASSWORD || 'travel_password',
+              database: process.env.DB_NAME || 'travel_db',
+              port: process.env.DB_PORT || 5432
+          }
+);
 
-// Fonction utilitaire pour hacher le mot de passe (Module natif crypto)
+// Fonction utilitaire pour hacher le mot de passe
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
     const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
     return { salt, hash };
@@ -19,7 +27,7 @@ function verifyPassword(password, salt, storedHash) {
     return hash === storedHash;
 }
 
-// Fonction pour parser le corps d'une requête JSON
+// Fonction sécurisée pour parser le corps d'une requête JSON
 function parseJSONBody(req) {
     return new Promise((resolve, reject) => {
         let body = '';
@@ -27,11 +35,19 @@ function parseJSONBody(req) {
             body += chunk.toString();
         });
         req.on('end', () => {
+            if (!body) return resolve({});
             try {
-                resolve(body ? JSON.parse(body) : {});
+                resolve(JSON.parse(body));
             } catch (err) {
-                reject(new Error('Invalid JSON'));
+                const syntaxError = new Error('Format JSON invalide.');
+                syntaxError.statusCode = 400;
+                reject(syntaxError);
             }
+        });
+        req.on('error', () => {
+            const netError = new Error('Erreur de lecture des données.');
+            netError.statusCode = 400;
+            reject(netError);
         });
     });
 }
@@ -47,7 +63,7 @@ function sendResponse(res, statusCode, data) {
     res.end(JSON.stringify(data));
 }
 
-// Fonction utilitaire pour récupérer l'utilisateur à partir du header Authorization
+// Récupération sécurisée de l'utilisateur par token
 async function getUserByToken(req) {
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -76,13 +92,19 @@ const server = http.createServer(async (req, res) => {
     const method = req.method;
 
     try {
-        // --- ROUTE : Inscription (Version 1.0) ---
-        if (pathname === '/api/auth/register' && method === 'POST') {
+        // --- ROUTE : Accueil / Healthcheck ---
+        if (pathname === '/' && method === 'GET') {
+            return sendResponse(res, 200, { status: 'API Travel Agency en ligne' });
+        }
+
+        // --- ROUTE : Inscription ---
+        if (pathname === '/api/register' && method === 'POST') {
             const { name, email, password } = await parseJSONBody(req);
             if (!name || !email || !password) {
                 return sendResponse(res, 400, { error: 'Tous les champs sont obligatoires.' });
             }
 
+            const cleanEmail = email.toLowerCase().trim();
             const verificationToken = crypto.randomBytes(32).toString('hex');
             const { salt, hash } = hashPassword(password);
 
@@ -91,25 +113,34 @@ const server = http.createServer(async (req, res) => {
                 VALUES ($1, $2, $3, $4, $5)
                 RETURNING id, name, email, is_verified
             `;
-            const values = [name, email, hash, salt, verificationToken];
-            const result = await pool.query(query, values);
+            const values = [name.trim(), cleanEmail, hash, salt, verificationToken];
+            
+            try {
+                const result = await pool.query(query, values);
+                console.log(`[Email de vérification] Lien : http://localhost/verify-email.html?token=${verificationToken}`);
 
-            console.log(`[Email de vérification] Lien : http://localhost/verify-email.html?token=${verificationToken}`);
-
-            return sendResponse(res, 201, {
-                message: 'Inscription réussie. Veuillez vérifier votre e-mail.',
-                user: result.rows[0]
-            });
+                return sendResponse(res, 201, {
+                    message: 'Inscription réussie. Veuillez vérifier votre e-mail.',
+                    user: result.rows[0]
+                });
+            } catch (dbErr) {
+                // Gestion spécifique de l'unicité de l'email (Code Postgres 23505)
+                if (dbErr.code === '23505') {
+                    return sendResponse(res, 400, { error: 'Cet e-mail est déjà utilisé.' });
+                }
+                throw dbErr;
+            }
         }
 
-        // --- ROUTE : Connexion (Version 1.0) ---
-        if (pathname === '/api/auth/login' && method === 'POST') {
+        // --- ROUTE : Connexion ---
+        if (pathname === '/api/login' && method === 'POST') {
             const { email, password } = await parseJSONBody(req);
             if (!email || !password) {
                 return sendResponse(res, 400, { error: 'Email et mot de passe requis.' });
             }
 
-            const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+            const cleanEmail = email.toLowerCase().trim();
+            const result = await pool.query('SELECT * FROM users WHERE email = $1', [cleanEmail]);
             if (result.rows.length === 0) {
                 return sendResponse(res, 401, { error: 'Identifiants invalides.' });
             }
@@ -121,7 +152,6 @@ const server = http.createServer(async (req, res) => {
                 return sendResponse(res, 401, { error: 'Identifiants invalides.' });
             }
 
-            // Génération et stockage du token de session en base de données
             const sessionToken = crypto.randomBytes(32).toString('hex');
             await pool.query('UPDATE users SET session_token = $1 WHERE id = $2', [sessionToken, user.id]);
 
@@ -132,8 +162,8 @@ const server = http.createServer(async (req, res) => {
             });
         }
 
-        // --- ROUTE : Vérification d'e-mail (Version 1.5) ---
-        if (pathname === '/api/auth/verify' && method === 'GET') {
+        // --- ROUTE : Vérification d'e-mail ---
+        if (pathname === '/api/verify' && method === 'GET') {
             const token = parsedUrl.query.token;
             if (!token) {
                 return sendResponse(res, 400, { error: 'Token manquant.' });
@@ -151,19 +181,20 @@ const server = http.createServer(async (req, res) => {
             return sendResponse(res, 200, { message: 'E-mail vérifié avec succès.' });
         }
 
-        // --- ROUTE : Mot de passe oublié (Version 1.4) ---
-        if (pathname === '/api/auth/forgot-password' && method === 'POST') {
+        // --- ROUTE : Mot de passe oublié ---
+        if (pathname === '/api/forgot-password' && method === 'POST') {
             const { email } = await parseJSONBody(req);
             if (!email) {
                 return sendResponse(res, 400, { error: 'Email requis.' });
             }
 
+            const cleanEmail = email.toLowerCase().trim();
             const resetToken = crypto.randomBytes(32).toString('hex');
-            const expires = new Date(Date.now() + 3600000); // 1 heure
+            const expires = new Date(Date.now() + 3600000);
 
             const result = await pool.query(
                 'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3 RETURNING id',
-                [resetToken, expires, email]
+                [resetToken, expires, cleanEmail]
             );
 
             if (result.rowCount > 0) {
@@ -173,8 +204,8 @@ const server = http.createServer(async (req, res) => {
             return sendResponse(res, 200, { message: 'Si cet e-mail existe, un lien de réinitialisation a été envoyé.' });
         }
 
-        // --- ROUTE : Changement de mot de passe (Version 1.3) ---
-        if (pathname === '/api/auth/change-password' && method === 'PUT') {
+        // --- ROUTE : Changement de mot de passe ---
+        if (pathname === '/api/change-password' && method === 'PUT') {
             const user = await getUserByToken(req);
             if (!user) {
                 return sendResponse(res, 401, { error: 'Accès non autorisé.' });
@@ -199,7 +230,7 @@ const server = http.createServer(async (req, res) => {
             return sendResponse(res, 200, { message: 'Mot de passe mis à jour avec succès.' });
         }
 
-        // --- ROUTE : Profil (Version 1.1 - GET & Version 1.2 - PUT) ---
+        // --- ROUTE : Profil ---
         if (pathname === '/api/profile') {
             const user = await getUserByToken(req);
             if (!user) {
@@ -221,15 +252,23 @@ const server = http.createServer(async (req, res) => {
                     return sendResponse(res, 400, { error: 'Nom et email requis.' });
                 }
 
-                const result = await pool.query(
-                    'UPDATE users SET name = $1, email = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, email',
-                    [name, email, user.id]
-                );
+                const cleanEmail = email.toLowerCase().trim();
+                try {
+                    const result = await pool.query(
+                        'UPDATE users SET name = $1, email = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, name, email',
+                        [name.trim(), cleanEmail, user.id]
+                    );
 
-                return sendResponse(res, 200, {
-                    message: 'Profil mis à jour avec succès.',
-                    user: result.rows[0]
-                });
+                    return sendResponse(res, 200, {
+                        message: 'Profil mis à jour avec succès.',
+                        user: result.rows[0]
+                    });
+                } catch (dbErr) {
+                    if (dbErr.code === '23505') {
+                        return sendResponse(res, 400, { error: 'Cet e-mail est déjà utilisé par un autre compte.' });
+                    }
+                    throw dbErr;
+                }
             }
         }
 
@@ -237,8 +276,10 @@ const server = http.createServer(async (req, res) => {
         sendResponse(res, 404, { error: 'Route introuvable.' });
 
     } catch (err) {
-        console.error(err);
-        sendResponse(res, 500, { error: 'Erreur interne du serveur.' });
+        console.error('[Erreur Interne]', err);
+        const statusCode = err.statusCode || 500;
+        const errorMessage = statusCode === 400 ? err.message : 'Erreur interne du serveur.';
+        sendResponse(res, statusCode, { error: errorMessage });
     }
 });
 
