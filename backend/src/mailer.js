@@ -6,16 +6,18 @@ function createTransport() {
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASSWORD;
 
-    if (!host || !user || !pass || !Number.isInteger(port) || port < 1 || port > 65535) {
+    if (!host || !Number.isInteger(port) || port < 1 || port > 65535) {
         throw new Error('Configuration SMTP incomplète ou invalide.');
     }
 
-    return nodemailer.createTransport({
+    const options = {
         host,
         port,
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: { user, pass }
-    });
+        secure: process.env.SMTP_SECURE === 'true'
+    };
+    // MailHog et certains relais internes n'utilisent pas d'authentification.
+    if (user && pass) options.auth = { user, pass };
+    return nodemailer.createTransport(options);
 }
 
 async function sendMail(message) {

@@ -17,8 +17,12 @@ async function apiRequest(path, method = 'GET', body = null) {
     const url = `${API_BASE_URL}${path}`;
     const options = {
         method,
-        headers: {}
+        headers: {},
+        credentials: 'same-origin'
     };
+
+    const token = localStorage.getItem('token');
+    if (token) options.headers.Authorization = `Bearer ${token}`;
 
     if (body !== null) {
         options.headers['Content-Type'] = 'application/json';

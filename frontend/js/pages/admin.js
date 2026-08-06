@@ -1,8 +1,12 @@
 import { apiRequest } from '../api.js'; // Ajustez le chemin selon votre structure d'API
 
+const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+}[char]));
+
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
+    if (!token || !hasAdminRole(token)) {
         window.location.href = 'login.html';
         return;
     }
@@ -19,6 +23,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+function hasAdminRole(token) {
+    try {
+        const claims = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return claims.exp * 1000 > Date.now() && Array.isArray(claims.roles) && claims.roles.includes('admin');
+    } catch {
+        return false;
+    }
+}
+
 async function loadUsers() {
     const tbody = document.getElementById('users-table-body');
     const errorDiv = document.getElementById('error-message');
@@ -32,8 +45,8 @@ async function loadUsers() {
             const currentRole = Array.isArray(user.roles) && user.roles.length ? user.roles[0] : 'client';
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${user.id}</td>
-                <td>${user.email}</td>
+                <td>${escapeHtml(user.id)}</td>
+                <td>${escapeHtml(user.email)}</td>
                 <td>${user.is_verified ? '✅ Vérifié' : '⏳ En attente'}</td>
                 <td>
                     <select class="role-select" data-user-id="${user.id}">
@@ -229,7 +242,7 @@ async function updateUserRole(userId, role) {
     const errorDiv = document.getElementById('error-message');
 
     try {
-        await apiRequest(`/admin/users/${userId}/roles`, 'PUT', { roles: [role] });
+        await apiRequest(`/admin/users/${userId}/role`, 'PUT', { roles: [role] });
         successDiv.style.display = 'block';
         successDiv.textContent = 'Rôle mis à jour avec succès !';
         errorDiv.style.display = 'none';

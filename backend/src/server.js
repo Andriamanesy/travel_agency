@@ -1,6 +1,7 @@
 const http = require('http');
 const url = require('url');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
 // Formidable v3 expose sa fonction de création sous un export nommé.
@@ -16,7 +17,7 @@ if (typeof fetch !== 'function') {
     throw new Error('Le runtime Node.js doit supporter fetch() (Node 18+).');
 }
 
-const PASSWORD_MIN_LENGTH = 6;
+const PASSWORD_MIN_LENGTH = 12;
 const {
     loadAuthorization,
     signAccessToken,
@@ -249,22 +250,35 @@ async function getCountries() {
     return countries;
 }
 
-// Fonction utilitaire pour hacher le mot de passe
-function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
-    const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
-    return { salt, hash };
+// bcrypt inclut le sel dans le hash : aucune donnée secrète complémentaire
+// ne doit être stockée séparément. Le champ salt historique est conservé
+// temporairement pour la compatibilité des bases déjà créées.
+async function hashPassword(password) {
+    return { salt: '', hash: await bcrypt.hash(password, 12) };
 }
 
-function verifyPassword(password, salt, storedHash) {
-    const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
-    return hash === storedHash;
+async function verifyPassword(password, salt, storedHash) {
+    if (typeof storedHash !== 'string') return false;
+    if (storedHash.startsWith('$2')) return bcrypt.compare(password, storedHash);
+    // Migration progressive des anciens hashes PBKDF2.
+    const legacy = crypto.pbkdf2Sync(password, salt || '', 10000, 64, 'sha512').toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(legacy), Buffer.from(storedHash));
 }
 
 function validatePassword(password, label = 'Le mot de passe') {
-    if (typeof password !== 'string' || password.length < PASSWORD_MIN_LENGTH) {
-        return `${label} doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères.`;
+    if (typeof password !== 'string' || password.length < PASSWORD_MIN_LENGTH || password.length > 128) {
+        return `${label} doit contenir entre ${PASSWORD_MIN_LENGTH} et 128 caractères.`;
+    }
+    if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9\s]/.test(password)) {
+        return `${label} doit contenir une minuscule, une majuscule, un chiffre et un caractère spécial.`;
     }
     return null;
+}
+
+function validateEmail(email) {
+    return typeof email === 'string'
+        && email.length <= 254
+        && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function validateBirthdate(birthdate) {
@@ -447,6 +461,11 @@ const server = http.createServer(async (req, res) => {
             return sendResponse(res, 200, { status: 'API Travel Agency en ligne' });
         }
 
+        if (pathname === '/healthz' && method === 'GET') {
+            await pool.query('SELECT 1');
+            return sendResponse(res, 200, { status: 'ok' });
+        }
+
         // --- ROUTE : Liste des pays (proxy RestCountries avec cache) ---
         if (pathname === '/api/countries' && method === 'GET') {
             try {
@@ -500,7 +519,7 @@ const server = http.createServer(async (req, res) => {
         // --- ROUTE : Inscription ---
         if (pathname === '/api/register' && method === 'POST') {
             const { name, email, password } = await parseJSONBody(req);
-            if (typeof name !== 'string' || typeof email !== 'string' || !name.trim() || !email.trim() || !password) {
+            if (typeof name !== 'string' || name.trim().length > 100 || !validateEmail(email) || !password) {
                 return sendResponse(res, 400, { error: 'Tous les champs sont obligatoires.' });
             }
             const passwordError = validatePassword(password);
@@ -509,7 +528,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             const cleanEmail = email.toLowerCase().trim();
-            const { salt, hash: passwordHash } = hashPassword(password);
+            const { salt, hash: passwordHash } = await hashPassword(password);
             
             const client = await pool.connect();
             let transactionOpen = false;
@@ -553,7 +572,7 @@ const server = http.createServer(async (req, res) => {
         // --- ROUTE : Connexion ---
         if (pathname === '/api/login' && method === 'POST') {
             const { email, password } = await parseJSONBody(req);
-            if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
+            if (!validateEmail(email) || typeof password !== 'string' || !password) {
                 return sendResponse(res, 400, { error: 'Email et mot de passe requis.' });
             }
 
@@ -564,7 +583,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             const user = result.rows[0];
-            const isValid = verifyPassword(password, user.salt, user.password_hash);
+            const isValid = await verifyPassword(password, user.salt, user.password_hash);
 
             if (!isValid) {
                 return sendResponse(res, 401, { error: 'Identifiants invalides.' });
@@ -635,7 +654,7 @@ const server = http.createServer(async (req, res) => {
         // --- ROUTE : Mot de passe oublié ---
         if (pathname === '/api/forgot-password' && method === 'POST') {
             const { email } = await parseJSONBody(req);
-            if (typeof email !== 'string' || !email.trim()) {
+            if (!validateEmail(email)) {
                 return sendResponse(res, 400, { error: 'Email requis.' });
             }
 
@@ -681,7 +700,7 @@ const server = http.createServer(async (req, res) => {
                 return sendResponse(res, 400, { error: passwordError });
             }
 
-            const { salt, hash: passwordHash } = hashPassword(password);
+            const { salt, hash: passwordHash } = await hashPassword(password);
             const client = await pool.connect();
             try {
                 await client.query('BEGIN');
@@ -698,7 +717,7 @@ const server = http.createServer(async (req, res) => {
                 const userId = tokenResult.rows[0].user_id;
                 await client.query(
                     `UPDATE users
-                     SET password_hash = $1, salt = $2, session_token = NULL, updated_at = CURRENT_TIMESTAMP
+                     SET password_hash = $1, salt = $2, updated_at = CURRENT_TIMESTAMP
                      WHERE id = $3`,
                     [passwordHash, salt, userId]
                 );
@@ -743,7 +762,7 @@ const server = http.createServer(async (req, res) => {
         if (pathname === '/api/admin/users' && method === 'GET') {
             const user = await getUserByToken(req);
             if (!user || !req.auth.permissions.includes('users:read:any')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
-            const { rows } = await pool.query(`SELECT u.id,u.name,u.email,u.is_active,COALESCE(array_agg(r.code) FILTER (WHERE r.code IS NOT NULL),'{}') roles FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles r ON r.id=ur.role_id GROUP BY u.id ORDER BY u.created_at DESC`);
+            const { rows } = await pool.query(`SELECT u.id,u.name,u.email,u.is_verified,u.is_active,COALESCE(array_agg(r.code) FILTER (WHERE r.code IS NOT NULL),'{}') roles FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles r ON r.id=ur.role_id GROUP BY u.id ORDER BY u.created_at DESC`);
             return sendResponse(res, 200, { users: rows });
         }
 
@@ -961,7 +980,7 @@ const server = http.createServer(async (req, res) => {
             return sendResponse(res, 200, { message: 'Destination supprimée.' });
         }
 
-        const roleMatch = pathname.match(/^\/api\/admin\/users\/([0-9a-f-]+)\/roles$/i);
+        const roleMatch = pathname.match(/^\/api\/admin\/users\/([0-9a-f-]+)\/roles?$/i);
         if (roleMatch && method === 'PUT') {
             const user = await getUserByToken(req);
             if (!user || !req.auth.permissions.includes('users:update:any')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
@@ -1000,12 +1019,12 @@ const server = http.createServer(async (req, res) => {
                 return sendResponse(res, 400, { error: passwordError });
             }
 
-            const isValid = verifyPassword(currentPassword, user.salt, user.password_hash);
+            const isValid = await verifyPassword(currentPassword, user.salt, user.password_hash);
             if (!isValid) {
                 return sendResponse(res, 400, { error: 'L\'ancien mot de passe est incorrect.' });
             }
 
-            const { salt, hash } = hashPassword(newPassword);
+            const { salt, hash } = await hashPassword(newPassword);
             await pool.query(
                 'UPDATE users SET password_hash = $1, salt = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
                 [hash, salt, user.id]
@@ -1154,7 +1173,7 @@ const server = http.createServer(async (req, res) => {
 
             if (method === 'PUT') {
                 const { name, email } = await parseJSONBody(req);
-                if (!name || !email) {
+                if (typeof name !== 'string' || name.trim().length === 0 || name.trim().length > 100 || !validateEmail(email)) {
                     return sendResponse(res, 400, { error: 'Nom et email requis.' });
                 }
 

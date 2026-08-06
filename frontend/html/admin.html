@@ -4,27 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administration - Travel Agency</title>
-    <link rel="stylesheet" href="../css/style.css"> <!-- Adaptez selon votre CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Panneau d'Administration</h1>
-            <nav>
-                <a href="dashboard.html">Tableau de bord</a>
-                <a href="#" id="logout-btn">Déconnexion</a>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-8 md:px-8">
+        <header class="mb-8 flex flex-col gap-4 rounded-3xl bg-slate-900 px-6 py-6 text-white shadow-xl md:flex-row md:items-center md:justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-blue-300">Travel Agency</p>
+                <h1 class="mt-1 text-2xl font-extrabold">Panneau d’administration</h1>
+            </div>
+            <nav class="flex gap-4 text-sm font-semibold">
+                <a class="rounded-xl bg-white/10 px-4 py-2 hover:bg-white/20" href="dashboard.html">Tableau de bord</a>
+                <a class="rounded-xl bg-white/10 px-4 py-2 hover:bg-white/20" href="index.html">Voir le site</a>
             </nav>
         </header>
 
-        <main>
-            <section>
-                <h2>Gestion des Utilisateurs</h2>
-                <div id="error-message" class="alert error" style="display: none;"></div>
-                <div id="success-message" class="alert success" style="display: none;"></div>
+        <main class="space-y-8">
+            <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <div class="mb-5 flex items-center justify-between"><div><h2 class="text-xl font-bold">Gestion des utilisateurs</h2><p class="text-sm text-slate-500">Les changements de rôle invalident les sessions actives.</p></div></div>
+                <div id="error-message" class="mb-4 rounded-xl bg-rose-50 p-4 text-sm font-medium text-rose-700" style="display: none;"></div>
+                <div id="success-message" class="mb-4 rounded-xl bg-emerald-50 p-4 text-sm font-medium text-emerald-700" style="display: none;"></div>
                 
-                <table class="admin-table">
+                <div class="overflow-x-auto"><table class="min-w-full text-left text-sm">
                     <thead>
-                        <tr>
+                        <tr class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
                             <th>ID</th>
                             <th>E-mail</th>
                             <th>Statut</th>
@@ -32,16 +35,16 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="users-table-body">
+                    <tbody id="users-table-body" class="divide-y divide-slate-100">
                         <!-- Les utilisateurs seront injectés ici par JavaScript -->
                     </tbody>
-                </table>
+                </table></div>
             </section>
 
-            <section>
-                <h2>Gestion des Destinations</h2>
-                <div id="destinations-error-message" class="alert error" style="display: none;"></div>
-                <div id="destinations-success-message" class="alert success" style="display: none;"></div>
+            <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <h2 class="mb-5 text-xl font-bold">Gestion des destinations</h2>
+                <div id="destinations-error-message" class="mb-4 rounded-xl bg-rose-50 p-4 text-sm font-medium text-rose-700" style="display: none;"></div>
+                <div id="destinations-success-message" class="mb-4 rounded-xl bg-emerald-50 p-4 text-sm font-medium text-emerald-700" style="display: none;"></div>
 
                 <form id="destination-form" class="grid gap-4 mb-8">
                     <input type="hidden" id="destinationId">
@@ -74,7 +77,7 @@
                     </div>
                 </form>
 
-                <table class="admin-table">
+                <div class="overflow-x-auto"><table class="min-w-full text-left text-sm">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -85,10 +88,10 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="destinations-table-body">
+                    <tbody id="destinations-table-body" class="divide-y divide-slate-100">
                         <!-- Les destinations seront injectées ici -->
                     </tbody>
-                </table>
+                </table></div>
             </section>
         </main>
     </div>

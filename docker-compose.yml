@@ -47,7 +47,7 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${DB_NAME:-travel_agency_db}
-      PUBLIC_APP_URL: ${PUBLIC_APP_URL}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:8080}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       # Mail settings: in dev default to MailHog service added below
@@ -65,6 +65,11 @@ services:
     volumes:
       - ./uploads:/app/public/uploads
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build: ./frontend
