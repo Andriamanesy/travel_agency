@@ -121,7 +121,7 @@
                         </div>
                     </div>
 
-                    <!-- Pays (Avant la ville), Ville et Code postal -->
+                    <!-- Pays (Avant la ville), Ville (Dépendante) et Code postal -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pays</label>
@@ -131,7 +131,9 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Ville</label>
-                            <input type="text" id="city" placeholder="Antananarivo" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <select id="city" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                                <option value="" disabled selected>Sélectionner d'abord un pays</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Code postal</label>
@@ -175,7 +177,7 @@
         </div>
     </main>
 
-    <!-- SCRIPT DE GESTION ET SÉCURISATION -->
+    <!-- SCRIPT DE GESTION ET GESTIONNAIRE DÉPENDANT -->
     <script>
         const token = localStorage.getItem('token');
         let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
@@ -184,14 +186,44 @@
             window.location.href = 'login.html';
         }
 
-        // Chargement sécurisé des pays avec solution de secours (fallback) intégrée
+        // Base de données des villes par pays
+        const citiesByCountry = {
+            "Madagascar": ["Antananarivo", "Toamasina", "Antsirabe", "Fianarantsoa", "Mahajanga", "Toliara", "Antsiranana", "Nosy Be"],
+            "France": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille"],
+            "Belgique": ["Bruxelles", "Anvers", "Gand", "Charleroi", "Liège", "Bruges"],
+            "Suisse": ["Genève", "Zurich", "Lausanne", "Berne", "Bâle"],
+            "Canada": ["Montréal", "Toronto", "Québec", "Vancouver", "Ottawa"],
+            "États-Unis": ["New York", "Los Angeles", "Chicago", "Miami", "San Francisco"],
+            "Algérie": ["Alger", "Oran", "Constantine", "Annaba"],
+            "Maroc": ["Casablanca", "Rabat", "Marrakech", "Fès", "Tanger"],
+            "Tunisie": ["Tunis", "Sfax", "Sousse", "Bizerte"],
+            "Espagne": ["Madrid", "Barcelone", "Valence", "Séville"],
+            "Italie": ["Rome", "Milan", "Naples", "Turin", "Florence"],
+            "Allemagne": ["Berlin", "Hambourg", "Munich", "Francfort"]
+        };
+
+        // Fonction pour mettre à jour la liste des villes selon le pays sélectionné
+        function updateCities(selectedCountry, preselectedCity = '') {
+            const citySelect = document.getElementById('city');
+            citySelect.innerHTML = '<option value="" disabled selected>Sélectionner la ville</option>';
+
+            const cities = citiesByCountry[selectedCountry] || ["Autre / Saisie libre"];
+
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                if (preselectedCity && preselectedCity === city) {
+                    option.selected = true;
+                }
+                citySelect.appendChild(option);
+            });
+        }
+
+        // Chargement des pays
         async function loadCountries() {
             const countrySelect = document.getElementById('country');
-            const fallbackCountries = [
-                "Afrique du Sud", "Algérie", "Allemagne", "Belgique", "Brésil", "Canada", 
-                "Chine", "Espagne", "États-Unis", "France", "Italie", "Madagascar", 
-                "Maroc", "Royaume-Uni", "Suisse", "Tunisie"
-            ].sort();
+            const fallbackCountries = Object.keys(citiesByCountry).sort();
 
             try {
                 const response = await fetch('https://restcountries.com/v3.1/all?fields=name,translations');
@@ -224,9 +256,19 @@
                     countrySelect.appendChild(option);
                 });
             }
+
+            // Si un pays était déjà enregistré, charger ses villes et pré-sélectionner la ville
+            if (userData.country) {
+                updateCities(userData.country, userData.city);
+            }
         }
 
-        // Chargement sécurisé des nationalités (liste propre et garantie sans erreur)
+        // Écouter le changement de pays pour actualiser les villes en temps réel
+        document.getElementById('country').addEventListener('change', (e) => {
+            updateCities(e.target.value);
+        });
+
+        // Chargement des nationalités
         function loadNationalities() {
             const natSelect = document.getElementById('nationality');
             const nationalities = [
@@ -251,13 +293,12 @@
             loadNationalities();
         });
 
-        // Pré-remplissage des champs
+        // Pré-remplissage des champs de base
         document.getElementById('fullName').value = userData.name || userData.fullName || '';
         document.getElementById('email').value = userData.email || '';
         document.getElementById('phone').value = userData.phone || '';
         document.getElementById('birthdate').value = userData.birthdate || '';
         document.getElementById('gender').value = userData.gender || '';
-        document.getElementById('city').value = userData.city || '';
         document.getElementById('postalCode').value = userData.postalCode || '';
         document.getElementById('address').value = userData.address || '';
         document.getElementById('preferredLang').value = userData.preferredLang || 'fr';
@@ -292,15 +333,14 @@
                 return;
             }
 
-            // 2. Validation Ville (Lettres, espaces, tirets et accents uniquement)
-            const cityInput = document.getElementById('city').value.trim();
-            const cityRegex = /^[a-zA-ZÀ-ÿ\s\-]{2,50}$/;
-            if (cityInput && !cityRegex.test(cityInput)) {
-                showAlert("⚠️ Le nom de la ville ne doit contenir que des lettres.");
+            // 2. Validation Ville
+            const cityInput = document.getElementById('city').value;
+            if (!cityInput) {
+                showAlert("⚠️ Veuillez sélectionner une ville.");
                 return;
             }
 
-            // 3. Validation Code postal (Alphanumérique, espaces, tirets de 2 à 10 caractères)
+            // 3. Validation Code postal
             const postalInput = document.getElementById('postalCode').value.trim();
             const postalRegex = /^[a-zA-Z0-9\s\-]{2,10}$/;
             if (postalInput && !postalRegex.test(postalInput)) {
@@ -308,7 +348,7 @@
                 return;
             }
 
-            // Enregistrement des données sécurisées
+            // Enregistrement des données
             userData.name = document.getElementById('fullName').value;
             userData.fullName = userData.name;
             userData.email = document.getElementById('email').value;
