@@ -6,6 +6,30 @@ const fs = require('fs');
 // Formidable v3 expose sa fonction de création sous un export nommé.
 const { formidable } = require('formidable');
 const { Pool } = require('pg');
+const { loadAuthorization, signAccessToken, authenticate, issueRefreshToken, revokeAll, hash } = require('./auth');
+
+const PASSWORD_MIN_LENGTH = 6;
+
+/**
+ * Construit les liens envoyés par e-mail à partir de l'URL publique du site.
+ * Cette URL doit être configurée dans l'environnement de déploiement, par
+ * exemple : https://voyages.example.com
+ */
+function buildPublicLink(pathname, token) {
+    const publicAppUrl = process.env.PUBLIC_APP_URL;
+    if (!publicAppUrl) {
+        throw new Error('PUBLIC_APP_URL doit être configurée pour générer les liens e-mail.');
+    }
+
+    let link;
+    try {
+        link = new URL(pathname, publicAppUrl.endsWith('/') ? publicAppUrl : `${publicAppUrl}/`);
+    } catch {
+        throw new Error('PUBLIC_APP_URL doit être une URL absolue valide.');
+    }
+    link.searchParams.set('token', token);
+    return link.toString();
+}
 
 // Configuration robuste de la connexion PostgreSQL
 const pool = new Pool(
@@ -95,6 +119,13 @@ function verifyPassword(password, salt, storedHash) {
     return hash === storedHash;
 }
 
+function validatePassword(password, label = 'Le mot de passe') {
+    if (typeof password !== 'string' || password.length < PASSWORD_MIN_LENGTH) {
+        return `${label} doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères.`;
+    }
+    return null;
+}
+
 function validateBirthdate(birthdate) {
     if (typeof birthdate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) {
         return 'La date de naissance est obligatoire et doit être au format AAAA-MM-JJ.';
@@ -143,24 +174,21 @@ function parseJSONBody(req) {
 }
 
 // Configuration des en-têtes CORS et réponse JSON
-function sendResponse(res, statusCode, data) {
+function sendResponse(res, statusCode, data, extraHeaders = {}) {
     res.writeHead(statusCode, {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        ...extraHeaders
     });
     res.end(JSON.stringify(data));
 }
 
 // Récupération sécurisée de l'utilisateur par token
 async function getUserByToken(req) {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return null;
-    }
-    const token = authHeader.split(' ')[1];
-    const result = await pool.query('SELECT * FROM users WHERE session_token = $1', [token]);
+    try { await authenticate(pool, req); } catch { return null; }
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.auth.id]);
     return result.rows.length > 0 ? result.rows[0] : null;
 }
 
@@ -222,12 +250,17 @@ const server = http.createServer(async (req, res) => {
         // --- ROUTE : Inscription ---
         if (pathname === '/api/register' && method === 'POST') {
             const { name, email, password } = await parseJSONBody(req);
-            if (!name || !email || !password) {
+            if (typeof name !== 'string' || typeof email !== 'string' || !name.trim() || !email.trim() || !password) {
                 return sendResponse(res, 400, { error: 'Tous les champs sont obligatoires.' });
+            }
+            const passwordError = validatePassword(password);
+            if (passwordError) {
+                return sendResponse(res, 400, { error: passwordError });
             }
 
             const cleanEmail = email.toLowerCase().trim();
             const verificationToken = crypto.randomBytes(32).toString('hex');
+            const verificationLink = buildPublicLink('/verify-email.html', verificationToken);
             const { salt, hash } = hashPassword(password);
 
             const query = `
@@ -239,7 +272,8 @@ const server = http.createServer(async (req, res) => {
             
             try {
                 const result = await pool.query(query, values);
-                console.log(`[Email de vérification] Lien : http://localhost/verify-email.html?token=${verificationToken}`);
+                await pool.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE code = 'client' ON CONFLICT DO NOTHING`, [result.rows[0].id]);
+                console.log(`[Email de vérification] Lien : ${verificationLink}`);
 
                 return sendResponse(res, 201, {
                     message: 'Inscription réussie. Veuillez vérifier votre e-mail.',
@@ -256,7 +290,7 @@ const server = http.createServer(async (req, res) => {
         // --- ROUTE : Connexion ---
         if (pathname === '/api/login' && method === 'POST') {
             const { email, password } = await parseJSONBody(req);
-            if (!email || !password) {
+            if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
                 return sendResponse(res, 400, { error: 'Email et mot de passe requis.' });
             }
 
@@ -272,9 +306,13 @@ const server = http.createServer(async (req, res) => {
             if (!isValid) {
                 return sendResponse(res, 401, { error: 'Identifiants invalides.' });
             }
+            if (!user.is_verified) {
+                return sendResponse(res, 403, { error: 'Veuillez vérifier votre e-mail avant de vous connecter.' });
+            }
 
-            const sessionToken = crypto.randomBytes(32).toString('hex');
-            await pool.query('UPDATE users SET session_token = $1 WHERE id = $2', [sessionToken, user.id]);
+            const auth = await loadAuthorization(pool, user.id);
+            const sessionToken = signAccessToken(auth);
+            const refreshToken = await issueRefreshToken(pool, user.id);
 
             return sendResponse(res, 200, {
                 message: 'Connexion réussie.',
@@ -284,7 +322,7 @@ const server = http.createServer(async (req, res) => {
                     name: user.name,
                     email: user.email,
                     phone: user.phone,
-                    birthdate: user.birthdate,
+                    birthdate: user.birth_date,
                     gender: user.gender,
                     nationality: user.nationality,
                     country: user.country,
@@ -295,7 +333,7 @@ const server = http.createServer(async (req, res) => {
                     avatar_url: user.avatar_url,
                     is_verified: user.is_verified
                 }
-            });
+            }, { 'Set-Cookie': `travelms_refresh=${refreshToken}; HttpOnly; Path=/api; Max-Age=604800; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}` });
         }
 
         // --- ROUTE : Vérification d'e-mail ---
@@ -320,12 +358,13 @@ const server = http.createServer(async (req, res) => {
         // --- ROUTE : Mot de passe oublié ---
         if (pathname === '/api/forgot-password' && method === 'POST') {
             const { email } = await parseJSONBody(req);
-            if (!email) {
+            if (typeof email !== 'string' || !email.trim()) {
                 return sendResponse(res, 400, { error: 'Email requis.' });
             }
 
             const cleanEmail = email.toLowerCase().trim();
             const resetToken = crypto.randomBytes(32).toString('hex');
+            const resetLink = buildPublicLink('/reset-password.html', resetToken);
             const expires = new Date(Date.now() + 3600000);
 
             const result = await pool.query(
@@ -334,10 +373,76 @@ const server = http.createServer(async (req, res) => {
             );
 
             if (result.rowCount > 0) {
-                console.log(`[Réinitialisation MDP] Lien : http://localhost/reset-password.html?token=${resetToken}`);
+                console.log(`[Réinitialisation MDP] Lien : ${resetLink}`);
             }
 
             return sendResponse(res, 200, { message: 'Si cet e-mail existe, un lien de réinitialisation a été envoyé.' });
+        }
+
+        // --- ROUTE : Réinitialisation du mot de passe avec token à usage unique ---
+        if (pathname === '/api/reset-password' && method === 'POST') {
+            const { token, password } = await parseJSONBody(req);
+            if (!token || !password) {
+                return sendResponse(res, 400, { error: 'Token et nouveau mot de passe requis.' });
+            }
+            const passwordError = validatePassword(password);
+            if (passwordError) {
+                return sendResponse(res, 400, { error: passwordError });
+            }
+
+            const userResult = await pool.query(
+                `SELECT id FROM users
+                 WHERE reset_token = $1 AND reset_token_expires > CURRENT_TIMESTAMP`,
+                [token]
+            );
+            if (userResult.rowCount === 0) {
+                return sendResponse(res, 400, { error: 'Le lien de réinitialisation est invalide ou expiré.' });
+            }
+
+            const { salt, hash } = hashPassword(password);
+            await pool.query(
+                `UPDATE users
+                 SET password_hash = $1, salt = $2, reset_token = NULL,
+                     reset_token_expires = NULL, session_token = NULL,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $3`,
+                [hash, salt, userResult.rows[0].id]
+            );
+            await revokeAll(pool, userResult.rows[0].id);
+
+            return sendResponse(res, 200, {
+                message: 'Mot de passe réinitialisé avec succès. Veuillez vous reconnecter.'
+            });
+        }
+
+        // --- ROUTE : Déconnexion et invalidation de la session en base ---
+        if (pathname === '/api/logout' && method === 'POST') {
+            const user = await getUserByToken(req);
+            if (!user) {
+                return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            }
+
+            await revokeAll(pool, user.id);
+            return sendResponse(res, 200, { message: 'Déconnexion réussie.' }, { 'Set-Cookie': 'travelms_refresh=; HttpOnly; Path=/api; Max-Age=0; SameSite=Lax' });
+        }
+
+        if (pathname === '/api/refresh' && method === 'POST') {
+            const token = (req.headers.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith('travelms_refresh='))?.slice('travelms_refresh='.length);
+            if (!token) return sendResponse(res, 401, { error: 'Refresh token manquant.' });
+            const { rows } = await pool.query('SELECT user_id FROM refresh_tokens WHERE token_hash=$1 AND revoked_at IS NULL AND expires_at>CURRENT_TIMESTAMP', [hash(token)]);
+            if (!rows[0]) return sendResponse(res, 401, { error: 'Refresh token invalide.' });
+            await pool.query('UPDATE refresh_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE token_hash=$1', [hash(token)]);
+            const auth = await loadAuthorization(pool, rows[0].user_id);
+            if (!auth?.is_active) return sendResponse(res, 401, { error: 'Compte inactif.' });
+            const fresh = await issueRefreshToken(pool, auth.id);
+            return sendResponse(res, 200, { token: signAccessToken(auth) }, { 'Set-Cookie': `travelms_refresh=${fresh}; HttpOnly; Path=/api; Max-Age=604800; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}` });
+        }
+
+        if (pathname === '/api/admin/users' && method === 'GET') {
+            const user = await getUserByToken(req);
+            if (!user || !req.auth.permissions.includes('users:read:any')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            const { rows } = await pool.query(`SELECT u.id,u.name,u.email,u.is_active,COALESCE(array_agg(r.code) FILTER (WHERE r.code IS NOT NULL),'{}') roles FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles r ON r.id=ur.role_id GROUP BY u.id ORDER BY u.created_at DESC`);
+            return sendResponse(res, 200, { users: rows });
         }
 
         // --- ROUTE : Changement de mot de passe ---
@@ -350,6 +455,10 @@ const server = http.createServer(async (req, res) => {
             const { currentPassword, newPassword } = await parseJSONBody(req);
             if (!currentPassword || !newPassword) {
                 return sendResponse(res, 400, { error: 'Ancien et nouveau mots de passe requis.' });
+            }
+            const passwordError = validatePassword(newPassword, 'Le nouveau mot de passe');
+            if (passwordError) {
+                return sendResponse(res, 400, { error: passwordError });
             }
 
             const isValid = verifyPassword(currentPassword, user.salt, user.password_hash);
@@ -488,7 +597,7 @@ const server = http.createServer(async (req, res) => {
                     name: user.name,
                     email: user.email,
                     phone: user.phone,
-                    birthdate: user.birthdate,
+                    birthdate: user.birth_date,
                     gender: user.gender,
                     nationality: user.nationality,
                     country: user.country,

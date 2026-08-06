@@ -38,12 +38,6 @@ Windows
 
 Le projet évolue à travers des versions progressives, simulant le cycle de vie d'un produit logiciel en entreprise.
 
-### Phase 0 : Fondations & Connectivité (3 Couches & Page d'Accueil)
-
-* **Version 0.1 — Hello World** : Mise en place de Nginx, diffusion de la page d'accueil statique (HTML/CSS) et intégration du favicon.
-* **Version 0.2 — API** : Premier endpoint `GET /api/hello` géré par le serveur HTTP natif de Node.js et consommé en `fetch()` par le frontend.
-* **Version 0.3 — PostgreSQL** : Connexion à la base de données et lecture dynamique des messages par le backend.
-
 ### Phase 1 : Gestion des Utilisateurs & Sécurité
 
 * **Version 1.0 — Authentification** : Modules d'inscription, connexion et déconnexion.

@@ -265,10 +265,17 @@
         // Appliquer les traductions sur le contenu injecté dynamiquement
         setLanguage(savedLang);
 
-        document.getElementById('logoutHomeBtn').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('travelms_user');
-            localStorage.removeItem('user');
+        document.getElementById('logoutHomeBtn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/api/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            } finally {
+                localStorage.removeItem('token');
+                localStorage.removeItem('travelms_user');
+                localStorage.removeItem('user');
+            }
             window.location.reload();
         });
     }

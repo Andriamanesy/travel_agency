@@ -353,10 +353,17 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
         }
     });
 
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('travelms_user');
-        localStorage.removeItem('user');
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+            await fetch(`${API_BASE_URL}/api/logout`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('travelms_user');
+            localStorage.removeItem('user');
+        }
         window.location.href = 'index.html';
     });
 

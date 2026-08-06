@@ -9,6 +9,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./database/migrations/002_add_rbac.sql:/docker-entrypoint-initdb.d/002_add_rbac.sql
     networks:
       - travel-net
     healthcheck:
@@ -28,6 +29,10 @@ services:
       DB_USER: travel_user
       DB_PASSWORD: travel_password
       DB_NAME: travel_db
+      # URL publique utilisée dans les liens de vérification et de réinitialisation.
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://travelms.example.com}
+      # Secret long et aléatoire obligatoire : ne jamais fournir de valeur par défaut.
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Définissez JWT_ACCESS_SECRET avant le déploiement}
     depends_on:
       database:
         condition: service_healthy

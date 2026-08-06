@@ -163,7 +163,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
     // Charger les données du profil au chargement de la page
     window.addEventListener('DOMContentLoaded', async () => {
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
-        const token = localStorage.getItem('travelms_token'); // Suppose un token JWT stocké
+        const token = localStorage.getItem('token');
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/profile`, {
@@ -194,7 +194,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
         const email = document.getElementById('email').value.trim();
         const submitBtn = document.getElementById('submit-btn');
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
-        const token = localStorage.getItem('travelms_token');
+        const token = localStorage.getItem('token');
 
         submitBtn.textContent = translations[currentLang]["profile.updating"];
         submitBtn.disabled = true;
@@ -225,7 +225,17 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
     });
 
     // Gestion de la déconnexion
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('travelms_token');
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        const token = localStorage.getItem('token');
+        try {
+            await fetch(`${API_BASE_URL}/api/logout`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('travelms_user');
+            localStorage.removeItem('user');
+        }
         window.location.href = '/login.html';
     });
