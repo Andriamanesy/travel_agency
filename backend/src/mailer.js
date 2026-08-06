@@ -25,17 +25,28 @@ function createTransport() {
 async function sendMail(message) {
     const from = process.env.SMTP_FROM || 'no-reply@travel-agency.local';
 
-    // Si la configuration SMTP est incomplète, ne pas empêcher le flux
-    // d'inscription pendant le développement : journaliser le message
-    // et retourner une promesse résolue. En production, configurez
-    // correctement `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` et `SMTP_FROM`.
     try {
         const transport = createTransport();
-        return transport.sendMail({ from, ...message });
+        const result = await transport.sendMail({ from, ...message });
+        console.log('[SMTP] E-mail envoyé avec succès :', {
+            to: message.to,
+            subject: message.subject,
+            messageId: result?.messageId
+        });
+        return result;
     } catch (err) {
-        console.warn('[SMTP] Configuration manquante ou invalide :', err.message);
-        console.log('[SMTP-FALLBACK] Mail envoyé en mode journalisation :', JSON.stringify({ from, ...message }, null, 2));
-        return Promise.resolve({ fallback: true });
+        console.error('[SMTP] Échec de l’envoi du mail :', {
+            to: message.to,
+            subject: message.subject,
+            error: err?.message,
+            stack: err?.stack,
+            smtpHost: process.env.SMTP_HOST,
+            smtpPort: process.env.SMTP_PORT,
+            smtpSecure: process.env.SMTP_SECURE,
+            hasAuth: Boolean(process.env.SMTP_USER && process.env.SMTP_PASSWORD)
+        });
+        console.log('[SMTP-FALLBACK] Mail non envoyé. Vérifiez la configuration SMTP.');
+        return Promise.resolve({ fallback: true, error: err?.message });
     }
 }
 

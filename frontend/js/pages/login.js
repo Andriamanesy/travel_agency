@@ -228,14 +228,24 @@ if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
         const submitBtn = document.getElementById('submit-btn');
         const verificationHelp = document.getElementById('verification-help');
 
+        if (!emailInput || !passwordInput || !submitBtn) {
+            return;
+        }
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
+
         submitBtn.textContent = translations[currentLang]["login.submitting"];
         submitBtn.disabled = true;
+        if (verificationHelp) {
+            verificationHelp.classList.add('hidden');
+        }
 
         try {
             const response = await fetch('/api/login', {
@@ -244,34 +254,36 @@ if (loginForm) {
                 body: JSON.stringify({ email, password })
             });
 
-            const data = await response.json();
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                data = {};
+            }
 
             if (!response.ok) {
-                if (response.status === 403) {
+                if (response.status === 403 && verificationHelp) {
                     verificationHelp.classList.remove('hidden');
                 }
                 throw new Error(data.error || data.message || translations[currentLang]["login.error_default"]);
             }
 
-            // Enregistrement du token JWT et des données utilisateur
             if (data.token) {
                 localStorage.setItem('token', data.token);
             }
 
-            const userData = data.user || { name: email.split('@')[0], email: email };
+            const userData = data.user || { name: email.split('@')[0], email };
             localStorage.setItem('travelms_user', JSON.stringify(userData));
             localStorage.setItem('user', JSON.stringify(userData));
 
             showToast(translations[currentLang]["login.success_msg"], "success");
 
-            // URL absolue : la redirection reste fiable quel que soit le chemin
-            // depuis lequel la page de connexion a été ouverte.
             setTimeout(() => {
                 window.location.assign('/dashboard.html');
             }, 1200);
 
         } catch (err) {
-            showToast(err.message, "error");
+            showToast(err.message || translations[currentLang]["login.error_default"], "error");
             submitBtn.textContent = translations[currentLang]["login.submit"];
             submitBtn.disabled = false;
         }

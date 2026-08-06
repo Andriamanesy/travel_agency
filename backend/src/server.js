@@ -678,10 +678,20 @@ const server = http.createServer(async (req, res) => {
                 await client.query('COMMIT');
                 transactionOpen = false;
 
-                await sendVerificationEmail(
-                    user.email,
-                    buildPublicLink('/verify-email.html', verificationToken)
-                );
+                try {
+                    await sendVerificationEmail(
+                        user.email,
+                        buildPublicLink('/verify-email.html', verificationToken)
+                    );
+                } catch (mailError) {
+                    console.error('[AUTH] Échec d’envoi de l’e-mail de vérification :', {
+                        email: user.email,
+                        error: mailError?.message,
+                        stack: mailError?.stack,
+                        smtpHost: process.env.SMTP_HOST,
+                        smtpPort: process.env.SMTP_PORT
+                    });
+                }
 
                 return sendResponse(res, 201, {
                     message: 'Inscription réussie. Veuillez vérifier votre e-mail.',
@@ -838,7 +848,13 @@ const server = http.createServer(async (req, res) => {
                         buildPublicLink('/verify-email.html', verificationToken)
                     );
                 } catch (error) {
-                    console.error('[SMTP] Renvoi de vérification impossible :', error.message);
+                    console.error('[SMTP] Renvoi de vérification impossible :', {
+                        email: cleanEmail,
+                        error: error?.message,
+                        stack: error?.stack,
+                        smtpHost: process.env.SMTP_HOST,
+                        smtpPort: process.env.SMTP_PORT
+                    });
                 }
             }
 
