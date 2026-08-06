@@ -10,7 +10,10 @@ const { Pool } = require('pg');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
 
 const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads');
+const USER_UPLOAD_DIR = path.join(UPLOAD_DIR, 'users');
 const DESTINATION_UPLOAD_DIR = path.join(UPLOAD_DIR, 'destinations');
+const CIRCUIT_UPLOAD_DIR = path.join(UPLOAD_DIR, 'circuits');
+const BANNER_UPLOAD_DIR = path.join(UPLOAD_DIR, 'banners');
 const ALLOWED_IMAGE_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 if (typeof fetch !== 'function') {
@@ -128,6 +131,15 @@ async function ensureUploadDir() {
     await ensureDirectory(UPLOAD_DIR);
 }
 
+async function ensureMediaDirectories() {
+    await Promise.all([
+        ensureDirectory(USER_UPLOAD_DIR),
+        ensureDirectory(DESTINATION_UPLOAD_DIR),
+        ensureDirectory(CIRCUIT_UPLOAD_DIR),
+        ensureDirectory(BANNER_UPLOAD_DIR)
+    ]);
+}
+
 async function ensureDestinationUploadDir() {
     await ensureDirectory(DESTINATION_UPLOAD_DIR);
 }
@@ -145,13 +157,37 @@ function sanitizeFileName(value) {
 function buildDestinationFileName(destinationId, originalName) {
     const ext = path.extname(originalName) || '.jpg';
     const baseName = sanitizeFileName(path.basename(originalName, ext));
-    const timestamp = Math.floor(Date.now() / 1000);
+    // Millisecondes : plusieurs fichiers portant le même nom peuvent être
+    // envoyés durant la même seconde sans s'écraser.
+    const timestamp = Date.now();
     return `dest_${destinationId}_${timestamp}_${baseName}${ext}`;
+}
+
+function destinationStoragePath(imageUrl) {
+    const prefix = '/uploads/destinations/';
+    if (typeof imageUrl !== 'string' || !imageUrl.startsWith(prefix)) return null;
+    const fileName = path.basename(imageUrl);
+    return path.join(DESTINATION_UPLOAD_DIR, fileName);
+}
+
+function userStoragePath(imageUrl) {
+    if (typeof imageUrl !== 'string') return null;
+    const isCurrentPath = imageUrl.startsWith('/uploads/users/');
+    const isLegacyPath = imageUrl.startsWith('/uploads/avatars/');
+    if (!isCurrentPath && !isLegacyPath) return null;
+    // Les anciens avatars étaient enregistrés à la racine uploads malgré leur
+    // URL /avatars. Cette branche permet leur nettoyage sans exposer de chemin.
+    const baseDir = isLegacyPath ? UPLOAD_DIR : USER_UPLOAD_DIR;
+    return path.join(baseDir, path.basename(imageUrl));
 }
 
 function toFileArray(value) {
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
+}
+
+function firstValue(value) {
+    return Array.isArray(value) ? value[0] : value;
 }
 
 async function moveFileToDestinationDir(srcFilePath, destFileName) {
@@ -320,24 +356,25 @@ function parseBoolean(value) {
 }
 
 function validateDestinationPayload(body, isUpdate = false) {
-    const price = body.price === undefined || body.price === null || body.price === ''
+    const raw = Object.fromEntries(Object.entries(body).map(([key, value]) => [key, firstValue(value)]));
+    const price = raw.price === undefined || raw.price === null || raw.price === ''
         ? NaN
-        : Number(body.price);
+        : Number(raw.price);
 
     const payload = {
-        title: body.title?.trim?.() || '',
-        description: body.description?.trim?.() || '',
+        title: raw.title?.trim?.() || '',
+        description: raw.description?.trim?.() || '',
         price,
-        location: body.location?.trim?.() || '',
-        cover_image: body.cover_image?.trim?.() || '',
-        is_active: body.is_active === undefined ? true : parseBoolean(body.is_active)
+        location: raw.location?.trim?.() || '',
+        cover_image: raw.cover_image?.trim?.() || '',
+        is_active: raw.is_active === undefined ? true : parseBoolean(raw.is_active)
     };
 
     const errors = [];
     if (!payload.title) errors.push('Le titre de la destination est requis.');
     if (!payload.location) errors.push('Le lieu de la destination est requis.');
     if (!payload.description) errors.push('La description est requise.');
-    if (!payload.cover_image) errors.push('L’URL de l’image de couverture est requise.');
+    if (!payload.cover_image && !raw.has_cover_upload) errors.push('Une image de couverture ou son URL est requise.');
     if (Number.isNaN(payload.price)) {
         errors.push('Le prix est invalide.');
     }
@@ -514,6 +551,15 @@ const server = http.createServer(async (req, res) => {
                     sort
                 }
             });
+        }
+
+        const publicDestinationMatch = pathname.match(/^\/api\/destinations\/([0-9a-fA-F-]{36})$/);
+        if (publicDestinationMatch && method === 'GET') {
+            const destination = await getDestinationById(publicDestinationMatch[1]);
+            if (!destination || !destination.is_active) {
+                return sendResponse(res, 404, { error: 'Destination introuvable.' });
+            }
+            return sendResponse(res, 200, { destination });
         }
 
         // --- ROUTE : Inscription ---
@@ -800,7 +846,8 @@ const server = http.createServer(async (req, res) => {
                 price: fields.price,
                 location: fields.location,
                 cover_image: fields.cover_image || fields.image_url,
-                is_active: fields.is_active
+                is_active: fields.is_active,
+                has_cover_upload: Boolean(coverFile)
             });
 
             const client = await pool.connect();
@@ -895,7 +942,8 @@ const server = http.createServer(async (req, res) => {
                 price: fields.price,
                 location: fields.location,
                 cover_image: fields.cover_image || fields.image_url,
-                is_active: fields.is_active
+                is_active: fields.is_active,
+                has_cover_upload: Boolean(coverFile)
             });
 
             const client = await pool.connect();
@@ -910,14 +958,25 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 let coverImageUrl = payload.cover_image || current.rows[0].cover_image;
+                let oldCoverPath = null;
+                let oldGalleryPaths = [];
                 if (coverFile) {
                     const fileName = buildDestinationFileName(destinationId, coverFile.originalFilename || coverFile.newFilename || 'cover.jpg');
                     const destPath = await moveFileToDestinationDir(coverFile.filepath, fileName);
                     movedFiles.push(destPath);
                     coverImageUrl = `/uploads/destinations/${fileName}`;
-                    if (current.rows[0].cover_image && current.rows[0].cover_image.startsWith('/uploads/destinations/')) {
-                        await removeFileIfExists(path.join(__dirname, '../public', current.rows[0].cover_image));
-                    }
+                    oldCoverPath = destinationStoragePath(current.rows[0].cover_image);
+                }
+
+                if (parseBoolean(firstValue(fields.replace_gallery))) {
+                    const previousGallery = await client.query(
+                        'SELECT image_url FROM destination_images WHERE destination_id=$1',
+                        [destinationId]
+                    );
+                    oldGalleryPaths = previousGallery.rows
+                        .map(row => destinationStoragePath(row.image_url))
+                        .filter(Boolean);
+                    await client.query('DELETE FROM destination_images WHERE destination_id=$1', [destinationId]);
                 }
 
                 const result = await client.query(
@@ -947,6 +1006,9 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 await client.query('COMMIT');
+                // Après le commit uniquement : une erreur SQL ne doit jamais
+                // faire disparaître la couverture actuellement publiée.
+                await Promise.all([oldCoverPath, ...oldGalleryPaths].filter(Boolean).map(removeFileIfExists));
                 return sendResponse(res, 200, {
                     destination: {
                         ...result.rows[0],
@@ -975,8 +1037,30 @@ const server = http.createServer(async (req, res) => {
             const user = await getUserByToken(req);
             if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
             const destinationId = adminDestinationMatch[1];
-            const result = await pool.query('DELETE FROM destinations WHERE id=$1 RETURNING id', [destinationId]);
-            if (result.rowCount === 0) return sendResponse(res, 404, { error: 'Destination introuvable.' });
+            const client = await pool.connect();
+            let filePaths = [];
+            try {
+                await client.query('BEGIN');
+                const destination = await client.query('SELECT cover_image FROM destinations WHERE id=$1 FOR UPDATE', [destinationId]);
+                if (destination.rowCount === 0) {
+                    await client.query('ROLLBACK');
+                    return sendResponse(res, 404, { error: 'Destination introuvable.' });
+                }
+                const gallery = await client.query('SELECT image_url FROM destination_images WHERE destination_id=$1', [destinationId]);
+                filePaths = [destination.rows[0].cover_image, ...gallery.rows.map(row => row.image_url)]
+                    .map(destinationStoragePath)
+                    .filter(Boolean);
+                await client.query('DELETE FROM destinations WHERE id=$1', [destinationId]);
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
+            }
+            // Les entrées sont supprimées en cascade; le nettoyage disque est
+            // volontairement best-effort afin qu'un verrou fichier n'annule pas le CRUD.
+            await Promise.all(filePaths.map(removeFileIfExists));
             return sendResponse(res, 200, { message: 'Destination supprimée.' });
         }
 
@@ -1045,11 +1129,11 @@ const server = http.createServer(async (req, res) => {
                     return sendResponse(res, 401, { success: false, error: 'Accès non autorisé. Token invalide.' });
                 }
 
-                // Garantit le dossier à chaque upload, y compris après un redémarrage.
-                await ensureUploadDir();
+                // Garantit les quatre répertoires montés dans le volume Docker.
+                await ensureMediaDirectories();
 
                 const form = formidable({
-                    uploadDir: UPLOAD_DIR,
+                    uploadDir: USER_UPLOAD_DIR,
                     keepExtensions: true,
                     maxFileSize: 5 * 1024 * 1024,
                     filter: ({ mimetype }) => !mimetype || ['image/jpeg', 'image/png', 'image/webp'].includes(mimetype),
@@ -1059,7 +1143,9 @@ const server = http.createServer(async (req, res) => {
                             'image/png': '.png',
                             'image/webp': '.webp'
                         }[part.mimetype] || '';
-                        return `avatar-${user.id}-${Date.now()}${extension}`;
+                        const original = part.originalFilename || name || 'avatar';
+                        const base = sanitizeFileName(path.basename(original, path.extname(original))) || 'avatar';
+                        return `user_${user.id}_${Date.now()}_${base}${extension}`;
                     }
                 });
 
@@ -1093,7 +1179,7 @@ const server = http.createServer(async (req, res) => {
                         await removeFileIfExists(uploadedFile.filepath);
                         return sendResponse(res, 400, { success: false, error: 'Format d’image non autorisé.' });
                     }
-                    avatarUrl = `/uploads/avatars/${uploadedFile.newFilename}`;
+                    avatarUrl = `/uploads/users/${uploadedFile.newFilename}`;
                 }
 
                 const updateQuery = `
@@ -1114,8 +1200,9 @@ const server = http.createServer(async (req, res) => {
                 const updatedUser = result.rows[0];
 
                 // Supprime l’ancien avatar seulement après la mise à jour SQL réussie.
-                if (uploadedFile && user.avatar_url?.startsWith('/uploads/avatars/')) {
-                    await removeFileIfExists(path.join(UPLOAD_DIR, path.basename(user.avatar_url)));
+                if (uploadedFile) {
+                    const oldAvatarPath = userStoragePath(user.avatar_url);
+                    if (oldAvatarPath) await removeFileIfExists(oldAvatarPath);
                 }
 
                 return sendResponse(res, 200, {
@@ -1210,6 +1297,9 @@ const server = http.createServer(async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 async function bootstrapAdmin() {
+    // Crée la structure du volume média dès le démarrage, même avant le
+    // premier téléversement.
+    await ensureMediaDirectories();
     const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
     if (!email) return;
     const result = await pool.query('SELECT id FROM users WHERE email=$1', [email]);

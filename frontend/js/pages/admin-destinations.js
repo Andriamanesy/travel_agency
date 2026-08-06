@@ -118,6 +118,7 @@ async function submitDestinationForm() {
     formData.append('location', document.getElementById('destinationLocation').value.trim());
     formData.append('image_url', document.getElementById('destinationImageUrl').value.trim());
     formData.append('is_active', document.getElementById('destinationIsActive').checked ? 'true' : 'false');
+    formData.append('replace_gallery', document.getElementById('destinationReplaceGallery').checked ? 'true' : 'false');
 
     const coverFile = document.getElementById('destinationCoverFile').files[0];
     if (coverFile) {
@@ -186,6 +187,7 @@ function clearDestinationForm() {
     document.getElementById('destinationImageUrl').value = '';
     document.getElementById('destinationCoverFile').value = '';
     document.getElementById('destinationGalleryFiles').value = '';
+    document.getElementById('destinationReplaceGallery').checked = false;
     document.getElementById('destinationIsActive').checked = true;
     document.getElementById('destinationDescription').value = '';
     // clear previews

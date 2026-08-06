@@ -2,11 +2,18 @@
     // L'API et les avatars sont relayés par Nginx sur le même domaine.
     // Une URL relative évite CORS et ne dépend d'aucun port exposé.
 const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
+const DEFAULT_AVATAR_URL = '/assets/default-avatar.svg';
     const token = localStorage.getItem('token');
     let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
 
     if (!token && !userData.email) {
         window.location.href = 'login.html';
+    }
+
+    function setAvatar(url) {
+        const image = document.getElementById('avatarDisplay');
+        image.onerror = () => { image.onerror = null; image.src = DEFAULT_AVATAR_URL; };
+        image.src = url || DEFAULT_AVATAR_URL;
     }
 
     // 2. PRÉVISUALISATION INSTANTANÉE AVEC NETTOYAGE MÉMOIRE
@@ -221,9 +228,9 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
         document.getElementById('preferredLang').value = userData.preferredLang || 'fr';
 
         if (userData.avatar_url) {
-            document.getElementById('avatarDisplay').src = userData.avatar_url.startsWith('http')
+            setAvatar(userData.avatar_url.startsWith('http')
                 ? userData.avatar_url
-                : `${API_BASE_URL}${userData.avatar_url}`;
+                : userData.avatar_url);
         }
 
         document.getElementById('userNameDisplay').textContent = userData.name || userData.fullName || 'Voyageur';
@@ -331,9 +338,9 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
             localStorage.setItem('user', JSON.stringify(userData));
 
             if (userData.avatar_url) {
-                document.getElementById('avatarDisplay').src = userData.avatar_url.startsWith('http') 
+                setAvatar(userData.avatar_url.startsWith('http')
                     ? userData.avatar_url 
-                    : `${API_BASE_URL}${userData.avatar_url}`;
+                    : userData.avatar_url);
             }
 
             document.getElementById('userNameDisplay').textContent = userData.name;

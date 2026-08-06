@@ -11,8 +11,8 @@ RUN npm install --production
 # Copie du code source
 COPY src/ ./src/
 
-# Répertoire de destination des avatars (également vérifié à chaque upload).
-RUN mkdir -p /app/public/uploads/avatars
+# Répertoires persistants montés sous /app/public/uploads par Docker Compose.
+RUN mkdir -p /app/public/uploads/users /app/public/uploads/destinations /app/public/uploads/circuits /app/public/uploads/banners
 
 EXPOSE 3000
 
