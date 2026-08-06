@@ -95,6 +95,28 @@ function verifyPassword(password, salt, storedHash) {
     return hash === storedHash;
 }
 
+function validateBirthdate(birthdate) {
+    if (typeof birthdate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) {
+        return 'La date de naissance est obligatoire et doit être au format AAAA-MM-JJ.';
+    }
+
+    const [year, month, day] = birthdate.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+        return 'La date de naissance est invalide.';
+    }
+
+    const today = new Date();
+    const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const age = new Date(todayUtc).getUTCFullYear() - year
+        - (todayUtc < Date.UTC(new Date(todayUtc).getUTCFullYear(), month - 1, day) ? 1 : 0);
+
+    if (age < 13 || age > 120) {
+        return 'Vous devez avoir entre 13 et 120 ans.';
+    }
+    return null;
+}
+
 // Fonction sécurisée pour parser le corps d'une requête JSON
 function parseJSONBody(req) {
     return new Promise((resolve, reject) => {
@@ -381,6 +403,10 @@ const server = http.createServer(async (req, res) => {
                 }
                 const phone = getVal(fields.phone) || null;
                 const birthdate = getVal(fields.birthdate) || null;
+                const birthdateError = validateBirthdate(birthdate);
+                if (birthdateError) {
+                    return sendResponse(res, 400, { success: false, error: birthdateError });
+                }
                 const gender = getVal(fields.gender) || null;
                 const nationality = getVal(fields.nationality) || null;
                 const country = getVal(fields.country) || null;

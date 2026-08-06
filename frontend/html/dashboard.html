@@ -115,7 +115,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Date de naissance</label>
-                            <input type="date" id="birthdate" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
+                            <input type="date" id="birthdate" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                         </div>
                     </div>
 
@@ -222,16 +222,34 @@
         });
 
         // 3. VÉRIFICATION DYNAMIQUE DU STATUT DE PROFIL
+        function getBirthdateBounds() {
+            const today = new Date();
+            const maxDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate());
+            const minDate = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate());
+            const formatDate = (date) => date.toISOString().slice(0, 10);
+            return { min: formatDate(minDate), max: formatDate(maxDate) };
+        }
+
+        function isValidBirthdate(value) {
+            const { min, max } = getBirthdateBounds();
+            return /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= min && value <= max;
+        }
+
         function checkProfileCompletion() {
             const badge = document.getElementById('profileStatusBadge');
             const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
             const phone = document.getElementById('phone').value.trim();
+            const gender = document.getElementById('gender').value;
+            const nationality = document.getElementById('nationality').value;
             const country = document.getElementById('country').value;
             const city = document.getElementById('city').value;
             const birthdate = document.getElementById('birthdate').value;
+            const postalCode = document.getElementById('postalCode').value.trim();
+            const address = document.getElementById('address').value.trim();
 
-            const isComplete = fullName && email && phone && country && city && birthdate;
+            const isComplete = fullName && email && /^\d{6,12}$/.test(phone) && gender && nationality
+                && country && city && postalCode && address && isValidBirthdate(birthdate);
 
             if (isComplete) {
                 badge.className = "bg-emerald-50 text-emerald-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300";
@@ -246,6 +264,19 @@
         const phoneInput = document.getElementById('phone');
         phoneInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/\D/g, '');
+            checkProfileCompletion();
+        });
+
+        const birthdateInput = document.getElementById('birthdate');
+        const birthdateBounds = getBirthdateBounds();
+        birthdateInput.min = birthdateBounds.min;
+        birthdateInput.max = birthdateBounds.max;
+        birthdateInput.addEventListener('change', () => {
+            if (birthdateInput.value && !isValidBirthdate(birthdateInput.value)) {
+                birthdateInput.setCustomValidity('Vous devez avoir entre 13 et 120 ans.');
+            } else {
+                birthdateInput.setCustomValidity('');
+            }
             checkProfileCompletion();
         });
 
@@ -382,7 +413,7 @@
                 }
             }
 
-            document.getElementById('birthdate').value = userData.birthdate || '';
+            document.getElementById('birthdate').value = userData.birthdate?.slice(0, 10) || '';
             document.getElementById('gender').value = userData.gender || '';
             document.getElementById('postalCode').value = userData.postalCode || '';
             document.getElementById('address').value = userData.address || '';
@@ -398,7 +429,7 @@
             checkProfileCompletion();
         });
 
-        ['fullName', 'email', 'birthdate', 'postalCode', 'address', 'gender', 'nationality', 'preferredLang'].forEach(id => {
+        ['fullName', 'email', 'birthdate', 'postalCode', 'address', 'gender', 'nationality', 'preferredLang', 'phoneCode'].forEach(id => {
             const el = document.getElementById(id);
             el.addEventListener('input', checkProfileCompletion);
             el.addEventListener('change', checkProfileCompletion);
@@ -453,11 +484,17 @@
                 return;
             }
 
+            const birthdate = birthdateInput.value;
+            if (!isValidBirthdate(birthdate)) {
+                showAlert("⚠️ La date de naissance doit correspondre à un âge compris entre 13 et 120 ans.");
+                return;
+            }
+
             const formData = new FormData();
             formData.append('name', document.getElementById('fullName').value);
             formData.append('email', document.getElementById('email').value);
             formData.append('phone', phoneNum ? `${phoneCode} ${phoneNum}` : '');
-            formData.append('birthdate', document.getElementById('birthdate').value);
+            formData.append('birthdate', birthdate);
             formData.append('gender', document.getElementById('gender').value);
             formData.append('nationality', document.getElementById('nationality').value);
             formData.append('country', document.getElementById('country').value);
