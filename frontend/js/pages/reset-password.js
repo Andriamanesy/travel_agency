@@ -175,7 +175,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
 
         try {
             // Utilisation de API_BASE_URL pour pointer correctement vers le backend (ex: port 3000)
-            const response = await fetch(`${API_BASE_URL}/api/reset-password`, {
+            const response = await fetch(`${API_BASE_URL}/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, password })

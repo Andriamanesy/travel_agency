@@ -4,11 +4,13 @@
   "description": "Backend natif Node.js pour TravelMS",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "migrate": "node src/migrate.js"
   },
   "dependencies": {
     "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^9.0.4",
     "pg": "^8.11.3"
   }
 }

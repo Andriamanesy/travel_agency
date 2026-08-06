@@ -28,7 +28,7 @@
         submitButton.disabled = true;
         submitButton.textContent = 'Mise à jour…';
         try {
-            const response = await fetch(`${API_BASE_URL}/api/change-password`, {
+            const response = await fetch(`${API_BASE_URL}/change-password`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -41,6 +41,7 @@
 
             form.reset();
             showMessage(data.message, 'success');
+            window.TravelAuth.redirectToLogin();
         } catch (error) {
             showMessage(error.message, 'error');
         } finally {

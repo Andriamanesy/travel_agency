@@ -111,7 +111,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
 
         try {
             // Utilisation de API_BASE_URL pour pointer correctement vers le backend (ex: port 3000)
-            const response = await fetch(`${API_BASE_URL}/api/verify?token=${encodeURIComponent(token)}`, {
+            const response = await fetch(`${API_BASE_URL}/verify?token=${encodeURIComponent(token)}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });

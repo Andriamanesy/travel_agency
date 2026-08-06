@@ -267,7 +267,7 @@
 
         document.getElementById('logoutHomeBtn').addEventListener('click', async () => {
             try {
-                await fetch(`${API_BASE_URL}/api/logout`, {
+                await fetch(`${API_BASE_URL}/logout`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });

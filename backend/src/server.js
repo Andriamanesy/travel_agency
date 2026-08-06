@@ -6,6 +6,7 @@ const fs = require('fs');
 // Formidable v3 expose sa fonction de création sous un export nommé.
 const { formidable } = require('formidable');
 const { Pool } = require('pg');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
 
 const PASSWORD_MIN_LENGTH = 6;
 const {
@@ -43,16 +44,48 @@ function buildPublicLink(pathname, token) {
 
 // Configuration robuste de la connexion PostgreSQL
 const pool = new Pool(
-    process.env.DATABASE_URL
-        ? { connectionString: process.env.DATABASE_URL }
-        : {
+    process.env.DB_HOST
+        ? {
               host: process.env.DB_HOST || 'localhost',
               user: process.env.DB_USER || 'travel_user',
               password: process.env.DB_PASSWORD || 'travel_password',
               database: process.env.DB_NAME || 'travel_db',
               port: process.env.DB_PORT || 5432
           }
+        : { connectionString: process.env.DATABASE_URL }
 );
+
+function newEmailToken() {
+    return crypto.randomBytes(32).toString('base64url');
+}
+
+async function createVerificationToken(client, userId) {
+    const token = newEmailToken();
+    await client.query(
+        'DELETE FROM email_verification_tokens WHERE user_id = $1 AND used_at IS NULL',
+        [userId]
+    );
+    await client.query(
+        `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, CURRENT_TIMESTAMP + INTERVAL '24 hours')`,
+        [userId, hash(token)]
+    );
+    return token;
+}
+
+async function createPasswordResetToken(client, userId) {
+    const token = newEmailToken();
+    await client.query(
+        'DELETE FROM password_reset_tokens WHERE user_id = $1 AND used_at IS NULL',
+        [userId]
+    );
+    await client.query(
+        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, CURRENT_TIMESTAMP + INTERVAL '1 hour')`,
+        [userId, hash(token)]
+    );
+    return token;
+}
 
 // Création du dossier de stockage des photos sur le serveur (s'il n'existe pas)
 const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads', 'avatars');
@@ -269,31 +302,44 @@ const server = http.createServer(async (req, res) => {
             }
 
             const cleanEmail = email.toLowerCase().trim();
-            const verificationToken = crypto.randomBytes(32).toString('hex');
-            const verificationLink = buildPublicLink('/verify-email.html', verificationToken);
-            const { salt, hash } = hashPassword(password);
-
-            const query = `
-                INSERT INTO users (name, email, password_hash, salt, verification_token)
-                VALUES ($1, $2, $3, $4, $5)
-                RETURNING id, name, email, is_verified
-            `;
-            const values = [name.trim(), cleanEmail, hash, salt, verificationToken];
+            const { salt, hash: passwordHash } = hashPassword(password);
             
+            const client = await pool.connect();
+            let transactionOpen = false;
             try {
-                const result = await pool.query(query, values);
-                await pool.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE code = 'client' ON CONFLICT DO NOTHING`, [result.rows[0].id]);
-                console.log(`[Email de vérification] Lien : ${verificationLink}`);
+                await client.query('BEGIN');
+                transactionOpen = true;
+                const result = await client.query(
+                    `INSERT INTO users (name, email, password_hash, salt)
+                     VALUES ($1, $2, $3, $4)
+                     RETURNING id, name, email, is_verified`,
+                    [name.trim(), cleanEmail, passwordHash, salt]
+                );
+                const user = result.rows[0];
+                await client.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE code = 'client' ON CONFLICT DO NOTHING`, [user.id]);
+                const verificationToken = await createVerificationToken(client, user.id);
+                await client.query('COMMIT');
+                transactionOpen = false;
+
+                await sendVerificationEmail(
+                    user.email,
+                    buildPublicLink('/verify-email.html', verificationToken)
+                );
 
                 return sendResponse(res, 201, {
                     message: 'Inscription réussie. Veuillez vérifier votre e-mail.',
-                    user: result.rows[0]
+                    user
                 });
             } catch (dbErr) {
+                if (transactionOpen) {
+                    await client.query('ROLLBACK');
+                }
                 if (dbErr.code === '23505') {
                     return sendResponse(res, 400, { error: 'Cet e-mail est déjà utilisé.' });
                 }
                 throw dbErr;
+            } finally {
+                client.release();
             }
         }
 
@@ -353,13 +399,27 @@ const server = http.createServer(async (req, res) => {
                 return sendResponse(res, 400, { error: 'Token manquant.' });
             }
 
-            const result = await pool.query(
-                'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = $1 RETURNING id',
-                [token]
-            );
-
-            if (result.rowCount === 0) {
-                return sendResponse(res, 400, { error: 'Token invalide ou expiré.' });
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const result = await client.query(
+                    `SELECT id, user_id FROM email_verification_tokens
+                     WHERE token_hash = $1 AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP
+                     FOR UPDATE`,
+                    [hash(token)]
+                );
+                if (result.rowCount === 0) {
+                    await client.query('ROLLBACK');
+                    return sendResponse(res, 400, { error: 'Token invalide ou expiré.' });
+                }
+                await client.query('UPDATE users SET is_verified = TRUE WHERE id = $1', [result.rows[0].user_id]);
+                await client.query('UPDATE email_verification_tokens SET used_at = CURRENT_TIMESTAMP WHERE id = $1', [result.rows[0].id]);
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
             }
 
             return sendResponse(res, 200, { message: 'E-mail vérifié avec succès.' });
@@ -373,17 +433,31 @@ const server = http.createServer(async (req, res) => {
             }
 
             const cleanEmail = email.toLowerCase().trim();
-            const resetToken = crypto.randomBytes(32).toString('hex');
-            const resetLink = buildPublicLink('/reset-password.html', resetToken);
-            const expires = new Date(Date.now() + 3600000);
+            const client = await pool.connect();
+            let resetToken;
+            try {
+                await client.query('BEGIN');
+                const result = await client.query('SELECT id FROM users WHERE email = $1', [cleanEmail]);
+                if (result.rowCount > 0) {
+                    resetToken = await createPasswordResetToken(client, result.rows[0].id);
+                }
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
+            }
 
-            const result = await pool.query(
-                'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3 RETURNING id',
-                [resetToken, expires, cleanEmail]
-            );
-
-            if (result.rowCount > 0) {
-                console.log(`[Réinitialisation MDP] Lien : ${resetLink}`);
+            if (resetToken) {
+                try {
+                    await sendPasswordResetEmail(
+                        cleanEmail,
+                        buildPublicLink('/reset-password.html', resetToken)
+                    );
+                } catch (error) {
+                    console.error('[SMTP] Envoi de réinitialisation impossible :', error.message);
+                }
             }
 
             return sendResponse(res, 200, { message: 'Si cet e-mail existe, un lien de réinitialisation a été envoyé.' });
@@ -400,25 +474,36 @@ const server = http.createServer(async (req, res) => {
                 return sendResponse(res, 400, { error: passwordError });
             }
 
-            const userResult = await pool.query(
-                `SELECT id FROM users
-                 WHERE reset_token = $1 AND reset_token_expires > CURRENT_TIMESTAMP`,
-                [token]
-            );
-            if (userResult.rowCount === 0) {
-                return sendResponse(res, 400, { error: 'Le lien de réinitialisation est invalide ou expiré.' });
+            const { salt, hash: passwordHash } = hashPassword(password);
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const tokenResult = await client.query(
+                    `SELECT id, user_id FROM password_reset_tokens
+                     WHERE token_hash = $1 AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP
+                     FOR UPDATE`,
+                    [hash(token)]
+                );
+                if (tokenResult.rowCount === 0) {
+                    await client.query('ROLLBACK');
+                    return sendResponse(res, 400, { error: 'Le lien de réinitialisation est invalide ou expiré.' });
+                }
+                const userId = tokenResult.rows[0].user_id;
+                await client.query(
+                    `UPDATE users
+                     SET password_hash = $1, salt = $2, session_token = NULL, updated_at = CURRENT_TIMESTAMP
+                     WHERE id = $3`,
+                    [passwordHash, salt, userId]
+                );
+                await client.query('UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE id = $1', [tokenResult.rows[0].id]);
+                await revokeAll(client, userId);
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
             }
-
-            const { salt, hash } = hashPassword(password);
-            await pool.query(
-                `UPDATE users
-                 SET password_hash = $1, salt = $2, reset_token = NULL,
-                     reset_token_expires = NULL, session_token = NULL,
-                     updated_at = CURRENT_TIMESTAMP
-                 WHERE id = $3`,
-                [hash, salt, userResult.rows[0].id]
-            );
-            await revokeAll(pool, userResult.rows[0].id);
 
             return sendResponse(res, 200, {
                 message: 'Mot de passe réinitialisé avec succès. Veuillez vous reconnecter.'
@@ -504,8 +589,11 @@ const server = http.createServer(async (req, res) => {
                 'UPDATE users SET password_hash = $1, salt = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
                 [hash, salt, user.id]
             );
+            // Un changement de mot de passe invalide immédiatement tous les
+            // access/refresh tokens émis avant cette opération.
+            await revokeAll(pool, user.id);
 
-            return sendResponse(res, 200, { message: 'Mot de passe mis à jour avec succès.' });
+            return sendResponse(res, 200, { message: 'Mot de passe mis à jour. Veuillez vous reconnecter.' });
         }
 
         // --- ROUTE : MISE À JOUR COMPLETE DU PROFIL ET DE L'IMAGE (/api/profile/update) ---

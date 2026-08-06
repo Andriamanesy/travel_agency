@@ -8,9 +8,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-travel_agency_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Les scripts *.sql de ./database sont exécutés par PostgreSQL lors de
-      # l'initialisation d'un volume pgdata neuf.
-      - ./database:/docker-entrypoint-initdb.d:ro
     networks:
       - travel-net
     healthcheck:
@@ -18,6 +15,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrate:
+    build: ./backend
+    container_name: travel_migrate
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-briandri}
+      DB_PASSWORD: ${DB_PASSWORD:-Economie@2021}
+      DB_NAME: ${DB_NAME:-travel_agency_db}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["npm", "run", "migrate"]
+    volumes:
+      - ./database/migrations:/app/migrations:ro
+    networks:
+      - travel-net
+    restart: "no"
 
   backend:
     build: ./backend
@@ -31,13 +47,18 @@ services:
       DB_USER: ${DB_USER:-briandri}
       DB_PASSWORD: ${DB_PASSWORD:-Economie@2021}
       DB_NAME: ${DB_NAME:-travel_agency_db}
-      DATABASE_URL: postgresql://${DB_USER:-briandri}:${DB_PASSWORD:-Economie@2021}@db:5432/${DB_NAME:-travel_agency_db}
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://192.168.88.226:8080}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Définissez JWT_ACCESS_SECRET avant le déploiement}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - travel-net
     volumes:

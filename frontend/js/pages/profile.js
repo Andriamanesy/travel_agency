@@ -166,7 +166,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
         const token = localStorage.getItem('token');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/profile`, {
+            const response = await fetch(`${API_BASE_URL}/profile`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
         submitBtn.disabled = true;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/profile`, {
+            const response = await fetch(`${API_BASE_URL}/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -228,7 +228,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         const token = localStorage.getItem('token');
         try {
-            await fetch(`${API_BASE_URL}/api/logout`, {
+            await fetch(`${API_BASE_URL}/logout`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

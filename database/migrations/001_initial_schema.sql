@@ -1,6 +1,4 @@
--- ==========================================
--- 1. EXTENSIONS ET TABLES PRINCIPALES
--- ==========================================
+-- Migration 001 : extensions, utilisateurs, RBAC et tokens.
 
 -- Extension pour la génération des identifiants UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

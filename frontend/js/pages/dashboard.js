@@ -312,7 +312,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
         try {
             setLoadingState(true);
 
-            const response = await fetch(`${API_BASE_URL}/api/profile/update`, {
+            const response = await fetch(`${API_BASE_URL}/profile/update`, {
                 method: 'POST',
                 headers: { 
                     'Authorization': `Bearer ${token}`
@@ -355,7 +355,7 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         try {
-            await fetch(`${API_BASE_URL}/api/logout`, {
+            await fetch(`${API_BASE_URL}/logout`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
