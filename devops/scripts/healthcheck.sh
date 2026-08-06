@@ -9,14 +9,14 @@ else
 fi
 
 # Test Backend API (Port 3000)
-if docker exec travel_backend node -e "fetch('http://localhost:3000/hello').then(r => process.exit(0)).catch(() => process.exit(1))"; then
+if docker exec travel_backend node -e "fetch('http://localhost:3000/').then(r => process.exit(0)).catch(() => process.exit(1))"; then
     echo "🟢 Backend API (Port 3000) : OK"
 else
     echo "🔴 Backend API (Port 3000) : INACCESSIBLE"
 fi
 
 # Test Database PostgreSQL
-if docker exec travel_db pg_isready -U user -d travel_db | grep -q "accepting connections"; then
+if docker exec travel_db pg_isready -U travel_user -d travel_db | grep -q "accepting connections"; then
     echo "🟢 Database (PostgreSQL) : OK"
 else
     echo "🔴 Database (PostgreSQL) : ERREUR"
