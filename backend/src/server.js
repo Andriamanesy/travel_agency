@@ -20,7 +20,7 @@ const pool = new Pool(
 );
 
 // Création du dossier de stockage des photos sur le serveur (s'il n'existe pas)
-const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads', 'avatars');
+const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads', 'avatars');
 if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -103,7 +103,7 @@ const server = http.createServer(async (req, res) => {
     try {
         // --- 1. SERVICE DES FICHIERS STATIQUES (Pour afficher les images uploadées) ---
         if (pathname.startsWith('/uploads/') && method === 'GET') {
-            const filePath = path.join(__dirname, 'public', pathname);
+            const filePath = path.join(__dirname, '../public', pathname);
             fs.readFile(filePath, (err, content) => {
                 if (err) {
                     res.writeHead(404, { 'Content-Type': 'text/plain' });

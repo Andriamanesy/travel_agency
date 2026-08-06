@@ -198,7 +198,7 @@
     <!-- SCRIPT DE GESTION -->
     <script>
         // 1. CONFIGURATION CENTRALE
-        const API_BASE_URL = 'http://localhost:5000';
+        const API_BASE_URL = `http://${window.location.hostname}:3000`;
         const token = localStorage.getItem('token');
         let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
 

@@ -130,6 +130,9 @@
 
     <!-- Script de gestion -->
     <script>
+        // CONFIGURATION CENTRALE DE L'API
+        const API_BASE_URL = `http://${window.location.hostname}:3000`;
+
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
         const translations = {
@@ -487,7 +490,8 @@
             submitBtn.disabled = true;
 
             try {
-                const response = await fetch('/api/register', {
+                // Utilisation de API_BASE_URL pour pointer correctement vers le backend (ex: port 3000)
+                const response = await fetch(`${API_BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, password })

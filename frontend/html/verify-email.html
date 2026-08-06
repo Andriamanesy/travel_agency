@@ -56,6 +56,9 @@
 
     <!-- Script de gestion (Multilingue & API Verification) -->
     <script>
+        // CONFIGURATION CENTRALE DE L'API
+        const API_BASE_URL = `http://${window.location.hostname}:3000`;
+
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
         const translations = {
@@ -165,8 +168,8 @@
             }
 
             try {
-                // Appel au backend Node.js natif pour valider le token
-                const response = await fetch(`/api/auth/verify?token=${encodeURIComponent(token)}`, {
+                // Utilisation de API_BASE_URL pour pointer correctement vers le backend (ex: port 3000)
+                const response = await fetch(`${API_BASE_URL}/api/auth/verify?token=${encodeURIComponent(token)}`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });

@@ -78,6 +78,9 @@
 
     <!-- Script de gestion (Multi-langue, Toast, API Profile) -->
     <script>
+        // URL de base dynamique pour pointer vers le backend Node.js sur le port 3000
+        const API_BASE_URL = `http://${window.location.hostname}:3000`;
+
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
         const translations = {
@@ -243,7 +246,7 @@
             const token = localStorage.getItem('travelms_token'); // Suppose un token JWT stocké
 
             try {
-                const response = await fetch('/api/profile', {
+                const response = await fetch(`${API_BASE_URL}/api/profile`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -277,7 +280,7 @@
             submitBtn.disabled = true;
 
             try {
-                const response = await fetch('/api/profile', {
+                const response = await fetch(`${API_BASE_URL}/api/profile`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
