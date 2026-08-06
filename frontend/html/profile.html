@@ -1,84 +1,325 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Profil — TravelMS</title>
-    <link rel="icon" href="/assets/favicon.ico">
-    <!-- Tailwind CSS CDN -->
+    <title>TravelMS - Mon Profil Premium</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-800 font-sans">
+<body class="bg-slate-900 text-slate-800 antialiased flex h-screen overflow-hidden">
 
-    <!-- En-tête fixe -->
-    <header class="bg-white/85 backdrop-blur-md shadow-sm fixed w-full z-50">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="/" class="text-2xl font-black text-blue-600 tracking-tight no-underline">Travel<span class="text-slate-900">MS</span></a>
-            <nav class="hidden md:flex space-x-8 font-medium text-slate-600">
-                <a href="/" class="hover:text-blue-600 transition" data-i18n="nav.home">Accueil</a>
-                <a href="/#destinations" class="hover:text-blue-600 transition" data-i18n="nav.destinations">Destinations</a>
-                <a href="/#circuits" class="hover:text-blue-600 transition" data-i18n="nav.circuits">Circuits</a>
-            </nav>
-            <div class="flex items-center space-x-4">
-                <!-- Sélecteur de langue -->
-                <select id="langSwitch" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
-                    <option value="fr">🇫🇷 FR</option>
-                    <option value="en">🇬🇧 EN</option>
-                    <option value="es">🇪🇸 ES</option>
-                    <option value="ru">🇷🇺 RU</option>
-                    <option value="it">🇮🇹 IT</option>
-                    <option value="zh">🇨🇳 ZH</option>
-                </select>
-
-                <button id="logoutBtn" class="bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 px-4 py-2 rounded-xl text-sm font-semibold transition" data-i18n="nav.logout">Déconnexion</button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Contenu principal -->
-    <main class="flex-1 flex items-center justify-center px-4 py-28">
-        <div class="bg-white p-8 md:p-10 rounded-3xl border border-slate-100 shadow-xl w-full max-w-lg">
-            
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-4" id="user-avatar">
-                    👤
-                </div>
-                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2" data-i18n="profile.title">Mon Profil</h2>
-                <p class="text-slate-500 text-sm leading-relaxed" data-i18n="profile.subtitle">Consultez et mettez à jour vos informations personnelles.</p>
-            </div>
-
-            <form id="profile-form" class="space-y-5">
-                <div>
-                    <label for="name" class="block text-sm font-semibold text-slate-700 mb-2" data-i18n="profile.name_label">Nom complet</label>
-                    <input type="text" id="name" name="name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" required>
-                </div>
-
-                <div>
-                    <label for="email" class="block text-sm font-semibold text-slate-700 mb-2" data-i18n="profile.email_label">Adresse email</label>
-                    <input type="email" id="email" name="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" required autocomplete="email">
-                </div>
-
-                <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-600/20 transition duration-200 mt-2" data-i18n="profile.submit">Mettre à jour</button>
-            </form>
-
-            <a href="/change-password.html" class="block text-center text-sm text-blue-600 font-semibold hover:underline mt-5">Changer mon mot de passe</a>
-
-            <div class="text-center text-sm text-slate-500 mt-6">
-                <a href="/" class="text-blue-600 font-semibold hover:underline inline-flex items-center space-x-1">
-                    <span>←</span>
-                    <span data-i18n="profile.back">Retour à l'accueil</span>
+    <!-- 1. SIDEBAR (Navigation Gauche) -->
+    <aside class="w-72 bg-[#17232e] text-slate-300 flex flex-col justify-between hidden lg:flex z-20 flex-shrink-0 shadow-2xl">
+        <div>
+            <!-- Logo -->
+            <div class="h-20 flex items-center px-6 border-b border-slate-800/80">
+                <a href="#" class="flex items-center space-x-3 text-2xl font-black tracking-tight text-white hover:opacity-95 transition">
+                    <span class="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center text-lg shadow-lg shadow-brand-900/50">🌍</span>
+                    <span>Travel<span class="text-brand-500">MS</span></span>
                 </a>
             </div>
 
+            <!-- Menus -->
+            <nav class="p-4 space-y-1.5 mt-4">
+                <a href="#" class="flex items-center space-x-3 px-4 py-3 hover:bg-slate-800/60 hover:text-white rounded-xl font-semibold text-slate-400 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    <span>Tableau de bord</span>
+                </a>
+                
+                <!-- Lien Actif : Mon Profil -->
+                <a href="#" class="flex items-center space-x-3 px-4 py-3 bg-brand-600 text-white rounded-xl font-bold shadow-lg shadow-brand-900/30">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <span>Mon Profil</span>
+                </a>
+                
+                <a href="#" class="flex items-center space-x-3 px-4 py-3 hover:bg-slate-800/60 hover:text-white rounded-xl font-semibold text-slate-400 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Mes Voyages</span>
+                </a>
+
+                <a href="#" class="flex items-center space-x-3 px-4 py-3 hover:bg-slate-800/60 hover:text-white rounded-xl font-semibold text-slate-400 transition">
+                    <svg class="w-5 h-5 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                    <span>Ma Wishlist</span>
+                </a>
+            </nav>
         </div>
+
+        <!-- Encadré Compte Premium -->
+        <div class="p-5">
+            <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl p-5 text-center shadow-lg">
+                <div class="flex items-center justify-center space-x-2 text-amber-400 font-bold mb-4 text-sm">
+                    <span>👑</span>
+                    <span>Compte Premium</span>
+                </div>
+                <button class="w-full bg-white text-slate-900 font-extrabold text-xs py-3 rounded-xl hover:bg-amber-50 transition shadow-md">
+                    Gérer mon abonnement
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 2. MAIN CONTENT AREA -->
+    <main class="flex-1 relative flex flex-col h-screen overflow-hidden bg-slate-50">
+        
+        <!-- Header Supérieur Fixe -->
+        <header class="bg-white/80 backdrop-blur-xl border-b border-slate-200 z-30 flex items-center justify-between px-8 py-4 sticky top-0">
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                    Paramètres du Profil
+                </h1>
+                <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200">
+                    Sécurisé 🛡️
+                </span>
+            </div>
+
+            <!-- Actions Supérieures -->
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-1 hover:bg-slate-100 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 cursor-pointer transition">
+                    <span>🇫🇷</span>
+                    <span>FR</span>
+                </div>
+
+                <button class="relative p-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+
+                <div class="w-px h-8 bg-slate-200"></div>
+
+                <div class="flex items-center space-x-3 cursor-pointer group">
+                    <div class="text-right hidden md:block">
+                        <div class="text-sm font-bold text-slate-800">Sophie Dubois</div>
+                        <div class="text-[11px] text-slate-500 font-semibold">Membre Premium</div>
+                    </div>
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Sophie Dubois" class="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100 group-hover:ring-brand-500 transition">
+                </div>
+            </div>
+        </header>
+
+        <!-- Contenu Défilant de la Page Profil -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pb-16 pt-6">
+            <div class="max-w-5xl mx-auto space-y-8">
+
+                <!-- En-tête de Profil (Banner style) -->
+                <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 text-center md:text-left">
+                        <div class="relative group">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80" alt="Sophie Dubois" class="w-24 h-24 rounded-2xl object-cover shadow-md ring-4 ring-slate-50">
+                            <button class="absolute inset-0 bg-slate-900/40 rounded-2xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition backdrop-blur-xs">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </button>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-center md:justify-start space-x-2">
+                                <h2 class="text-2xl font-black text-slate-900">Sophie Dubois</h2>
+                                <span class="text-amber-500 text-lg" title="Membre VIP">👑</span>
+                            </div>
+                            <p class="text-slate-500 font-medium text-sm mt-1">sophie.dubois@example.com • +33 6 12 34 56 78</p>
+                            <div class="flex items-center justify-center md:justify-start space-x-2 mt-3">
+                                <span class="bg-brand-50 text-brand-700 text-xs font-bold px-3 py-1 rounded-lg border border-brand-100">Client Vérifié</span>
+                                <span class="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-lg">Membre depuis Jan 2024</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-3 rounded-xl shadow-md transition text-sm">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grille principale des paramètres -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- Colonne Gauche / Milieu : Informations & Préférences (2 colonnes sur 3) -->
+                    <div class="lg:col-span-2 space-y-8">
+
+                        <!-- Section 1 : Informations Personnelles -->
+                        <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
+                            <div class="flex items-center space-x-3 mb-6">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-lg">👤</div>
+                                <div>
+                                    <h3 class="font-black text-slate-900 text-lg">Informations Personnelles</h3>
+                                    <p class="text-xs text-slate-500 font-medium">Mettez à jour vos coordonnées personnelles</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Prénom</label>
+                                    <input type="text" value="Sophie" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:bg-white focus:border-brand-500 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Nom</label>
+                                    <input type="text" value="Dubois" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:bg-white focus:border-brand-500 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Adresse Email</label>
+                                    <input type="email" value="sophie.dubois@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:bg-white focus:border-brand-500 outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Téléphone</label>
+                                    <input type="text" value="+33 6 12 34 56 78" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:bg-white focus:border-brand-500 outline-none transition">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Adresse Postale</label>
+                                    <input type="text" value="14 Rue de la Paix, 75001 Paris, France" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:bg-white focus:border-brand-500 outline-none transition">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2 : Préférences de Voyage & Sur-Mesure -->
+                        <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
+                            <div class="flex items-center space-x-3 mb-6">
+                                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg">✈️</div>
+                                <div>
+                                    <h3 class="font-black text-slate-900 text-lg">Préférences de Voyage & Logistique</h3>
+                                    <p class="text-xs text-slate-500 font-medium">Transmis directement à nos équipes pour vos circuits sur-mesure</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Niveau de confort habituel</label>
+                                    <select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:bg-white focus:border-brand-500 outline-none transition cursor-pointer">
+                                        <option>Lodges de charme & Hôtels 4/5 étoiles</option>
+                                        <option>Hôtels de catégorie standard / Authentique</option>
+                                        <option>Aventure & Bivouacs améliorés</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Régimes alimentaires & Allergies</label>
+                                    <input type="text" value="Aucune allergie particulière • Option végétarienne appréciée" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-800 focus:bg-white focus:border-brand-500 outline-none transition">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-3">Styles de voyage favoris</label>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        <label class="flex items-center space-x-3 bg-slate-50 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-brand-50 hover:border-brand-200 transition">
+                                            <input type="checkbox" checked class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                            <span class="text-xs font-bold text-slate-800">Aventure & Trek</span>
+                                        </label>
+                                        <label class="flex items-center space-x-3 bg-slate-50 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-brand-50 hover:border-brand-200 transition">
+                                            <input type="checkbox" checked class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                            <span class="text-xs font-bold text-slate-800">Faune & Safari</span>
+                                        </label>
+                                        <label class="flex items-center space-x-3 bg-slate-50 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-brand-50 hover:border-brand-200 transition">
+                                            <input type="checkbox" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                            <span class="text-xs font-bold text-slate-800">Farniente / Plage</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Colonne Droite : Coffre-fort de documents & Sécurité (1 colonne sur 3) -->
+                    <div class="space-y-8">
+
+                        <!-- Section 3 : Coffre-fort Numérique -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-5">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-base">📁</div>
+                                    <h3 class="font-black text-slate-900">Coffre-fort</h3>
+                                </div>
+                                <button class="text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition">+ Ajouter</button>
+                            </div>
+
+                            <div class="space-y-3">
+                                <!-- Fichier 1 -->
+                                <div class="bg-slate-50 border border-slate-100 p-3 rounded-2xl flex items-center justify-between group hover:border-slate-200 transition">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="text-2xl">🛂</div>
+                                        <div>
+                                            <div class="font-bold text-xs text-slate-900">Passeport_Sophie.pdf</div>
+                                            <div class="text-[10px] text-slate-400 font-semibold">Expire en Mai 2030</div>
+                                        </div>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-slate-700 text-xs font-bold">📥</button>
+                                </div>
+
+                                <!-- Fichier 2 -->
+                                <div class="bg-slate-50 border border-slate-100 p-3 rounded-2xl flex items-center justify-between group hover:border-slate-200 transition">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="text-2xl">💉</div>
+                                        <div>
+                                            <div class="font-bold text-xs text-slate-900">Carnet_Vaccination.pdf</div>
+                                            <div class="text-[10px] text-green-600 font-semibold">À jour (Validé)</div>
+                                        </div>
+                                    </div>
+                                    <button class="text-slate-400 hover:text-slate-700 text-xs font-bold">📥</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4 : Sécurité & Connexion -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                            <div class="flex items-center space-x-3 mb-5">
+                                <div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-base">🔒</div>
+                                <h3 class="font-black text-slate-900">Sécurité</h3>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Mot de passe actuel</label>
+                                    <input type="password" value="••••••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 font-medium text-slate-800 text-sm outline-none">
+                                </div>
+                                <button class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-3 rounded-xl transition">
+                                    Modifier mon mot de passe
+                                </button>
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-900">Double Authentification (2FA)</div>
+                                        <div class="text-[10px] text-slate-500">Protection renforcée par SMS</div>
+                                    </div>
+                                    <input type="checkbox" checked class="w-5 h-5 text-brand-600 rounded cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
     </main>
-
-    <!-- Pied de page -->
-    <footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm mt-auto">
-        <p>&copy; <span id="current-year"></span> TravelMS. <span data-i18n="footer.rights">Tous droits réservés.</span></p>
-    </footer>
-
-    <!-- Script de gestion (Multi-langue, Toast, API Profile) -->
+        <script>
+        const yearEl = document.getElementById('current-year');
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+    </script>
     <script src="/js/config.js" defer></script>
     <script src="/js/pages/profile.js" defer></script>
 </body>
