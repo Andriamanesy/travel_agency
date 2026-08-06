@@ -3,17 +3,16 @@ services:
     image: postgres:15-alpine
     container_name: travel_db
     environment:
-      POSTGRES_USER: travel_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-travel_password}
-      POSTGRES_DB: travel_db
+      POSTGRES_USER: ${POSTGRES_USER:-briandri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Economie@2021}
+      POSTGRES_DB: ${POSTGRES_DB:-travel_agency_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-      - ./database/migrations/002_add_rbac.sql:/docker-entrypoint-initdb.d/002_add_rbac.sql
+      - ./database/migrations:/docker-entrypoint-initdb.d
     networks:
       - travel-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U travel_user -d travel_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-briandri} -d ${POSTGRES_DB:-travel_agency_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,11 +26,11 @@ services:
       PORT: 3000
       NODE_ENV: production
       DB_HOST: database
-      DB_USER: travel_user
-      DB_PASSWORD: ${DB_PASSWORD:-travel_password}
-      DB_NAME: travel_db
+      DB_USER: ${DB_USER:-${POSTGRES_USER:-briandri}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-Economie@2021}}
+      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-travel_agency_db}}
       # URL publique utilisée dans les liens de vérification et de réinitialisation.
-      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://travelms.example.com}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://192.168.88.226:8080}
       # Secret long et aléatoire obligatoire : ne jamais fournir de valeur par défaut.
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Définissez JWT_ACCESS_SECRET avant le déploiement}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
