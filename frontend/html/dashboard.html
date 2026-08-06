@@ -90,11 +90,26 @@
                         </div>
                     </div>
 
-                    <!-- Téléphone (Sécurisé) et Date de naissance -->
+                    <!-- Téléphone avec sélecteur d'indicatif et Date de naissance -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Téléphone</label>
-                            <input type="tel" id="phone" placeholder="+261 34 00 000 00" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <div class="flex gap-2">
+                                <select id="phoneCode" class="w-1/3 px-2 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm font-semibold">
+                                    <option value="+261">🇲🇬 +261</option>
+                                    <option value="+33">🇫🇷 +33</option>
+                                    <option value="+32">🇧🇪 +32</option>
+                                    <option value="+41">🇨🇭 +41</option>
+                                    <option value="+1">🇨🇦 +1</option>
+                                    <option value="+213">🇩🇿 +213</option>
+                                    <option value="+212">🇲🇦 +212</option>
+                                    <option value="+216">🇹🇳 +216</option>
+                                    <option value="+34">🇪🇸 +34</option>
+                                    <option value="+39">🇮🇹 +39</option>
+                                    <option value="+49">🇩🇪 +49</option>
+                                </select>
+                                <input type="text" id="phone" inputmode="numeric" placeholder="340000000" class="w-2/3 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Date de naissance</label>
@@ -102,7 +117,7 @@
                         </div>
                     </div>
 
-                    <!-- Sexe et Nationalité (Sécurisée) -->
+                    <!-- Sexe et Nationalité -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Sexe</label>
@@ -121,7 +136,7 @@
                         </div>
                     </div>
 
-                    <!-- Pays (Avant la ville), Ville (Dépendante) et Code postal -->
+                    <!-- Pays, Ville (Dépendante) et Code postal -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pays</label>
@@ -141,7 +156,7 @@
                         </div>
                     </div>
 
-                    <!-- Adresse postale (en bas des informations géographiques) -->
+                    <!-- Adresse postale -->
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Adresse postale</label>
                         <input type="text" id="address" placeholder="Lot IVX 123 Bis..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
@@ -177,7 +192,7 @@
         </div>
     </main>
 
-    <!-- SCRIPT DE GESTION ET GESTIONNAIRE DÉPENDANT -->
+    <!-- SCRIPT DE GESTION -->
     <script>
         const token = localStorage.getItem('token');
         let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
@@ -186,7 +201,13 @@
             window.location.href = 'login.html';
         }
 
-        // Base de données des villes par pays
+        // Bloquer automatiquement tout caractère autre que des chiffres dans le champ téléphone
+        const phoneInput = document.getElementById('phone');
+        phoneInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+
+        // Villes par pays
         const citiesByCountry = {
             "Madagascar": ["Antananarivo", "Toamasina", "Antsirabe", "Fianarantsoa", "Mahajanga", "Toliara", "Antsiranana", "Nosy Be"],
             "France": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille"],
@@ -202,11 +223,9 @@
             "Allemagne": ["Berlin", "Hambourg", "Munich", "Francfort"]
         };
 
-        // Fonction pour mettre à jour la liste des villes selon le pays sélectionné
         function updateCities(selectedCountry, preselectedCity = '') {
             const citySelect = document.getElementById('city');
             citySelect.innerHTML = '<option value="" disabled selected>Sélectionner la ville</option>';
-
             const cities = citiesByCountry[selectedCountry] || ["Autre / Saisie libre"];
 
             cities.forEach(city => {
@@ -220,7 +239,6 @@
             });
         }
 
-        // Chargement des pays
         async function loadCountries() {
             const countrySelect = document.getElementById('country');
             const fallbackCountries = Object.keys(citiesByCountry).sort();
@@ -257,18 +275,15 @@
                 });
             }
 
-            // Si un pays était déjà enregistré, charger ses villes et pré-sélectionner la ville
             if (userData.country) {
                 updateCities(userData.country, userData.city);
             }
         }
 
-        // Écouter le changement de pays pour actualiser les villes en temps réel
         document.getElementById('country').addEventListener('change', (e) => {
             updateCities(e.target.value);
         });
 
-        // Chargement des nationalités
         function loadNationalities() {
             const natSelect = document.getElementById('nationality');
             const nationalities = [
@@ -287,7 +302,6 @@
             });
         }
 
-        // Initialisation au chargement
         document.addEventListener('DOMContentLoaded', () => {
             loadCountries();
             loadNationalities();
@@ -296,7 +310,18 @@
         // Pré-remplissage des champs de base
         document.getElementById('fullName').value = userData.name || userData.fullName || '';
         document.getElementById('email').value = userData.email || '';
-        document.getElementById('phone').value = userData.phone || '';
+        
+        // Gestion du pré-remplissage du téléphone (Séparation Code / Numéro)
+        if (userData.phone) {
+            const parts = userData.phone.trim().split(' ');
+            if (parts.length >= 2 && parts[0].startsWith('+')) {
+                document.getElementById('phoneCode').value = parts[0];
+                document.getElementById('phone').value = parts.slice(1).join('').replace(/\D/g, '');
+            } else {
+                document.getElementById('phone').value = userData.phone.replace(/\D/g, '');
+            }
+        }
+
         document.getElementById('birthdate').value = userData.birthdate || '';
         document.getElementById('gender').value = userData.gender || '';
         document.getElementById('postalCode').value = userData.postalCode || '';
@@ -325,22 +350,22 @@
         profileForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
-            // 1. Validation Téléphone
-            const phoneInput = document.getElementById('phone').value.trim();
-            const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
-            if (phoneInput && !phoneRegex.test(phoneInput)) {
-                showAlert("⚠️ Veuillez entrer un numéro de téléphone valide.");
+            // Validation Téléphone (Uniquement des chiffres entre 6 et 12 caractères)
+            const phoneCode = document.getElementById('phoneCode').value;
+            const phoneNum = phoneInput.value.trim();
+            if (phoneNum && !/^\d{6,12}$/.test(phoneNum)) {
+                showAlert("⚠️ Le numéro de téléphone doit contenir uniquement des chiffres (entre 6 et 12 chiffres).");
                 return;
             }
 
-            // 2. Validation Ville
+            // Validation Ville
             const cityInput = document.getElementById('city').value;
             if (!cityInput) {
                 showAlert("⚠️ Veuillez sélectionner une ville.");
                 return;
             }
 
-            // 3. Validation Code postal
+            // Validation Code postal
             const postalInput = document.getElementById('postalCode').value.trim();
             const postalRegex = /^[a-zA-Z0-9\s\-]{2,10}$/;
             if (postalInput && !postalRegex.test(postalInput)) {
@@ -348,11 +373,11 @@
                 return;
             }
 
-            // Enregistrement des données
+            // Enregistrement combiné de l'indicatif et du numéro
             userData.name = document.getElementById('fullName').value;
             userData.fullName = userData.name;
             userData.email = document.getElementById('email').value;
-            userData.phone = phoneInput;
+            userData.phone = phoneNum ? `${phoneCode} ${phoneNum}` : '';
             userData.birthdate = document.getElementById('birthdate').value;
             userData.gender = document.getElementById('gender').value;
             userData.nationality = document.getElementById('nationality').value;
