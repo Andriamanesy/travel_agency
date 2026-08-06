@@ -1,4 +1,4 @@
-document.getElementById('current-year').textContent = new Date().getFullYear();
+import { apiRequest } from '../api.js'; // Si vous utilisez un module API centralisé, sinon fetch direct
 
 const translations = {
     fr: {
@@ -134,7 +134,7 @@ const translations = {
     }
 };
 
-// Solution pérenne : Nettoyer l'ancien token sur la page de login pour éviter l'affichage erroné de la navbar connectée
+// Nettoyage de l'ancien token sur la page de connexion
 localStorage.removeItem('token');
 
 function setLanguage(lang) {
@@ -169,7 +169,7 @@ if (langSwitch) {
     });
 }
 
-// 1. Gestion de l'Œil magique
+// 1. Gestion de l'Œil magique (Affichage/Masquage du mot de passe)
 const togglePassword = document.getElementById('togglePassword');
 const passwordInput = document.getElementById('password');
 if (togglePassword && passwordInput) {
@@ -179,12 +179,12 @@ if (togglePassword && passwordInput) {
         
         if (type === 'text') {
             togglePassword.innerHTML = `
-                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.027 10.027 0 01-4.132 5.411m0 0L21 21" />
                 </svg>`;
         } else {
             togglePassword.innerHTML = `
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>`;
@@ -192,7 +192,7 @@ if (togglePassword && passwordInput) {
     });
 }
 
-// 2. Fonction Toast pour les notifications
+// 2. Fonction Toast pour les notifications élégantes
 function showToast(message, type = 'success') {
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -253,13 +253,11 @@ if (loginForm) {
                 throw new Error(data.error || data.message || translations[currentLang]["login.error_default"]);
             }
 
-            // 1. Enregistrement du token JWT
+            // Enregistrement du token JWT et des données utilisateur
             if (data.token) {
                 localStorage.setItem('token', data.token);
             }
 
-            // 2. Enregistrement de l'objet utilisateur (requis par le Dashboard)
-            // Si l'API renvoie data.user, on l'utilise, sinon on crée un objet par défaut avec l'email
             const userData = data.user || { name: email.split('@')[0], email: email };
             localStorage.setItem('travelms_user', JSON.stringify(userData));
             localStorage.setItem('user', JSON.stringify(userData));
@@ -267,7 +265,7 @@ if (loginForm) {
             showToast(translations[currentLang]["login.success_msg"], "success");
 
             setTimeout(() => {
-                window.location.href = 'dashboard.html'; // Remplacez par index.html si c'est votre page d'accueil
+                window.location.href = 'dashboard.html';
             }, 1200);
 
         } catch (err) {
@@ -278,11 +276,13 @@ if (loginForm) {
     });
 }
 
+// 4. Gestion du renvoi de l'e-mail de vérification
 const resendVerificationBtn = document.getElementById('resend-verification-btn');
 if (resendVerificationBtn) {
     resendVerificationBtn.addEventListener('click', async () => {
         const email = document.getElementById('email').value.trim();
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
+        
         if (!email) {
             document.getElementById('email').focus();
             showToast('Saisissez votre adresse e-mail pour recevoir un nouveau lien.', 'error');
@@ -291,6 +291,7 @@ if (resendVerificationBtn) {
 
         resendVerificationBtn.disabled = true;
         resendVerificationBtn.textContent = translations[currentLang]['login.resending'] || translations.fr['login.resending'];
+        
         try {
             const response = await fetch('/api/resend-verification', {
                 method: 'POST',
@@ -298,7 +299,9 @@ if (resendVerificationBtn) {
                 body: JSON.stringify({ email })
             });
             const data = await response.json().catch(() => ({}));
+            
             if (!response.ok) throw new Error(data.error || translations[currentLang]['login.error_default']);
+            
             showToast(data.message || translations[currentLang]['login.resend_sent'] || translations.fr['login.resend_sent'], 'success');
         } catch (error) {
             showToast(error.message, 'error');

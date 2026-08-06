@@ -1,86 +1,305 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="antialiased">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Détails de la destination - TravelMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            600: '#059669',
+                            700: '#046c4e',
+                            800: '#065f46',
+                            900: '#064e3b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans">
-    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <a href="/" class="text-2xl font-black text-blue-600 tracking-tight">Travel<span class="text-slate-900">MS</span></a>
-            <nav class="flex items-center gap-4 text-sm text-slate-700">
-                <a href="/" class="hover:text-blue-600 transition">Accueil</a>
-                <a href="/register.html" class="hover:text-blue-600 transition">Inscription</a>
-                <a href="/login.html" class="hover:text-blue-600 transition">Connexion</a>
+<body class="bg-slate-50 text-slate-900 font-sans flex flex-col min-h-screen">
+
+    <!-- Header / Barre de navigation -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="/" class="text-2xl font-black text-brand-700 tracking-tight flex items-center gap-2">
+                <span>🌍</span>
+                <span>Travel<span class="text-slate-900">MS</span></span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-700">
+                <a href="/" class="hover:text-brand-700 transition">Accueil</a>
+                <a href="/destinations.html" class="text-brand-700 border-b-2 border-brand-700 pb-1">Destinations</a>
+                <a href="/circuits.html" class="hover:text-brand-700 transition">Circuits</a>
+                <a href="/hotels.html" class="hover:text-brand-700 transition">Hôtels</a>
+                <a href="/guides.html" class="hover:text-brand-700 transition">Guides</a>
+                <a href="/contact.html" class="hover:text-brand-700 transition">Contact</a>
             </nav>
+            <div class="flex items-center gap-3 text-sm font-semibold">
+                <a href="/login.html" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition">Connexion</a>
+                <a href="/register.html" class="px-4 py-2 rounded-lg bg-brand-700 text-white hover:bg-brand-800 transition shadow-sm">Inscription</a>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-8">
-        <div id="destination-loading" class="text-center py-24 text-slate-500">Chargement de la destination...</div>
-        <div id="destination-error" class="hidden rounded-3xl border border-rose-200 bg-rose-50 text-rose-700 px-6 py-8 text-center"></div>
+    <!-- Contenu principal -->
+    <main class="max-w-7xl mx-auto px-6 py-8 flex-grow w-full">
+        <!-- État de chargement -->
+        <div id="destination-loading" class="text-center py-24 text-slate-500 font-medium">
+            Chargement de la destination...
+        </div>
 
-        <section id="destination-content" class="hidden space-y-8">
-            <div class="relative overflow-hidden rounded-[2rem] shadow-xl bg-slate-200">
-                <img id="destinationHero" src="" alt="" class="w-full h-[520px] object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
-                <div class="absolute bottom-8 left-8 text-white max-w-2xl">
-                    <p id="destinationLocation" class="text-sm uppercase tracking-[0.35em] font-semibold text-blue-200"></p>
-                    <h1 id="destinationTitle" class="mt-4 text-4xl md:text-5xl font-black leading-tight"></h1>
-                    <p id="destinationLead" class="mt-4 text-base md:text-lg text-slate-100 max-w-3xl"></p>
+        <!-- État d'erreur -->
+        <div id="destination-error" class="hidden rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 px-6 py-8 text-center font-medium my-8"></div>
+
+        <!-- Section de contenu (masquée au chargement, gérée par JS) -->
+        <section id="destination-content" class="hidden space-y-10">
+            
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl shadow-xl bg-slate-900">
+                <img id="destinationHero" src="" alt="" class="w-full h-[440px] md:h-[480px] object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent"></div>
+                <div class="absolute inset-0 flex flex-col items-center justify-end text-center p-8 md:p-12 text-white max-w-4xl mx-auto">
+                    <p id="destinationLocation" class="text-xs md:text-sm uppercase tracking-[0.3em] font-bold text-brand-100 bg-brand-900/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-brand-600/40 mb-4"></p>
+                    <h1 id="destinationTitle" class="text-3xl md:text-5xl lg:text-6xl font-black leading-tight"></h1>
+                    <p id="destinationLead" class="mt-4 text-sm md:text-base text-slate-200 max-w-2xl line-clamp-2"></p>
                 </div>
             </div>
 
-            <div class="grid gap-10 xl:grid-cols-[1.5fr_0.9fr]">
-                <div class="space-y-10">
-                    <div class="rounded-[2rem] bg-white p-8 shadow-sm">
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                            <div>
-                                <p class="text-xs uppercase tracking-[0.35em] text-slate-400 font-semibold">Détails de la destination</p>
-                                <h2 class="mt-3 text-3xl font-extrabold text-slate-900">À propos de ce séjour</h2>
-                            </div>
-                            <div class="rounded-3xl bg-slate-100 px-5 py-4 text-slate-700 shadow-sm">
-                                <p class="text-sm text-slate-500">Prix</p>
-                                <p id="destinationPrice" class="mt-2 text-2xl font-black text-slate-900"></p>
-                            </div>
+            <!-- Galerie Photo (Sous le Hero) -->
+            <div>
+                <div id="galleryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+                    <!-- Les vignettes seront injectées par JS -->
+                </div>
+            </div>
+
+            <!-- Grille principale (Deux colonnes : Contenu & Sidebar) -->
+            <div class="grid gap-8 lg:grid-cols-12 items-start">
+                
+                <!-- COLONNE GAUCHE (7 colonnes sur 12) -->
+                <div class="lg:col-span-7 space-y-10">
+                    
+                    <!-- Description Détaillée -->
+                    <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <h2 class="text-2xl font-extrabold text-slate-900">Description Détaillée</h2>
+                            <span class="text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-3 py-1 rounded-full">Aperçu</span>
                         </div>
-                        <p id="destinationDescription" class="mt-8 text-slate-600 leading-8"></p>
+                        <p id="destinationDescription" class="text-slate-600 leading-relaxed text-base whitespace-pre-line"></p>
                     </div>
 
-                    <div class="rounded-[2rem] bg-white p-8 shadow-sm">
-                        <h3 class="text-2xl font-bold text-slate-900">Galerie photo</h3>
-                        <p class="mt-3 text-slate-500">Cliquez sur une miniature pour agrandir l'image.</p>
-                        <div id="galleryGrid" class="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                    <!-- Détails Techniques -->
+                    <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
+                        <h3 class="text-xl font-bold text-slate-900">Détails Techniques</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                                <span class="text-xs uppercase font-bold text-slate-400 block mb-1">Durée conseillée</span>
+                                <span class="text-lg font-extrabold text-slate-900">⏳ 3 jours</span>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                                <span class="text-xs uppercase font-bold text-slate-400 block mb-1">Difficulté</span>
+                                <span class="text-lg font-extrabold text-brand-700">Moyenne</span>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                                <span class="text-xs uppercase font-bold text-slate-400 block mb-1">Meilleure saison</span>
+                                <span class="text-lg font-extrabold text-slate-900">Mai - Oct</span>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Points Forts -->
+                    <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
+                        <h3 class="text-xl font-bold text-slate-900">Points Forts</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="border border-slate-100 rounded-2xl p-5 space-y-2 bg-slate-50/50">
+                                <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-lg">⛰️</div>
+                                <h4 class="font-bold text-slate-900">Canyons</h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">Exploration de gorges profondes et paysages sculptés par l'érosion.</p>
+                            </div>
+                            <div class="border border-slate-100 rounded-2xl p-5 space-y-2 bg-slate-50/50">
+                                <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-lg">lemur</div>
+                                <h4 class="font-bold text-slate-900">Lémuriens</h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">Rencontre authentique avec la faune endémique dans son habitat naturel.</p>
+                            </div>
+                            <div class="border border-slate-100 rounded-2xl p-5 space-y-2 bg-slate-50/50">
+                                <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-lg">🏊</div>
+                                <h4 class="font-bold text-slate-900">Piscines Naturelles</h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">Baignade rafraîchissante au cœur d'oasis verdoyantes et préservées.</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
-                <aside class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-                    <div class="space-y-3">
-                        <div class="text-sm uppercase tracking-[0.35em] text-slate-500 font-semibold">Informations</div>
-                        <div class="grid gap-4">
-                            <div class="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-4">
-                                <span class="text-slate-600">Lieu</span>
-                                <span id="destinationLocationDetail" class="font-semibold text-slate-900"></span>
+                <!-- COLONNE DROITE / SIDEBAR (5 colonnes sur 12) -->
+                <aside class="lg:col-span-5 space-y-8">
+                    
+                    <!-- Widget : Vérifier la Disponibilité & Réservation -->
+                    <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-lg space-y-6">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <h3 class="text-xl font-extrabold text-slate-900">Vérifier la Disponibilité</h3>
+                            <span id="destinationStatus" class="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
+                                <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span> Disponible
+                            </span>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Dates de Voyage</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="date" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-700">
+                                    <input type="date" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-700">
+                                </div>
                             </div>
-                            <div class="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-4">
-                                <span class="text-slate-600">Statut</span>
-                                <span id="destinationStatus" class="font-semibold text-emerald-700">Disponible</span>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Nombre de voyageurs</label>
+                                <select class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-700 bg-white">
+                                    <option>1 voyageur</option>
+                                    <option selected>2 voyageurs</option>
+                                    <option>3 voyageurs</option>
+                                    <option>4 voyageurs ou plus</option>
+                                </select>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-sm font-semibold text-slate-500">Estimation prix</span>
+                                <div class="text-right">
+                                    <span class="text-xs text-slate-400 block">À partir de</span>
+                                    <span id="destinationPrice" class="text-2xl font-black text-slate-900">--- €</span>
+                                </div>
+                            </div>
+
+                            <!-- Lieu de la destination (requis pour JS) -->
+                            <div class="flex items-center justify-between text-xs text-slate-500 pt-2">
+                                <span>Localisation exacte :</span>
+                                <span id="destinationLocationDetail" class="font-semibold text-slate-800"></span>
+                            </div>
+                        </div>
+
+                        <a id="destinationBookingLink" href="/booking.html" class="block w-full text-center bg-brand-700 text-white py-4 rounded-2xl font-bold hover:bg-brand-800 transition shadow-md hover:shadow-lg">
+                            Réserver Maintenant
+                        </a>
+                    </div>
+
+                    <!-- Avis Clients -->
+                    <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
+                        <h3 class="text-xl font-bold text-slate-900">Avis Clients</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3 border-b border-slate-50 pb-4">
+                                <div class="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center font-bold text-slate-600">ML</div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-sm text-slate-900">Marie L.</span>
+                                        <span class="text-amber-400 text-xs">★★★★★</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 leading-relaxed">"Des paysages à couper le souffle, une organisation impeccable !"</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center font-bold text-slate-600">JP</div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-sm text-slate-900">Jean P.</span>
+                                        <span class="text-amber-400 text-xs">★★★★★</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 leading-relaxed">"Le guide était passionnant, les piscines naturelles inoubliables."</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <a id="destinationBookingLink" href="/booking.html" class="block w-full text-center bg-blue-600 text-white py-4 rounded-3xl font-semibold hover:bg-blue-700 transition">Réserver maintenant</a>
+
+                    <!-- Carte interactive (Aperçu) -->
+                    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                        <h3 class="text-lg font-bold text-slate-900">Localisation sur la carte</h3>
+                        <div class="h-48 rounded-2xl bg-slate-100 overflow-hidden relative border border-slate-200 flex items-center justify-center text-slate-400">
+                            <div class="text-center">
+                                <span class="text-2xl block mb-1">📍</span>
+                                <span class="text-xs font-semibold">Carte interactive Madagascar</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Destinations Similaires -->
+                    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                        <h3 class="text-lg font-bold text-slate-900">Destinations Similaires</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <a href="/destinations.html" class="group block rounded-xl overflow-hidden border border-slate-100 hover:shadow-md transition">
+                                <div class="h-24 bg-slate-200 overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=400&q=80" alt="Tsingy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                </div>
+                                <div class="p-2.5">
+                                    <span class="font-bold text-xs text-slate-900 block">Tsingy de Bemaraha</span>
+                                    <span class="text-[10px] text-brand-700 font-semibold">Dès 920 €</span>
+                                </div>
+                            </a>
+                            <a href="/destinations.html" class="group block rounded-xl overflow-hidden border border-slate-100 hover:shadow-md transition">
+                                <div class="h-24 bg-slate-200 overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1589556264800-08ae9e129a8c?auto=format&fit=crop&w=400&q=80" alt="Nosy Be" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                </div>
+                                <div class="p-2.5">
+                                    <span class="font-bold text-xs text-slate-900 block">Nosy Be & Îles</span>
+                                    <span class="text-[10px] text-brand-700 font-semibold">Dès 850 €</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
                 </aside>
             </div>
         </section>
     </main>
 
-    <div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 p-6">
-        <button id="lightboxClose" type="button" aria-label="Fermer l'image agrandie" class="absolute top-6 right-6 text-white text-3xl font-bold">×</button>
-        <img id="lightboxImage" src="" alt="Agrandissement de l'image" class="max-h-full max-w-full rounded-3xl shadow-2xl" />
+    <!-- Pied de page (Footer) -->
+    <footer class="bg-slate-900 text-white mt-16 py-12 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <span class="text-2xl font-black text-white tracking-tight">Travel<span class="text-brand-600">MS</span></span>
+                <p class="mt-3 text-xs text-slate-400 leading-relaxed">Agence de voyage spécialiste des circuits sur-mesure et d'exception à travers Madagascar.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-sm mb-3">Navigation</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><a href="/" class="hover:text-white transition">Accueil</a></li>
+                    <li><a href="/destinations.html" class="hover:text-white transition">Destinations</a></li>
+                    <li><a href="/circuits.html" class="hover:text-white transition">Circuits</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-sm mb-3">Informations Légales</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><a href="/about.html" class="hover:text-white transition">Qui sommes-nous</a></li>
+                    <li><a href="/privacy.html" class="hover:text-white transition">Politique de confidentialité</a></li>
+                    <li><a href="/cgv.html" class="hover:text-white transition">CGV</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-sm mb-3">Nous Contacter</h4>
+                <p class="text-xs text-slate-400 leading-relaxed">Antananarivo, Madagascar<br>contact@travelms.com</p>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-6 mt-8 pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
+            &copy; <span id="current-year">2026</span> TravelMS. Tous droits réservés.
+        </div>
+    </footer>
+
+    <!-- Lightbox (Modale pour agrandir la galerie photo) -->
+    <div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 p-6 backdrop-blur-sm">
+        <button id="lightboxClose" type="button" aria-label="Fermer l'image agrandie" class="absolute top-6 right-6 text-white text-4xl font-light hover:text-brand-100 transition">&times;</button>
+        <img id="lightboxImage" src="" alt="Agrandissement de l'image" class="max-h-full max-w-full rounded-2xl shadow-2xl border border-slate-700" />
     </div>
 
+    <!-- Scripts -->
     <script type="module" src="/js/pages/destination-detail.js"></script>
+    <script>
+        const yearEl = document.getElementById('current-year');
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>

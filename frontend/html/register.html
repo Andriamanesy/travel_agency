@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="antialiased">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,21 +7,37 @@
     <link rel="icon" href="/assets/favicon.ico">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            600: '#059669',
+                            700: '#046c4e',
+                            800: '#065f46',
+                            900: '#064e3b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-800 font-sans relative">
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-sans selection:bg-brand-500 selection:text-white">
 
-    <!-- En-tête -->
-    <header class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-50">
+    <!-- En-tête fixe minimaliste et épuré -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 fixed w-full z-50 transition-all">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="/" class="text-2xl font-black text-blue-600 tracking-tight no-underline">Travel<span class="text-slate-900">MS</span></a>
-            <nav class="hidden md:flex space-x-8 font-medium text-slate-600">
-                <a href="/" class="hover:text-blue-600 transition" data-i18n="nav.home">Accueil</a>
-                <a href="/#destinations" class="hover:text-blue-600 transition" data-i18n="nav.destinations">Destinations</a>
-                <a href="/#circuits" class="hover:text-blue-600 transition" data-i18n="nav.circuits">Circuits</a>
-            </nav>
+            <a href="index.html" class="text-2xl font-black text-brand-700 tracking-tight flex items-center gap-2 no-underline">
+                <span>🌍</span>
+                <span>Travel<span class="text-slate-900">MS</span></span>
+            </a>
             <div class="flex items-center space-x-4">
                 <!-- Sélecteur de langue -->
-                <select id="langSwitch" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                <select id="langSwitch" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-600 cursor-pointer transition">
                     <option value="fr">🇫🇷 FR</option>
                     <option value="en">🇬🇧 EN</option>
                     <option value="es">🇪🇸 ES</option>
@@ -29,75 +45,120 @@
                     <option value="it">🇮🇹 IT</option>
                     <option value="zh">🇨🇳 ZH</option>
                 </select>
-
-                <a href="/login.html" class="px-5 py-2.5 rounded-full font-medium text-slate-700 hover:text-blue-600 transition" data-i18n="nav.login">Connexion</a>
-                <a href="/register.html" class="bg-blue-600 text-white px-5 py-2.5 rounded-full font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition" data-i18n="nav.register">Inscription</a>
+                <!-- Bouton de connexion -->
+                <a href="login.html" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:text-brand-700 transition no-underline" data-i18n="nav.login">Connexion</a>
             </div>
         </div>
     </header>
 
-    <!-- Contenu principal -->
-    <main class="flex-1 flex items-center justify-center px-4 py-28">
-        <div class="bg-white p-8 md:p-10 rounded-3xl border border-slate-100 shadow-xl w-full max-w-md">
+    <!-- Contenu principal avec structure Split-Screen -->
+    <main class="flex-1 flex items-center justify-center pt-24 pb-12 px-4 md:px-8 w-full max-w-7xl mx-auto">
+        <div class="w-full grid lg:grid-cols-12 gap-8 items-center bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl overflow-hidden">
             
-            <div class="text-center mb-8">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2" data-i18n="register.title">Créer un compte</h2>
-                <p class="text-slate-500 text-sm" data-i18n="register.subtitle">Commencez votre voyage avec TravelMS</p>
-            </div>
-
-            <form id="register-form" class="space-y-4">
-                <div>
-                    <label for="name" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.name_label">Nom complet</label>
-                    <input type="text" id="name" name="name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" data-i18n-placeholder="register.name_placeholder" placeholder="Jean Dupont" required autocomplete="name">
+            <!-- Colonne Visuelle Immersive (Gauche - 6 colonnes) -->
+            <div class="hidden lg:flex lg:col-span-6 relative min-h-[720px] bg-slate-900 flex-col justify-end p-12 overflow-hidden">
+                <!-- Image d'arrière-plan avec effet de zoom subtil -->
+                <img src="https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80" alt="Aventure Madagascar" class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay scale-105">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                
+                <!-- Contenu textuel par-dessus l'image -->
+                <div class="relative z-10 space-y-4">
+                    <span class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-brand-100 bg-brand-900/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-brand-600/30">
+                        🚀 Commencez l'aventure
+                    </span>
+                    <h2 class="text-3xl md:text-4xl font-black text-white leading-tight">
+                        Créez votre compte et évadez-vous autrement.
+                    </h2>
+                    <p class="text-sm text-slate-300 leading-relaxed max-w-md">
+                        Rejoignez TravelMS pour concevoir vos circuits sur-mesure à Madagascar et vivre des expériences inoubliables en toute tranquillité.
+                    </p>
                 </div>
 
-                <div>
-                    <label for="email" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.email_label">Adresse email</label>
-                    <input type="email" id="email" name="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" data-i18n-placeholder="register.email_placeholder" placeholder="jean.dupont@exemple.com" required autocomplete="email">
-                </div>
-
-                <div>
-                    <label for="password" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.password_label">Mot de passe</label>
-                    <div class="relative">
-                        <input type="password" id="password" required 
-                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" 
-                            data-i18n-placeholder="register.password_placeholder" placeholder="••••••••" autocomplete="new-password">
-                        <!-- Bouton de l'œil magique -->
-                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition">
-                            <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </button>
+                <!-- Badge flottant de réassurance -->
+                <div class="relative z-10 mt-8 pt-6 border-t border-white/10 flex items-center gap-4">
+                    <div class="flex -space-x-2">
+                        <div class="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold border-2 border-slate-900">A</div>
+                        <div class="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center text-white text-xs font-bold border-2 border-slate-900">S</div>
+                        <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white text-xs font-bold border-2 border-slate-900">✨</div>
+                    </div>
+                    <div class="text-xs text-slate-300">
+                        <span class="font-bold text-white block">Inscription gratuite & rapide</span> Accès immédiat à votre espace
                     </div>
                 </div>
-
-                <div>
-                    <label for="confirm-password" class="block text-sm font-semibold text-slate-700 mb-1.5" data-i18n="register.confirm_password_label">Confirmer le mot de passe</label>
-                    <input type="password" id="confirm-password" required 
-                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition" 
-                        data-i18n-placeholder="register.password_placeholder" placeholder="••••••••" autocomplete="new-password">
-                </div>
-
-                <!-- Case à cocher obligatoire et non cochée par défaut -->
-                <div class="flex items-start space-x-3 pt-1">
-                    <input type="checkbox" id="terms" name="terms" required class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
-                    <label for="terms" class="text-xs text-slate-600 leading-relaxed">
-                        <span data-i18n="register.terms_prefix">J'accepte les</span> 
-                        <button type="button" id="openTermsModal" class="text-blue-600 font-semibold hover:underline cursor-pointer focus:outline-none" data-i18n="register.terms_link">conditions générales d'utilisation</button> 
-                        <span data-i18n="register.terms_suffix">et la politique de confidentialité.</span>
-                    </label>
-                </div>
-
-                <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-600/20 transition duration-200 mt-3" data-i18n="register.submit">Créer mon compte et voyager</button>
-            </form>
-
-            <p class="text-center text-xs text-slate-400 mt-4" data-i18n="register.security">🔒 Vos données sont protégées et sécurisées.</p>
-
-            <div class="text-center text-sm text-slate-500 mt-6">
-                <span data-i18n="register.has_account">Déjà un compte ?</span> <a href="/login.html" class="text-blue-600 font-semibold hover:underline" data-i18n="nav.login">Se connecter</a>
             </div>
 
+            <!-- Colonne Formulaire d'Inscription (Droite - 6 colonnes) -->
+            <div class="lg:col-span-6 p-8 sm:p-12 md:p-14 flex flex-col justify-center">
+                
+                <div class="mb-6">
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mb-2" data-i18n="register.title">Créer un compte</h2>
+                    <p class="text-slate-500 text-sm" data-i18n="register.subtitle">Commencez votre voyage avec TravelMS</p>
+                </div>
+
+                <form id="register-form" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5" data-i18n="register.name_label">Nom complet</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">👤</span>
+                            <input type="text" id="name" name="name" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition" data-i18n-placeholder="register.name_placeholder" placeholder="Jean Dupont" required autocomplete="name">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5" data-i18n="register.email_label">Adresse email</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">✉️</span>
+                            <input type="email" id="email" name="email" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition" data-i18n-placeholder="register.email_placeholder" placeholder="jean.dupont@exemple.com" required autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5" data-i18n="register.password_label">Mot de passe</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">🔒</span>
+                            <input type="password" id="password" required 
+                                class="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition" 
+                                data-i18n-placeholder="register.password_placeholder" placeholder="••••••••" autocomplete="new-password">
+                            <!-- Bouton de l'œil magique -->
+                            <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition focus:outline-none">
+                                <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="confirm-password" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5" data-i18n="register.confirm_password_label">Confirmer le mot de passe</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">🔒</span>
+                            <input type="password" id="confirm-password" required 
+                                class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition" 
+                                data-i18n-placeholder="register.password_placeholder" placeholder="••••••••" autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <!-- Case à cocher obligatoire et non cochée par défaut -->
+                    <div class="flex items-start space-x-3 pt-1">
+                        <input type="checkbox" id="terms" name="terms" required class="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer">
+                        <label for="terms" class="text-xs text-slate-600 leading-relaxed">
+                            <span data-i18n="register.terms_prefix">J'accepte les</span> 
+                            <button type="button" id="openTermsModal" class="text-brand-700 font-semibold hover:underline cursor-pointer focus:outline-none" data-i18n="register.terms_link">conditions générales d'utilisation</button> 
+                            <span data-i18n="register.terms_suffix">et la politique de confidentialité.</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="w-full bg-brand-700 hover:bg-brand-800 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-brand-700/20 transition duration-200 mt-2 cursor-pointer" data-i18n="register.submit">Créer mon compte et voyager</button>
+                </form>
+
+                <p class="text-center text-xs text-slate-400 mt-4" data-i18n="register.security">🔒 Vos données sont protégées et sécurisées.</p>
+
+                <div class="text-center text-sm text-slate-500 mt-6 pt-6 border-t border-slate-100">
+                    <span data-i18n="register.has_account">Déjà un compte ?</span> <a href="/login.html" class="text-brand-700 font-bold hover:underline ml-1" data-i18n="nav.login">Se connecter</a>
+                </div>
+
+            </div>
         </div>
     </main>
 
@@ -118,17 +179,20 @@
                 <p data-i18n="modal.p4">Les informations collectées lors de votre inscription (Nom, Email) sont strictement utilisées pour le bon fonctionnement du service et ne sont jamais partagées à des tiers non autorisés.</p>
             </div>
             <div class="pt-4 border-t border-slate-100 flex justify-end">
-                <button type="button" id="acceptTermsBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition" data-i18n="modal.btn">J'ai compris et j'accepte</button>
+                <button type="button" id="acceptTermsBtn" class="bg-brand-700 hover:bg-brand-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer" data-i18n="modal.btn">J'ai compris et j'accepte</button>
             </div>
         </div>
     </div>
 
     <!-- Pied de page -->
-    <footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm mt-auto">
-        <p>&copy; <span id="current-year"></span> TravelMS. <span data-i18n="footer.rights">Tous droits réservés.</span></p>
+    <footer class="bg-slate-900 text-slate-400 py-8 text-center text-xs mt-auto border-t border-slate-800">
+        <p>&copy; <span id="current-year">2026</span> TravelMS. <span data-i18n="footer.rights">Tous droits réservés.</span></p>
     </footer>
 
-    <!-- Script de gestion -->
+    <script>
+        const yearEl = document.getElementById('current-year');
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+    </script>
     <script src="/js/config.js" defer></script>
     <script src="/js/pages/register.js" defer></script>
 </body>

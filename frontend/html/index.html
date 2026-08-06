@@ -1,28 +1,53 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TravelMS - Explorez Madagascar sans limites</title>
-    <!-- Tailwind CSS pour un design pro instantané -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuration de la palette pour correspondre au vert/émeraude du template -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800">
+<body class="bg-white font-sans text-slate-800 antialiased">
 
     <!-- 1. NAVIGATION -->
-    <header class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-50">
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-100 fixed w-full z-50 transition-all">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="text-2xl font-black text-blue-600 tracking-tight">Travel<span class="text-slate-900">MS</span></div>
-            <nav class="hidden md:flex space-x-8 font-medium text-slate-600">
-                <a href="#" class="text-blue-600" data-i18n="nav.home">Accueil</a>
-                <a href="#destinations" class="hover:text-blue-600 transition" data-i18n="nav.destinations">Destinations</a>
-                <a href="#circuits" class="hover:text-blue-600 transition" data-i18n="nav.circuits">Circuits à Madagascar</a>
-                <a href="#features" class="hover:text-blue-600 transition" data-i18n="nav.why">Pourquoi nous ?</a>
+            <!-- Logo -->
+            <a href="#" class="flex items-center space-x-2 text-2xl font-black tracking-tight text-slate-900">
+                <span class="text-brand-700">🌍</span>
+                <span>Travel<span class="text-brand-700">MS</span></span>
+            </a>
+
+            <!-- Menu de navigation -->
+            <nav class="hidden lg:flex items-center space-x-8 font-semibold text-slate-600 text-sm">
+                <a href="#" class="text-brand-700" data-i18n="nav.home">Accueil</a>
+                <a href="#destinations" class="hover:text-brand-700 transition" data-i18n="nav.destinations">Destinations</a>
+                <a href="#circuits" class="hover:text-brand-700 transition" data-i18n="nav.circuits">Circuits</a>
+                <a href="#experiences" class="hover:text-brand-700 transition" data-i18n="nav.experiences">Expériences</a>
+                <a href="#contact" class="hover:text-brand-700 transition" data-i18n="nav.contact">Contact</a>
             </nav>
             
             <div class="flex items-center space-x-4">
-                <!-- Sélecteur de langue 6 langues -->
-                <select id="langSwitch" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                <!-- Sélecteur de langue -->
+                <select id="langSwitch" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600 cursor-pointer">
                     <option value="fr">🇫🇷 FR</option>
                     <option value="en">🇬🇧 EN</option>
                     <option value="es">🇪🇸 ES</option>
@@ -31,168 +56,337 @@
                     <option value="zh">🇨🇳 ZH</option>
                 </select>
 
-                <!-- Zone dynamique gérée par JavaScript selon la session -->
-                <div id="authNav" class="flex items-center space-x-4">
-                    <a href="login.html" class="font-medium text-slate-700 hover:text-blue-600 transition" data-i18n="nav.login">Connexion</a>
-                    <a href="register.html" class="bg-blue-600 text-white px-5 py-2.5 rounded-full font-medium shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition" data-i18n="nav.register">S'inscrire</a>
+                <!-- Zone dynamique d'authentification -->
+                <div id="authNav" class="flex items-center space-x-3 text-sm">
+                    <a href="login.html" class="font-semibold text-slate-700 border border-slate-300 px-4 py-2 rounded-lg hover:border-slate-400 transition" data-i18n="nav.login">Connexion</a>
+                    <a href="register.html" class="bg-brand-700 text-white px-5 py-2 rounded-lg font-semibold shadow-md shadow-brand-700/20 hover:bg-brand-800 transition" data-i18n="nav.register">Inscription</a>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- 2. HERO SECTION (Le Banner Immersif) -->
-    <section class="relative h-[90vh] flex items-center justify-center bg-cover bg-center text-white" style="background-image: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1920&q=80');">
-        <div class="text-center max-w-3xl px-6 space-y-6 mt-12">
-            <span class="bg-blue-600/30 backdrop-blur-md text-blue-200 border border-blue-400/30 text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-wider" data-i18n="hero.tag">Vivez l'extraordinaire à Madagascar</span>
-            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight" data-i18n="hero.title">Découvrez les trésors cachés de la Grande Île</h1>
-            <p class="text-lg text-slate-200 font-light" data-i18n="hero.subtitle">Partez l'esprit tranquille avec nos séjours sur-mesure, pensés pour vous faire vivre des aventures inoubliables entre terres sauvages et plages paradisiaques.</p>
+    <!-- 2. HERO SECTION -->
+    <section class="relative min-h-[85vh] flex items-center justify-center bg-cover bg-center text-white pt-20" style="background-image: linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)), url('https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1920&q=80');">
+        <div class="text-center max-w-4xl px-6 space-y-6 my-12">
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight uppercase" data-i18n="hero.title">
+                Explorez Madagascar avec TravelMS
+            </h1>
+            <p class="text-lg md:text-xl text-slate-100 font-normal max-w-2xl mx-auto" data-i18n="hero.subtitle">
+                Découvrez des destinations inoubliables, des circuits uniques et des hébergements de prestige au cœur de la Grande Île.
+            </p>
             
-            <!-- Barre de recherche rapide -->
-            <div class="bg-white p-3 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-3 max-w-2xl mx-auto text-slate-800">
-                <input type="text" data-i18n-placeholder="hero.placeholder" placeholder="Quelle région souhaitez-vous explorer ?" class="flex-1 px-4 py-3 rounded-xl bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600">
-                <button class="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow-md" data-i18n="hero.search">Rechercher</button>
+            <!-- Barre de recherche multi-critères (style de la maquette) -->
+            <div class="bg-white p-3 rounded-2xl shadow-2xl max-w-3xl mx-auto text-slate-800 mt-8">
+                <form action="destinations.html" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                    <div class="text-left px-3 py-1 border-b md:border-b-0 md:border-r border-slate-200">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Destination</label>
+                        <input type="text" name="destination" placeholder="Ville, région..." class="w-full text-sm font-semibold text-slate-800 focus:outline-none bg-transparent py-1">
+                    </div>
+                    <div class="text-left px-3 py-1 border-b md:border-b-0 md:border-r border-slate-200">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Date</label>
+                        <input type="date" name="date" class="w-full text-sm font-semibold text-slate-800 focus:outline-none bg-transparent py-1 text-slate-500">
+                    </div>
+                    <div class="text-left px-3 py-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Type</label>
+                        <select name="type" class="w-full text-sm font-semibold text-slate-800 focus:outline-none bg-transparent py-1 cursor-pointer">
+                            <option value="">Hôtel, Circuit...</option>
+                            <option value="circuit">Circuit organisé</option>
+                            <option value="hotel">Hébergement</option>
+                            <option value="guide">Guide privé</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full bg-brand-700 text-white py-3.5 px-6 rounded-xl font-bold hover:bg-brand-800 transition shadow-md" data-i18n="hero.search">
+                            Rechercher
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </section>
 
-    <!-- 3. SECTION DESTINATIONS DYNAMIQUES -->
+    <!-- 3. DESTINATIONS POPULAIRES (Rendu Dynamique via JS + Squelette) -->
     <section id="destinations" class="py-20 max-w-7xl mx-auto px-6">
-        <div class="text-center max-w-2xl mx-auto mb-16">
-            <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Destinations incontournables</h2>
+        <div class="text-center max-w-2xl mx-auto mb-14">
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight" data-i18n="destinations.title">DESTINATIONS POPULAIRES</h2>
         </div>
 
-        <div id="destinationCards" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+        <!-- Zone injectée par votre script (index.js), structurée selon la maquette -->
+        <div id="destinationCards" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            
+            <!-- Carte 1 : Nosy Be (Exemple de layout visuel cible pour index.js) -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition flex flex-col justify-between overflow-hidden">
+                <div>
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="Nosy Be" class="w-full h-full object-cover hover:scale-105 transition duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-slate-900 mb-1">Nosy Be</h3>
+                        <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">
+                            Plages de sable blanc, récifs coralliens protégés et ambiance tropicale incomparable.
+                        </p>
+                    </div>
+                </div>
+                <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-slate-50">
+                    <div class="text-xs">
+                        <span class="text-slate-400 block">À partir de</span>
+                        <span class="text-slate-900 font-extrabold text-base">850 €</span>
+                    </div>
+                    <a href="/destination-detail.html?id=nosybe" class="bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-brand-800 transition">
+                        Voir l'offre
+                    </a>
+                </div>
+            </div>
+
+            <!-- Carte 2 : Sainte-Marie -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition flex flex-col justify-between overflow-hidden">
+                <div>
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80" alt="Sainte-Marie" class="w-full h-full object-cover hover:scale-105 transition duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-slate-900 mb-1">Sainte-Marie</h3>
+                        <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">
+                            Sanctuaire authentique des baleines à bosse et plages sauvages préservées.
+                        </p>
+                    </div>
+                </div>
+                <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-slate-50">
+                    <div class="text-xs">
+                        <span class="text-slate-400 block">À partir de</span>
+                        <span class="text-slate-900 font-extrabold text-base">720 €</span>
+                    </div>
+                    <a href="/destination-detail.html?id=saintemarie" class="bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-brand-800 transition">
+                        Voir l'offre
+                    </a>
+                </div>
+            </div>
+
+            <!-- Carte 3 : Morondava -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition flex flex-col justify-between overflow-hidden">
+                <div>
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=600&q=80" alt="Morondava" class="w-full h-full object-cover hover:scale-105 transition duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-slate-900 mb-1">Morondava</h3>
+                        <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">
+                            L'Avenue des Baobabs mythique au coucher du soleil et porte d'entrée des Tsingy.
+                        </p>
+                    </div>
+                </div>
+                <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-slate-50">
+                    <div class="text-xs">
+                        <span class="text-slate-400 block">À partir de</span>
+                        <span class="text-slate-900 font-extrabold text-base">690 €</span>
+                    </div>
+                    <a href="/destination-detail.html?id=morondava" class="bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-brand-800 transition">
+                        Voir l'offre
+                    </a>
+                </div>
+            </div>
+
+            <!-- Carte 4 : Isalo & Sud -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition flex flex-col justify-between overflow-hidden">
+                <div>
+                    <div class="h-48 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80" alt="Parc National de l'Isalo" class="w-full h-full object-cover hover:scale-105 transition duration-500">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-slate-900 mb-1">Parc de l'Isalo</h3>
+                        <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">
+                            Le Colorado malgache : canyons profonds, piscines naturelles et faune endémique.
+                        </p>
+                    </div>
+                </div>
+                <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-slate-50">
+                    <div class="text-xs">
+                        <span class="text-slate-400 block">À partir de</span>
+                        <span class="text-slate-900 font-extrabold text-base">910 €</span>
+                    </div>
+                    <a href="/destination-detail.html?id=isalo" class="bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-brand-800 transition">
+                        Voir l'offre
+                    </a>
+                </div>
+            </div>
+
+        </div>
     </section>
 
-    <!-- 4. SECTION CIRCUITS PHARES À MADAGASCAR -->
-    <section id="circuits" class="py-20 max-w-7xl mx-auto px-6">
-        <div class="text-center max-w-2xl mx-auto mb-16">
-            <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4" data-i18n="circuits.title">Nos Circuits Phares à Madagascar</h2>
-            <p class="text-slate-500 text-base" data-i18n="circuits.subtitle">Les expériences les plus prisées par nos voyageurs du monde entier.</p>
+    <!-- 4. VIVEZ DES EXPÉRIENCES UNIQUES (Nouvelle section de la maquette) -->
+    <section id="experiences" class="py-16 max-w-7xl mx-auto px-6 border-t border-slate-100">
+        <div class="text-center max-w-2xl mx-auto mb-14">
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight" data-i18n="exp.title">VIVEZ DES EXPÉRIENCES UNIQUES</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Expérience 1 -->
+            <div class="group cursor-pointer">
+                <div class="h-44 rounded-2xl overflow-hidden mb-4 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=500&q=80" alt="Plages" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                </div>
+                <h3 class="font-bold text-base text-slate-900 mb-1">Plages Tropicales</h3>
+                <p class="text-xs text-slate-500 mb-2">Détente sur les lagons turquoise de Nosy Be et Sainte-Marie.</p>
+                <a href="#circuits" class="text-xs font-bold text-brand-700 hover:underline">En savoir plus &rsaquo;</a>
+            </div>
+
+            <!-- Expérience 2 -->
+            <div class="group cursor-pointer">
+                <div class="h-44 rounded-2xl overflow-hidden mb-4 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=80" alt="Montagnes" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                </div>
+                <h3 class="font-bold text-base text-slate-900 mb-1">Aventures & Treks</h3>
+                <p class="text-xs text-slate-500 mb-2">Randonnées spectaculaires dans l'Isalo et l'Andringitra.</p>
+                <a href="#circuits" class="text-xs font-bold text-brand-700 hover:underline">En savoir plus &rsaquo;</a>
+            </div>
+
+            <!-- Expérience 3 -->
+            <div class="group cursor-pointer">
+                <div class="h-44 rounded-2xl overflow-hidden mb-4 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=500&q=80" alt="Culture" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                </div>
+                <h3 class="font-bold text-base text-slate-900 mb-1">Escapades Culturelles</h3>
+                <p class="text-xs text-slate-500 mb-2">Histoire des Hautes Terres, artisanat local et hospitalité malgache.</p>
+                <a href="#circuits" class="text-xs font-bold text-brand-700 hover:underline">En savoir plus &rsaquo;</a>
+            </div>
+
+            <!-- Expérience 4 -->
+            <div class="group cursor-pointer">
+                <div class="h-44 rounded-2xl overflow-hidden mb-4 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=500&q=80" alt="Safaris" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                </div>
+                <h3 class="font-bold text-base text-slate-900 mb-1">Faune Endémique</h3>
+                <p class="text-xs text-slate-500 mb-2">Rencontre avec les lémuriens, caméléons et baobabs centenaires.</p>
+                <a href="#circuits" class="text-xs font-bold text-brand-700 hover:underline">En savoir plus &rsaquo;</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. CE QUE DISENT NOS CLIENTS (Nouvelle section de la maquette) -->
+    <section class="py-16 max-w-7xl mx-auto px-6 border-t border-slate-100">
+        <div class="text-center max-w-2xl mx-auto mb-14">
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight" data-i18n="reviews.title">CE QUE DISENT NOS CLIENTS</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Avis 1 -->
+            <div class="bg-slate-50/70 p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-300 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" alt="Marie L." class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-900">Marie L.</h4>
+                            <span class="text-xs text-slate-400">Voyage en famille</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 text-sm font-medium mb-4">« Voyage inoubliable ! L'organisation à Nosy Be était parfaite de A à Z. »</p>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="text-amber-400 font-bold text-sm">★★★★★</span>
+                    <span>📍 Nosy Be</span>
+                </div>
+            </div>
+
+            <!-- Avis 2 -->
+            <div class="bg-slate-50/70 p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-300 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80" alt="Jean P." class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-900">Jean P.</h4>
+                            <span class="text-xs text-slate-400">Circuit aventure</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 text-sm font-medium mb-4">« Les Tsingy et l'Avenue des Baobabs sont à couper le souffle. Guide au top ! »</p>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="text-amber-400 font-bold text-sm">★★★★★</span>
+                    <span>📍 Morondava</span>
+                </div>
+            </div>
+
+            <!-- Avis 3 -->
+            <div class="bg-slate-50/70 p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-300 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80" alt="Marc R." class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-900">Marc R.</h4>
+                            <span class="text-xs text-slate-400">Photographe de nature</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 text-sm font-medium mb-4">« Un itinéraire sur-mesure respecté à la lettre. Expérience authentique ! »</p>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="text-amber-400 font-bold text-sm">★★★★★</span>
+                    <span>📍 Isalo</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. NEWSLETTER (Fidèle à la section "Restez informé" de la maquette) -->
+    <section class="bg-brand-50/60 py-16">
+        <div class="max-w-xl mx-auto px-6 text-center space-y-6">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900" data-i18n="newsletter.title">
+                RESTEZ INFORMÉ DE NOS OFFRES
+            </h2>
+            <form class="flex flex-col sm:flex-row gap-3 justify-center">
+                <input type="email" placeholder="Votre adresse email..." class="px-5 py-3 rounded-full bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 flex-1 shadow-sm">
+                <button type="submit" class="bg-brand-700 hover:bg-brand-800 text-white font-bold px-8 py-3 rounded-full text-sm transition shadow-md">
+                    S'abonner
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- 7. FOOTER ENRICHI -->
+    <footer id="contact" class="bg-slate-900 text-slate-400 py-14 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-sm">
             
-            <!-- Carte 1 : Nosy Be -->
-            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-xl transition duration-300 group">
-                <div>
-                    <div class="relative h-64 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="Nosy Be" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                        <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm flex items-center space-x-1">
-                            <span class="text-amber-500">★</span> <span>4.9</span>
-                        </div>
-                        <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold px-3.5 py-1.5 rounded-full" data-i18n="circuit.nosybe.duration">
-                            ⏳ 8 jours / 7 nuits
-                        </div>
-                    </div>
-
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition" data-i18n="circuit.nosybe.title">Nosy Be & Îles Voisines</h3>
-                            <span class="text-blue-600 font-extrabold text-lg whitespace-nowrap ml-2" data-i18n="circuit.nosybe.price">Dès 850 €</span>
-                        </div>
-                        <p class="text-slate-500 text-sm leading-relaxed mb-6" data-i18n="circuit.nosybe.desc">Eaux turquoise, récifs coralliens et détente tropicale absolue.</p>
-                    </div>
+            <!-- Logo & Copyright -->
+            <div class="space-y-2 text-center md:text-left">
+                <div class="text-xl font-black text-white flex items-center justify-center md:justify-start space-x-2">
+                    <span>🌍</span>
+                    <span>TravelMS</span>
                 </div>
-
-                <div class="px-6 pb-6 pt-0">
-                    <a href="/circuit-nosy-be.html" class="w-full bg-slate-50 hover:bg-blue-600 text-slate-700 hover:text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition duration-200 shadow-sm">
-                        <span data-i18n="circuit.cta">Découvrir le circuit →</span>
-                    </a>
-                </div>
+                <p class="text-xs text-slate-500">
+                    &copy; <span id="current-year"></span> TravelMS. <span data-i18n="footer.rights">Tous droits réservés.</span>
+                </p>
             </div>
 
-            <!-- Carte 2 : L'Avenue des Baobabs -->
-            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-xl transition duration-300 group">
-                <div>
-                    <div class="relative h-64 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=600&q=80" alt="Avenue des Baobabs" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                        <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm flex items-center space-x-1">
-                            <span class="text-amber-500">★</span> <span>4.8</span>
-                        </div>
-                        <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold px-3.5 py-1.5 rounded-full" data-i18n="circuit.baobabs.duration">
-                            ⏳ 6 jours / 5 nuits
-                        </div>
-                    </div>
-
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition" data-i18n="circuit.baobabs.title">L'Avenue des Baobabs</h3>
-                            <span class="text-blue-600 font-extrabold text-lg whitespace-nowrap ml-2" data-i18n="circuit.baobabs.price">Dès 690 €</span>
-                        </div>
-                        <p class="text-slate-500 text-sm leading-relaxed mb-6" data-i18n="circuit.baobabs.desc">Couchers de soleil mythiques au cœur des géants de l'Ouest malgache.</p>
-                    </div>
-                </div>
-
-                <div class="px-6 pb-6 pt-0">
-                    <a href="/circuit-baobabs.html" class="w-full bg-slate-50 hover:bg-blue-600 text-slate-700 hover:text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition duration-200 shadow-sm">
-                        <span data-i18n="circuit.cta">Découvrir le circuit →</span>
-                    </a>
-                </div>
+            <!-- Liens utiles -->
+            <div class="flex flex-wrap justify-center gap-6 text-xs font-semibold text-slate-300">
+                <a href="#" class="hover:text-white transition">Qui sommes-nous</a>
+                <a href="#" class="hover:text-white transition">Politique de confidentialité</a>
+                <a href="#" class="hover:text-white transition">CGV</a>
+                <a href="#" class="hover:text-white transition">Contact</a>
             </div>
 
-            <!-- Carte 3 : Expédition Tsingy de Bemaraha -->
-            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-xl transition duration-300 group">
-                <div>
-                    <div class="relative h-64 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80" alt="Tsingy de Bemaraha" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                        <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm flex items-center space-x-1">
-                            <span class="text-amber-500">★</span> <span>4.9</span>
-                        </div>
-                        <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold px-3.5 py-1.5 rounded-full" data-i18n="circuit.tsingy.duration">
-                            ⏳ 10 jours / 9 nuits
-                        </div>
-                    </div>
-
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition" data-i18n="circuit.tsingy.title">Expédition Tsingy de Bemaraha</h3>
-                            <span class="text-blue-600 font-extrabold text-lg whitespace-nowrap ml-2" data-i18n="circuit.tsingy.price">Dès 920 €</span>
-                        </div>
-                        <p class="text-slate-500 text-sm leading-relaxed mb-6" data-i18n="circuit.tsingy.desc">Labyrinthes de pierre uniques au monde et canyons spectaculaires.</p>
-                    </div>
-                </div>
-
-                <div class="px-6 pb-6 pt-0">
-                    <a href="/circuit-tsingy.html" class="w-full bg-slate-50 hover:bg-blue-600 text-slate-700 hover:text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition duration-200 shadow-sm">
-                        <span data-i18n="circuit.cta">Découvrir le circuit →</span>
-                    </a>
-                </div>
+            <!-- Réseaux sociaux -->
+            <div class="flex justify-center md:justify-end space-x-4 text-slate-400">
+                <a href="#" class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center hover:text-white hover:bg-slate-700 transition">f</a>
+                <a href="#" class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center hover:text-white hover:bg-slate-700 transition">ig</a>
+                <a href="#" class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center hover:text-white hover:bg-slate-700 transition">in</a>
             </div>
 
         </div>
-    </section>
-
-    <!-- 4. SECTION RÉASSURANCE -->
-    <section id="features" class="bg-white py-16 border-t border-slate-100">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div class="p-6 space-y-3">
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">🛡️</div>
-                <h4 class="font-bold text-lg text-slate-900" data-i18n="feat.1.title">Paiement 100% sécurisé</h4>
-                <p class="text-slate-500 text-sm" data-i18n="feat.1.desc">Transactions internationales protégées par les standards de sécurité les plus stricts.</p>
-            </div>
-            <div class="p-6 space-y-3">
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">🎧</div>
-                <h4 class="font-bold text-lg text-slate-900" data-i18n="feat.2.title">Support local & international 24/7</h4>
-                <p class="text-slate-500 text-sm" data-i18n="feat.2.desc">Une équipe dédiée sur place à Madagascar vous accompagne avant, pendant et après votre voyage.</p>
-            </div>
-            <div class="p-6 space-y-3">
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">✨</div>
-                <h4 class="font-bold text-lg text-slate-900" data-i18n="feat.3.title">Circuits sur-mesure</h4>
-                <p class="text-slate-500 text-sm" data-i18n="feat.3.desc">Des experts locaux conçoivent des itinéraires authentiques adaptés à vos envies d'évasion.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="bg-slate-900 text-slate-400 py-12 text-center text-sm">
-        <p>&copy; <span id="current-year"></span> TravelMS. <span data-i18n="footer.rights">Tous droits réservés.</span></p>
     </footer>
 
-    <!-- SCRIPT MULTI-LANGUE & SESSION -->
+    <!-- SCRIPTS MULTI-LANGUE & SESSION -->
     <script src="/js/config.js" defer></script>
     <script src="/js/auth-ui.js" defer></script>
     <script src="/js/pages/index.js" defer></script>
+    <script>
+        // Mise à jour de l'année dans le footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
 
 </body>
 </html>
