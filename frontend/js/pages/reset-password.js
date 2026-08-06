@@ -13,6 +13,9 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
             "reset.updating": "Mise à jour...",
             "reset.token_error": "Jeton de réinitialisation manquant ou invalide.",
             "reset.success_msg": "Mot de passe mis à jour avec succès !",
+            "reset.success_title": "Mot de passe mis à jour",
+            "reset.success_subtitle": "Votre mot de passe a été modifié avec succès. Connectez-vous avec vos nouveaux identifiants.",
+            "reset.login_btn": "Se connecter",
             "reset.error_default": "Une erreur est survenue.",
             "footer.rights": "Tous droits réservés."
         },
@@ -25,6 +28,9 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
             "reset.updating": "Updating...",
             "reset.token_error": "Missing or invalid reset token.",
             "reset.success_msg": "Password updated successfully!",
+            "reset.success_title": "Password updated",
+            "reset.success_subtitle": "Your password has been updated. Sign in with your new credentials.",
+            "reset.login_btn": "Sign in",
             "reset.error_default": "An error occurred.",
             "footer.rights": "All rights reserved."
         },
@@ -188,10 +194,11 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
             }
 
             showToast(data.message || translations[currentLang]["reset.success_msg"], "success");
-            
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
+            document.getElementById('reset-form').classList.add('hidden');
+            document.getElementById('reset-success-title').textContent = translations[currentLang]["reset.success_title"] || translations.fr["reset.success_title"];
+            document.getElementById('reset-success-message').textContent = translations[currentLang]["reset.success_subtitle"] || translations.fr["reset.success_subtitle"];
+            document.getElementById('reset-login-link').textContent = translations[currentLang]["reset.login_btn"] || translations.fr["reset.login_btn"];
+            document.getElementById('reset-success').classList.remove('hidden');
 
         } catch (err) {
             showToast(err.message, "error");

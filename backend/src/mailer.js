@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
 
 function createTransport() {
     const host = process.env.SMTP_HOST;
@@ -39,28 +41,69 @@ async function sendMail(message) {
 
 function verificationContent(link) {
     const subject = 'Confirmez votre adresse e-mail – Travel Agency';
-    let html = `<p>Bienvenue sur Travel Agency.</p><p><a href="${link}">Confirmer mon adresse e-mail</a></p>`;
-    let text = `Bienvenue sur Travel Agency. Confirmez votre adresse e-mail : ${link}`;
-    try {
-        const template = require('fs').readFileSync(require('path').join(__dirname, '../templates/verification_email.html'), 'utf8');
-        html = template.replace(/{{VERIFY_LINK}}/g, link);
-    } catch (err) {
-        // fallback to simple html
-    }
+    const text = [
+        'Bienvenue chez Travel Agency.',
+        '',
+        'Confirmez votre adresse e-mail pour activer votre espace personnel et sécuriser votre compte.',
+        `Confirmer mon adresse e-mail : ${link}`,
+        '',
+        'Ce lien est personnel et utilisable une seule fois. Si vous n’avez pas créé de compte, ignorez cet e-mail.'
+    ].join('\n');
+    const html = renderTemplate('verification_email.html', 'VERIFY_LINK', link, verificationFallback(link));
     return { subject, text, html };
 }
 
 function resetContent(link) {
     const subject = 'Réinitialisation de votre mot de passe – Travel Agency';
-    let html = `<p>Vous avez demandé la réinitialisation de votre mot de passe.</p><p><a href="${link}">Réinitialiser mon mot de passe</a></p>`;
-    let text = `Réinitialisez votre mot de passe Travel Agency : ${link}`;
-    try {
-        const template = require('fs').readFileSync(require('path').join(__dirname, '../templates/reset_password_email.html'), 'utf8');
-        html = template.replace(/{{RESET_LINK}}/g, link);
-    } catch (err) {
-        // fallback
-    }
+    const text = [
+        'Demande de réinitialisation de mot de passe.',
+        '',
+        'Utilisez le lien ci-dessous pour choisir un nouveau mot de passe pour votre compte Travel Agency.',
+        `Choisir un nouveau mot de passe : ${link}`,
+        '',
+        'Ce lien expire dans 1 heure et ne peut être utilisé qu’une seule fois. Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.'
+    ].join('\n');
+    const html = renderTemplate('reset_password_email.html', 'RESET_LINK', link, resetFallback(link));
     return { subject, text, html };
+}
+
+function renderTemplate(filename, placeholder, link, fallback) {
+    try {
+        return fs
+            .readFileSync(path.join(__dirname, '../templates', filename), 'utf8')
+            .replace(new RegExp(`{{${placeholder}}}`, 'g'), link);
+    } catch (err) {
+        // Un incident de packaging ne doit jamais renvoyer un e-mail minimaliste.
+        console.warn(`[SMTP] Modèle ${filename} indisponible :`, err.message);
+        return fallback;
+    }
+}
+
+function emailShell({ eyebrow, title, message, action, link, notice, accent = '#2563eb' }) {
+    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#1e293b"><div style="padding:32px 12px"><div style="max-width:600px;margin:auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 34px rgba(15,23,42,.12)"><div style="padding:27px 36px;background:#0f172a;color:#fff;font-size:24px;font-weight:700">✈ Travel Agency</div><div style="padding:36px"><p style="margin:0;color:${accent};font-size:12px;font-weight:700;letter-spacing:1.5px">${eyebrow}</p><h1 style="font-size:26px;margin:10px 0 16px">${title}</h1><p style="line-height:1.65">${message}</p><p style="margin:28px 0;text-align:center"><a href="${link}" style="display:inline-block;background:${accent};color:#fff;text-decoration:none;padding:15px 24px;border-radius:10px;font-weight:700">${action}</a></p><div style="background:#f8fafc;border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.5">${notice}</div><p style="font-size:12px;line-height:1.5;word-break:break-all;color:#475569">Le bouton ne fonctionne pas ? Copiez ce lien dans votre navigateur :<br><a href="${link}">${link}</a></p></div><div style="padding:22px 36px;background:#f8fafc;color:#64748b;font-size:12px;text-align:center">© 2026 Travel Agency</div></div></div></body></html>`;
+}
+
+function verificationFallback(link) {
+    return emailShell({
+        eyebrow: 'BIENVENUE À BORD',
+        title: 'Activez votre compte',
+        message: 'Merci de rejoindre Travel Agency. Confirmez votre adresse e-mail pour activer votre espace personnel et sécuriser votre compte.',
+        action: 'Confirmer mon adresse e-mail',
+        link,
+        notice: '<strong>Conseil sécurité :</strong> ce lien est personnel et utilisable une seule fois. Si vous n’avez pas créé de compte, ignorez cet e-mail.'
+    });
+}
+
+function resetFallback(link) {
+    return emailShell({
+        eyebrow: 'SÉCURITÉ DU COMPTE',
+        title: 'Réinitialisez votre mot de passe',
+        message: 'Une demande de réinitialisation vient d’être effectuée pour votre compte Travel Agency. Utilisez le bouton ci-dessous pour choisir un nouveau mot de passe.',
+        action: 'Choisir un nouveau mot de passe',
+        link,
+        accent: '#ea580c',
+        notice: '<strong>Important :</strong> ce lien expire dans <strong>1 heure</strong> et ne peut être utilisé qu’une seule fois. Vous n’êtes pas à l’origine de cette demande ? Ignorez cet e-mail.'
+    });
 }
 
 function sendVerificationEmail(to, link) {

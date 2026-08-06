@@ -113,6 +113,11 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
             iconEl.textContent = palette[2];
             titleEl.textContent = title;
             messageEl.textContent = message;
+            document.getElementById('security-note').textContent = type === 'info'
+                ? 'Votre compte est déjà actif : aucune autre action n’est nécessaire.'
+                : type === 'success'
+                    ? 'Votre adresse e-mail est confirmée. Vous pouvez désormais accéder à votre compte.'
+                    : 'Le lien doit être complet et valide. Demandez un nouvel e-mail si nécessaire.';
             actionContainer.classList.remove('hidden');
         }
 
