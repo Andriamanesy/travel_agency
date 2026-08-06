@@ -8,7 +8,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-travel_agency_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/migrations:/docker-entrypoint-initdb.d
+      # Les scripts *.sql de ./database sont exécutés par PostgreSQL lors de
+      # l'initialisation d'un volume pgdata neuf.
+      - ./database:/docker-entrypoint-initdb.d:ro
     networks:
       - travel-net
     healthcheck:
