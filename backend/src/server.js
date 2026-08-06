@@ -681,7 +681,25 @@ const server = http.createServer(async (req, res) => {
                     [hash(token)]
                 );
                 if (result.rowCount === 0) {
+                    // Un lien consommé ne doit pas ressembler à un échec. Le
+                    // hash est conservé avec used_at précisément pour pouvoir
+                    // donner ce retour clair sans conserver le secret en clair.
+                    const previous = await client.query(
+                        `SELECT u.is_verified
+                         FROM email_verification_tokens t
+                         JOIN users u ON u.id = t.user_id
+                         WHERE t.token_hash = $1
+                         ORDER BY t.created_at DESC
+                         LIMIT 1`,
+                        [hash(token)]
+                    );
                     await client.query('ROLLBACK');
+                    if (previous.rows[0]?.is_verified) {
+                        return sendResponse(res, 200, {
+                            status: 'already_verified',
+                            message: 'Cette adresse e-mail est déjà vérifiée. Vous pouvez vous connecter.'
+                        });
+                    }
                     return sendResponse(res, 400, { error: 'Token invalide ou expiré.' });
                 }
                 await client.query('UPDATE users SET is_verified = TRUE WHERE id = $1', [result.rows[0].user_id]);
@@ -694,7 +712,10 @@ const server = http.createServer(async (req, res) => {
                 client.release();
             }
 
-            return sendResponse(res, 200, { message: 'E-mail vérifié avec succès.' });
+            return sendResponse(res, 200, {
+                status: 'verified',
+                message: 'E-mail vérifié avec succès. Votre compte est prêt.'
+            });
         }
 
         // --- ROUTE : Mot de passe oublié ---

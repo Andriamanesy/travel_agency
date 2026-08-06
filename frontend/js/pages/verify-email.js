@@ -9,6 +9,8 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
             "verify.loading_subtitle": "Veuillez patienter pendant que nous validons votre adresse e-mail.",
             "verify.success_title": "E-mail vérifié !",
             "verify.success_subtitle": "Votre compte est désormais actif. Vous pouvez vous connecter à votre espace TravelMS.",
+            "verify.already_title": "E-mail déjà vérifié",
+            "verify.already_subtitle": "Votre adresse est déjà validée. Vous pouvez vous connecter directement à votre compte.",
             "verify.error_title": "Échec de la vérification",
             "verify.error_subtitle": "Le lien de vérification est invalide ou a expiré.",
             "verify.login_btn": "Se connecter",
@@ -99,13 +101,23 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
         const titleEl = document.getElementById('status-title');
         const messageEl = document.getElementById('status-message');
         const actionContainer = document.getElementById('action-container');
+        const dictionary = translations[currentLang] || translations.fr;
+
+        function showStatus(type, title, message) {
+            const palette = {
+                success: ['bg-emerald-100', 'text-emerald-600', '✅'],
+                info: ['bg-blue-100', 'text-blue-600', 'ℹ️'],
+                error: ['bg-rose-100', 'text-rose-600', '✕']
+            }[type];
+            iconEl.className = `w-20 h-20 ${palette[0]} ${palette[1]} rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6`;
+            iconEl.textContent = palette[2];
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            actionContainer.classList.remove('hidden');
+        }
 
         if (!token) {
-            iconEl.className = "w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6";
-            iconEl.textContent = "❌";
-            titleEl.textContent = translations[currentLang]["verify.error_title"];
-            messageEl.textContent = translations[currentLang]["verify.error_subtitle"];
-            actionContainer.classList.remove('hidden');
+            showStatus('error', dictionary["verify.error_title"], dictionary["verify.error_subtitle"]);
             return;
         }
 
@@ -116,23 +128,15 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            if (!response.ok) {
-                throw new Error("Token invalid or expired");
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.error || 'Token invalid or expired');
+            if (payload.status === 'already_verified') {
+                showStatus('info', dictionary["verify.already_title"] || translations.fr["verify.already_title"], dictionary["verify.already_subtitle"] || translations.fr["verify.already_subtitle"]);
+            } else {
+                showStatus('success', dictionary["verify.success_title"], dictionary["verify.success_subtitle"]);
             }
 
-            // Succès de la vérification
-            iconEl.className = "w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6";
-            iconEl.textContent = "✅";
-            titleEl.textContent = translations[currentLang]["verify.success_title"];
-            messageEl.textContent = translations[currentLang]["verify.success_subtitle"];
-            actionContainer.classList.remove('hidden');
-
         } catch (err) {
-            // Erreur de vérification
-            iconEl.className = "w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6";
-            iconEl.textContent = "❌";
-            titleEl.textContent = translations[currentLang]["verify.error_title"];
-            messageEl.textContent = translations[currentLang]["verify.error_subtitle"];
-            actionContainer.classList.remove('hidden');
+            showStatus('error', dictionary["verify.error_title"], dictionary["verify.error_subtitle"]);
         }
     });

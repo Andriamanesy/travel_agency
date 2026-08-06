@@ -199,6 +199,8 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
 
             showToast(data.message || translations[currentLang]["forgot.success_default"], "success");
             submitBtn.textContent = translations[currentLang]["forgot.sent"];
+            document.getElementById('forgot-form').classList.add('hidden');
+            document.getElementById('forgot-success').classList.remove('hidden');
 
             setTimeout(() => {
                 submitBtn.textContent = translations[currentLang]["forgot.submit"];
