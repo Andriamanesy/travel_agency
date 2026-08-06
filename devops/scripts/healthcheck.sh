@@ -16,7 +16,7 @@ else
 fi
 
 # Test Database PostgreSQL
-if docker exec travel_db pg_isready -U travel_user -d travel_db | grep -q "accepting connections"; then
+if docker exec travel_db pg_isready -U brian -d travel_agency_db | grep -q "accepting connections"; then
     echo "🟢 Database (PostgreSQL) : OK"
 else
     echo "🔴 Database (PostgreSQL) : ERREUR"
