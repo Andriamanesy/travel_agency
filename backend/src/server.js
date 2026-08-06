@@ -21,8 +21,28 @@ const pool = new Pool(
 
 // Création du dossier de stockage des photos sur le serveur (s'il n'existe pas)
 const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads', 'avatars');
-if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+async function ensureUploadDir() {
+    await fs.promises.mkdir(UPLOAD_DIR, { recursive: true });
+}
+
+function parseMultipartForm(form, req) {
+    return new Promise((resolve, reject) => {
+        form.parse(req, (error, fields, files) => {
+            if (error) return reject(error);
+            resolve({ fields, files });
+        });
+    });
+}
+
+async function removeFileIfExists(filePath) {
+    try {
+        await fs.promises.unlink(filePath);
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            console.warn('[Upload] Impossible de supprimer le fichier:', error.message);
+        }
+    }
 }
 
 const REST_COUNTRIES_URL = 'https://restcountries.com/v3.1/all?fields=name,translations';
@@ -322,29 +342,39 @@ const server = http.createServer(async (req, res) => {
 
         // --- ROUTE : MISE À JOUR COMPLETE DU PROFIL ET DE L'IMAGE (/api/profile/update) ---
         if (pathname === '/api/profile/update' && method === 'POST') {
-            const user = await getUserByToken(req);
-            if (!user) {
-                return sendResponse(res, 401, { success: false, error: 'Accès non autorisé. Token invalide.' });
-            }
-
-            const form = formidable({
-                uploadDir: UPLOAD_DIR,
-                keepExtensions: true,
-                maxFileSize: 5 * 1024 * 1024, // 5 Mo maximum
-                filename: (name, ext, part) => {
-                    return `avatar-${user.id}-${Date.now()}${path.extname(part.originalFilename || '')}`;
-                }
-            });
-
-            form.parse(req, async (err, fields, files) => {
-                if (err) {
-                    return sendResponse(res, 400, { success: false, error: 'Erreur lors du téléchargement du fichier.' });
+            let uploadedFile;
+            try {
+                const user = await getUserByToken(req);
+                if (!user) {
+                    return sendResponse(res, 401, { success: false, error: 'Accès non autorisé. Token invalide.' });
                 }
 
+                // Garantit le dossier à chaque upload, y compris après un redémarrage.
+                await ensureUploadDir();
+
+                const form = formidable({
+                    uploadDir: UPLOAD_DIR,
+                    keepExtensions: true,
+                    maxFileSize: 5 * 1024 * 1024,
+                    filter: ({ mimetype }) => !mimetype || ['image/jpeg', 'image/png', 'image/webp'].includes(mimetype),
+                    filename: (name, ext, part) => {
+                        const extension = {
+                            'image/jpeg': '.jpg',
+                            'image/png': '.png',
+                            'image/webp': '.webp'
+                        }[part.mimetype] || '';
+                        return `avatar-${user.id}-${Date.now()}${extension}`;
+                    }
+                });
+
+                const { fields, files } = await parseMultipartForm(form, req);
                 const getVal = (field) => Array.isArray(field) ? field[0] : field;
 
                 const name = getVal(fields.name) || user.name;
                 const email = (getVal(fields.email) || user.email).toLowerCase().trim();
+                if (!name.trim() || !email) {
+                    return sendResponse(res, 400, { success: false, error: 'Nom et e-mail sont requis.' });
+                }
                 const phone = getVal(fields.phone) || null;
                 const birthdate = getVal(fields.birthdate) || null;
                 const gender = getVal(fields.gender) || null;
@@ -356,46 +386,62 @@ const server = http.createServer(async (req, res) => {
                 const preferredLang = getVal(fields.preferredLang) || 'fr';
 
                 let avatarUrl = user.avatar_url;
-                const uploadedFile = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
+                uploadedFile = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
 
                 if (uploadedFile) {
-                    if (user.avatar_url && user.avatar_url.startsWith('/uploads/')) {
-                        const oldPath = path.join(__dirname, '../public', user.avatar_url);
-                        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+                    if (!['image/jpeg', 'image/png', 'image/webp'].includes(uploadedFile.mimetype)) {
+                        await removeFileIfExists(uploadedFile.filepath);
+                        return sendResponse(res, 400, { success: false, error: 'Format d’image non autorisé.' });
                     }
                     avatarUrl = `/uploads/avatars/${uploadedFile.newFilename}`;
                 }
 
-                try {
-                    const updateQuery = `
-                        UPDATE users SET 
-                            name = $1, email = $2, phone = $3, birthdate = $4, gender = $5, 
-                            nationality = $6, country = $7, city = $8, postal_code = $9, 
-                            address = $10, preferred_lang = $11, avatar_url = $12, updated_at = CURRENT_TIMESTAMP
-                        WHERE id = $13 
-                        RETURNING id, name, email, phone, birthdate, gender, nationality, country, city, postal_code AS "postalCode", address, preferred_lang AS "preferredLang", avatar_url;
-                    `;
+                const updateQuery = `
+                    UPDATE users SET
+                        name = $1, email = $2, phone = $3, birth_date = $4, gender = $5,
+                        nationality = $6, country = $7, city = $8, postal_code = $9,
+                        address = $10, preferred_lang = $11, avatar_url = $12, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = $13
+                    RETURNING id, name, email, phone, birth_date AS "birthdate", gender,
+                        nationality, country, city, postal_code AS "postalCode", address,
+                        preferred_lang AS "preferredLang", avatar_url;
+                `;
+                const values = [
+                    name.trim(), email, phone, birthdate, gender, nationality,
+                    country, city, postalCode, address, preferredLang, avatarUrl, user.id
+                ];
+                const result = await pool.query(updateQuery, values);
+                const updatedUser = result.rows[0];
 
-                    const values = [
-                        name, email, phone, birthdate, gender, nationality, 
-                        country, city, postalCode, address, preferredLang, avatarUrl, user.id
-                    ];
-
-                    const result = await pool.query(updateQuery, values);
-                    const updatedUser = result.rows[0];
-
-                    sendResponse(res, 200, {
-                        success: true,
-                        message: 'Profil mis à jour avec succès.',
-                        user: updatedUser
-                    });
-                } catch (dbErr) {
-                    if (dbErr.code === '23505') {
-                        return sendResponse(res, 400, { success: false, error: 'Cet e-mail est déjà utilisé.' });
-                    }
-                    sendResponse(res, 500, { success: false, error: 'Erreur SQL lors de la mise à jour.' });
+                // Supprime l’ancien avatar seulement après la mise à jour SQL réussie.
+                if (uploadedFile && user.avatar_url?.startsWith('/uploads/avatars/')) {
+                    await removeFileIfExists(path.join(UPLOAD_DIR, path.basename(user.avatar_url)));
                 }
-            });
+
+                return sendResponse(res, 200, {
+                    success: true,
+                    message: 'Profil mis à jour avec succès.',
+                    user: updatedUser
+                });
+            } catch (error) {
+                // Ne pas masquer la cause dans les logs : code PostgreSQL, erreur Formidable, I/O, etc.
+                console.error('[Profile update] Échec de mise à jour:', {
+                    message: error.message,
+                    code: error.code,
+                    stack: error.stack
+                });
+
+                if (uploadedFile?.filepath) {
+                    await removeFileIfExists(uploadedFile.filepath);
+                }
+                if (error.code === '23505') {
+                    return sendResponse(res, 409, { success: false, error: 'Cet e-mail est déjà utilisé.' });
+                }
+                if (error.code === 'ETOOBIG') {
+                    return sendResponse(res, 413, { success: false, error: 'L’image ne doit pas dépasser 5 Mo.' });
+                }
+                return sendResponse(res, 500, { success: false, error: 'Erreur interne lors de la mise à jour du profil.' });
+            }
             return;
         }
 
