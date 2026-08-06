@@ -50,12 +50,13 @@ services:
       PUBLIC_APP_URL: ${PUBLIC_APP_URL}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT:-587}
+      # Mail settings: in dev default to MailHog service added below
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_SECURE: ${SMTP_SECURE:-false}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_FROM: ${SMTP_FROM}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@travel-agency.local}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -72,6 +73,16 @@ services:
       - "8080:80"
     depends_on:
       - backend
+    networks:
+      - travel-net
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: travel_mailhog
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP
     networks:
       - travel-net
     restart: unless-stopped

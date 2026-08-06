@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Confirmez votre adresse e-mail</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f6f9fc;margin:0;padding:0}
+    .container{max-width:600px;margin:32px auto;background:#fff;border-radius:8px;overflow:hidden}
+    .header{background:#0366d6;color:#fff;padding:20px;text-align:center}
+    .content{padding:24px;color:#333}
+    .cta{display:block;width:100%;text-align:center;padding:12px 16px;background:#ff6b35;color:#fff;text-decoration:none;border-radius:6px;margin-top:18px}
+    .small{font-size:12px;color:#777;margin-top:14px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>Travel Agency</h1></div>
+    <div class="content">
+      <h2>Confirmez votre adresse e-mail</h2>
+      <p>Merci de vous être inscrit(e). Pour activer votre compte, cliquez sur le bouton ci‑dessous :</p>
+      <a class="cta" href="{{VERIFY_LINK}}" target="_blank">Confirmer mon e‑mail</a>
+      <p class="small">Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :</p>
+      <p class="small"><a href="{{VERIFY_LINK}}">{{VERIFY_LINK}}</a></p>
+      <p class="small">Si vous n'avez pas demandé cette action, ignorez ce message.</p>
+    </div>
+  </div>
+</body>
+</html>
