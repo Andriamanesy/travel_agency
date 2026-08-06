@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
 
 async function fetchHomeMessage() {
     try {
