@@ -78,7 +78,8 @@
                 <!-- Message d'alerte / succès -->
                 <div id="alertBox" class="hidden p-4 rounded-2xl text-sm font-medium"></div>
 
-                <form id="profileForm" class="space-y-4">
+                <!-- Note importante : enctype="multipart/form-data" est obligatoire pour envoyer des fichiers -->
+                <form id="profileForm" enctype="multipart/form-data" class="space-y-4">
                     <!-- Informations de base -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -163,7 +164,7 @@
                         <input type="text" id="address" placeholder="Lot IVX 123 Bis..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
                     </div>
 
-                    <!-- Langue préférée et Photo de profil -->
+                    <!-- Langue préférée et Photo de profil (Type Fichier) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Langue préférée</label>
@@ -177,8 +178,8 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">URL de la photo de profil</label>
-                            <input type="url" id="avatar" placeholder="https://exemple.com/photo.jpg" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Photo de profil (Fichier)</label>
+                            <input type="file" id="avatarFile" accept="image/png, image/jpeg, image/webp" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer">
                         </div>
                     </div>
 
@@ -202,6 +203,16 @@
             window.location.href = 'login.html';
         }
 
+        // Prévisualisation instantanée de l'image sélectionnée
+        const avatarFileInput = document.getElementById('avatarFile');
+        avatarFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const previewUrl = URL.createObjectURL(file);
+                document.getElementById('avatarDisplay').src = previewUrl;
+            }
+        });
+
         // Fonction pour vérifier et mettre à jour dynamiquement l'état du profil
         function checkProfileCompletion() {
             const badge = document.getElementById('profileStatusBadge');
@@ -212,7 +223,6 @@
             const city = document.getElementById('city').value;
             const birthdate = document.getElementById('birthdate').value;
 
-            // Critère de profil complet : Nom, email, téléphone, pays, ville et date de naissance remplis
             if (fullName && email && phone && country && city && birthdate) {
                 badge.className = "bg-emerald-50 text-emerald-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300";
                 badge.textContent = "Profil Complet";
@@ -372,19 +382,17 @@
             document.getElementById('postalCode').value = userData.postalCode || '';
             document.getElementById('address').value = userData.address || '';
             document.getElementById('preferredLang').value = userData.preferredLang || 'fr';
-            document.getElementById('avatar').value = userData.avatar || '';
 
-            document.getElementById('userNameDisplay').textContent = userData.name || userData.fullName || 'Voyageur';
-            if (userData.avatar) {
-                document.getElementById('avatarDisplay').src = userData.avatar;
+            // Si une image existe déjà en base, l'afficher
+            if (userData.avatar_url) {
+                document.getElementById('avatarDisplay').src = userData.avatar_url;
             }
 
-            // Vérification initiale du statut
+            document.getElementById('userNameDisplay').textContent = userData.name || userData.fullName || 'Voyageur';
             checkProfileCompletion();
         });
 
-        // Écouter les modifications sur tous les champs texte/date pour mettre à jour en direct le badge
-        ['fullName', 'email', 'birthdate', 'postalCode', 'address', 'gender', 'nationality', 'preferredLang', 'avatar'].forEach(id => {
+        ['fullName', 'email', 'birthdate', 'postalCode', 'address', 'gender', 'nationality', 'preferredLang'].forEach(id => {
             document.getElementById(id).addEventListener('input', checkProfileCompletion);
             document.getElementById(id).addEventListener('change', checkProfileCompletion);
         });
@@ -402,6 +410,7 @@
             alertBox.classList.remove('hidden');
         }
 
+        // Soumission du formulaire avec FormData (Prêt pour le serveur local)
         profileForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -425,8 +434,41 @@
                 return;
             }
 
+            // Création d'un objet FormData pour envoyer les champs texte ET le fichier image
+            const formData = new FormData();
+            formData.append('name', document.getElementById('fullName').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('phone', phoneNum ? `${phoneCode} ${phoneNum}` : '');
+            formData.append('birthdate', document.getElementById('birthdate').value);
+            formData.append('gender', document.getElementById('gender').value);
+            formData.append('nationality', document.getElementById('nationality').value);
+            formData.append('country', document.getElementById('country').value);
+            formData.append('city', cityInput);
+            formData.append('postalCode', postalInput);
+            formData.append('address', document.getElementById('address').value);
+            formData.append('preferredLang', document.getElementById('preferredLang').value);
+
+            // Ajout du fichier image s'il a été sélectionné
+            const imageFile = avatarFileInput.files[0];
+            if (imageFile) {
+                formData.append('avatar', imageFile);
+            }
+
+            /* 
+              PROCHAINE ÉTAPE CÔTÉ SERVEUR :
+              C'est ici que vous enverrez les données via fetch vers votre route de backend :
+              
+              fetch('/api/profile/update', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${token}` },
+                  body: formData
+              })
+              .then(res => res.json())
+              .then(data => { ... })
+            */
+
+            // Simulation locale pour l'instant (mise à jour du localStorage)
             userData.name = document.getElementById('fullName').value;
-            userData.fullName = userData.name;
             userData.email = document.getElementById('email').value;
             userData.phone = phoneNum ? `${phoneCode} ${phoneNum}` : '';
             userData.birthdate = document.getElementById('birthdate').value;
@@ -437,17 +479,11 @@
             userData.postalCode = postalInput;
             userData.address = document.getElementById('address').value;
             userData.preferredLang = document.getElementById('preferredLang').value;
-            userData.avatar = document.getElementById('avatar').value;
 
             localStorage.setItem('travelms_user', JSON.stringify(userData));
             localStorage.setItem('user', JSON.stringify(userData));
 
             document.getElementById('userNameDisplay').textContent = userData.name;
-            if (userData.avatar) {
-                document.getElementById('avatarDisplay').src = userData.avatar;
-            }
-
-            // Mettre à jour le badge après sauvegarde
             checkProfileCompletion();
 
             showAlert("✅ Votre profil a été mis à jour avec succès !", "emerald");
