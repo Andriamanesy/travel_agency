@@ -46,7 +46,8 @@
                     <p class="text-slate-500 text-sm mt-1">Complétez votre profil pour pouvoir effectuer une réservation en toute sérénité.</p>
                 </div>
             </div>
-            <div class="bg-amber-50 text-amber-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider">
+            <!-- Badge dynamique -->
+            <div id="profileStatusBadge" class="bg-amber-50 text-amber-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300">
                 Profil Partiel
             </div>
         </div>
@@ -136,7 +137,7 @@
                         </div>
                     </div>
 
-                    <!-- Pays, Ville (Dépendante) et Code postal (Automatique) -->
+                    <!-- Pays, Ville et Code postal -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pays</label>
@@ -201,10 +202,31 @@
             window.location.href = 'login.html';
         }
 
+        // Fonction pour vérifier et mettre à jour dynamiquement l'état du profil
+        function checkProfileCompletion() {
+            const badge = document.getElementById('profileStatusBadge');
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const country = document.getElementById('country').value;
+            const city = document.getElementById('city').value;
+            const birthdate = document.getElementById('birthdate').value;
+
+            // Critère de profil complet : Nom, email, téléphone, pays, ville et date de naissance remplis
+            if (fullName && email && phone && country && city && birthdate) {
+                badge.className = "bg-emerald-50 text-emerald-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300";
+                badge.textContent = "Profil Complet";
+            } else {
+                badge.className = "bg-amber-50 text-amber-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300";
+                badge.textContent = "Profil Partiel";
+            }
+        }
+
         // Bloquer tout caractère autre que des chiffres dans le téléphone
         const phoneInput = document.getElementById('phone');
         phoneInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/\D/g, '');
+            checkProfileCompletion();
         });
 
         // Villes par pays
@@ -223,7 +245,6 @@
             "Allemagne": ["Berlin", "Hambourg", "Munich", "Francfort"]
         };
 
-        // Correspondance indicative des codes postaux par ville principale
         const postalCodesByCity = {
             "Antananarivo": "101", "Toamasina": "501", "Antsirabe": "110", "Fianarantsoa": "301", 
             "Mahajanga": "401", "Toliara": "601", "Antsiranana": "201", "Nosy Be": "207",
@@ -250,15 +271,16 @@
                 }
                 citySelect.appendChild(option);
             });
+            checkProfileCompletion();
         }
 
-        // Remplissage automatique du code postal lors du choix de la ville
         document.getElementById('city').addEventListener('change', (e) => {
             const selectedCity = e.target.value;
             const postalInput = document.getElementById('postalCode');
             if (postalCodesByCity[selectedCity]) {
                 postalInput.value = postalCodesByCity[selectedCity];
             }
+            checkProfileCompletion();
         });
 
         async function loadCountries() {
@@ -300,11 +322,13 @@
             if (userData.country) {
                 updateCities(userData.country, userData.city);
             }
+            checkProfileCompletion();
         }
 
         document.getElementById('country').addEventListener('change', (e) => {
             updateCities(e.target.value);
-            document.getElementById('postalCode.value') = ''; // Réinitialiser le code postal si le pays change
+            document.getElementById('postalCode').value = '';
+            checkProfileCompletion();
         });
 
         function loadNationalities() {
@@ -328,33 +352,42 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadCountries();
             loadNationalities();
+            
+            // Pré-remplissage des champs de base
+            document.getElementById('fullName').value = userData.name || userData.fullName || '';
+            document.getElementById('email').value = userData.email || '';
+            
+            if (userData.phone) {
+                const parts = userData.phone.trim().split(' ');
+                if (parts.length >= 2 && parts[0].startsWith('+')) {
+                    document.getElementById('phoneCode').value = parts[0];
+                    document.getElementById('phone').value = parts.slice(1).join('').replace(/\D/g, '');
+                } else {
+                    document.getElementById('phone').value = userData.phone.replace(/\D/g, '');
+                }
+            }
+
+            document.getElementById('birthdate').value = userData.birthdate || '';
+            document.getElementById('gender').value = userData.gender || '';
+            document.getElementById('postalCode').value = userData.postalCode || '';
+            document.getElementById('address').value = userData.address || '';
+            document.getElementById('preferredLang').value = userData.preferredLang || 'fr';
+            document.getElementById('avatar').value = userData.avatar || '';
+
+            document.getElementById('userNameDisplay').textContent = userData.name || userData.fullName || 'Voyageur';
+            if (userData.avatar) {
+                document.getElementById('avatarDisplay').src = userData.avatar;
+            }
+
+            // Vérification initiale du statut
+            checkProfileCompletion();
         });
 
-        // Pré-remplissage des champs de base
-        document.getElementById('fullName').value = userData.name || userData.fullName || '';
-        document.getElementById('email').value = userData.email || '';
-        
-        if (userData.phone) {
-            const parts = userData.phone.trim().split(' ');
-            if (parts.length >= 2 && parts[0].startsWith('+')) {
-                document.getElementById('phoneCode').value = parts[0];
-                document.getElementById('phone').value = parts.slice(1).join('').replace(/\D/g, '');
-            } else {
-                document.getElementById('phone').value = userData.phone.replace(/\D/g, '');
-            }
-        }
-
-        document.getElementById('birthdate').value = userData.birthdate || '';
-        document.getElementById('gender').value = userData.gender || '';
-        document.getElementById('postalCode').value = userData.postalCode || '';
-        document.getElementById('address').value = userData.address || '';
-        document.getElementById('preferredLang').value = userData.preferredLang || 'fr';
-        document.getElementById('avatar').value = userData.avatar || '';
-
-        document.getElementById('userNameDisplay').textContent = userData.name || userData.fullName || 'Voyageur';
-        if (userData.avatar) {
-            document.getElementById('avatarDisplay').src = userData.avatar;
-        }
+        // Écouter les modifications sur tous les champs texte/date pour mettre à jour en direct le badge
+        ['fullName', 'email', 'birthdate', 'postalCode', 'address', 'gender', 'nationality', 'preferredLang', 'avatar'].forEach(id => {
+            document.getElementById(id).addEventListener('input', checkProfileCompletion);
+            document.getElementById(id).addEventListener('change', checkProfileCompletion);
+        });
 
         const profileForm = document.getElementById('profileForm');
         const alertBox = document.getElementById('alertBox');
@@ -413,6 +446,9 @@
             if (userData.avatar) {
                 document.getElementById('avatarDisplay').src = userData.avatar;
             }
+
+            // Mettre à jour le badge après sauvegarde
+            checkProfileCompletion();
 
             showAlert("✅ Votre profil a été mis à jour avec succès !", "emerald");
 
