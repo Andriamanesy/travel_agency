@@ -25,6 +25,41 @@ if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
+const REST_COUNTRIES_URL = 'https://restcountries.com/v3.1/all?fields=name,translations';
+const COUNTRIES_CACHE_DURATION_MS = 60 * 60 * 1000;
+let countriesCache = { countries: null, expiresAt: 0 };
+
+// Le navigateur ne contacte pas directement le service externe : cela évite
+// les erreurs CORS et permet de limiter proprement le temps d'attente.
+async function getCountries() {
+    if (countriesCache.countries && countriesCache.expiresAt > Date.now()) {
+        return countriesCache.countries;
+    }
+
+    const response = await fetch(REST_COUNTRIES_URL, {
+        signal: AbortSignal.timeout(3000)
+    });
+    if (!response.ok) {
+        throw new Error(`RestCountries a répondu ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const countries = [...new Set(payload
+        .map(country => country.translations?.fra?.common || country.name?.common)
+        .filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'fr'));
+
+    if (countries.length === 0) {
+        throw new Error('Liste de pays invalide.');
+    }
+
+    countriesCache = {
+        countries,
+        expiresAt: Date.now() + COUNTRIES_CACHE_DURATION_MS
+    };
+    return countries;
+}
+
 // Fonction utilitaire pour hacher le mot de passe
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
     const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
@@ -126,6 +161,16 @@ const server = http.createServer(async (req, res) => {
         // --- ROUTE : Accueil / Healthcheck ---
         if (pathname === '/' && method === 'GET') {
             return sendResponse(res, 200, { status: 'API Travel Agency en ligne' });
+        }
+
+        // --- ROUTE : Liste des pays (proxy RestCountries avec cache) ---
+        if (pathname === '/api/countries' && method === 'GET') {
+            try {
+                return sendResponse(res, 200, { countries: await getCountries() });
+            } catch (error) {
+                console.warn('[RestCountries]', error.message);
+                return sendResponse(res, 503, { error: 'Service de pays temporairement indisponible.' });
+            }
         }
 
         // --- ROUTE : Inscription ---
@@ -315,7 +360,7 @@ const server = http.createServer(async (req, res) => {
 
                 if (uploadedFile) {
                     if (user.avatar_url && user.avatar_url.startsWith('/uploads/')) {
-                        const oldPath = path.join(__dirname, 'public', user.avatar_url);
+                        const oldPath = path.join(__dirname, '../public', user.avatar_url);
                         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
                     }
                     avatarUrl = `/uploads/avatars/${uploadedFile.newFilename}`;

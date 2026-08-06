@@ -78,8 +78,8 @@
 
     <!-- Script de gestion (Multi-langue, Toast, API Profile) -->
     <script>
-        // URL de base dynamique pour pointer vers le backend Node.js sur le port 3000
-        const API_BASE_URL = `http://${window.location.hostname}:3000`;
+        // Nginx relaie /api vers le backend : rester sur la même origine.
+        const API_BASE_URL = '';
 
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
