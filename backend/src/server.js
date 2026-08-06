@@ -3,7 +3,8 @@ const url = require('url');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
-const formidable = require('formidable');
+// Formidable v3 expose sa fonction de création sous un export nommé.
+const { formidable } = require('formidable');
 const { Pool } = require('pg');
 
 // Configuration robuste de la connexion PostgreSQL
@@ -64,6 +65,9 @@ async function getCountries() {
     }
 
     const payload = await response.json();
+    if (!Array.isArray(payload)) {
+        throw new Error('Réponse RestCountries invalide.');
+    }
     const countries = [...new Set(payload
         .map(country => country.translations?.fra?.common || country.name?.common)
         .filter(Boolean))]
