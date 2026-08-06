@@ -93,6 +93,10 @@ window.TravelConfig = Object.freeze({
             publicAuthRoute ||
             alreadyRetried
         ) {
+            if (response.status === 403 && apiRequest && !publicAuthRoute) {
+                window.dispatchEvent(new CustomEvent('travelms:forbidden'));
+                redirectToLogin();
+            }
             return response;
         }
 

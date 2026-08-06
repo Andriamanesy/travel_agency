@@ -67,6 +67,31 @@ function resetContent(link) {
     return { subject, text, html };
 }
 
+function invitationContent(link) {
+    const subject = 'Invitation TravelMS – Votre espace collaborateur';
+    const text = [
+        'Bonjour,',
+        '',
+        'Vous avez été invité à rejoindre TravelMS en tant qu’agent.',
+        `Créer votre compte et finaliser votre accès : ${link}`,
+        '',
+        'Ce lien est personnel et expire dans 7 jours. Si vous n’êtes pas à l’origine de cette invitation, ignorez cet e-mail.'
+    ].join('\n');
+    return {
+        subject,
+        text,
+        html: emailShell({
+            eyebrow: 'INVITATION COLLABORATEUR',
+            title: 'Activez votre accès agent',
+            message: 'Vous avez été invité à rejoindre TravelMS en tant qu’agent. Utilisez le bouton ci-dessous pour créer votre compte et accéder à votre espace de travail.',
+            action: 'Créer mon compte',
+            link,
+            accent: '#7c3aed',
+            notice: '<strong>Sécurité :</strong> ce lien est personnel, utilisable une seule fois et expire dans 7 jours.'
+        })
+    };
+}
+
 function renderTemplate(filename, placeholder, link, fallback) {
     try {
         return fs
@@ -139,8 +164,12 @@ function sendPasswordResetEmail(to, link) {
     return sendMail({ to, ...resetContent(link) });
 }
 
+function sendStaffInvitationEmail(to, link) {
+    return sendMail({ to, ...invitationContent(link) });
+}
+
 function sendBookingConfirmationEmail(to, booking) {
     return sendMail({ to, ...bookingConfirmationContent(booking) });
 }
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail };
+module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail, sendStaffInvitationEmail };

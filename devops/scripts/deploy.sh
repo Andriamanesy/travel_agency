@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-echo "🚀 Début du déploiement..."
-
-# 1. Se placer à la racine du projet (deux dossiers au-dessus du script)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/../.."
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/common.sh"
 
-# 2. Récupérer la dernière version du code
-echo "📥 Récupération des dernières modifications..."
-git pull origin main
+resolve_project_root
+require_docker
 
-# 3. Reconstruire et relancer les conteneurs Docker
-echo "🐳 Rechargement des conteneurs Docker..."
-docker compose up -d --build
+log "🚀 Début du déploiement..."
 
-# 4. Nettoyer les anciennes images
-echo "🧹 Nettoyage des anciennes images..."
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    log "📥 Récupération des dernières modifications..."
+    git pull --ff-only origin main
+else
+    log "⚠️ Répertoire Git introuvable, skip de la mise à jour"
+fi
+
+log "🐳 Rechargement des conteneurs Docker..."
+compose up -d --build
+
+log "🧹 Nettoyage des anciennes images..."
 docker image prune -f
 
-echo "✅ Déploiement terminé avec succès !"
+log "✅ Déploiement terminé avec succès !"

@@ -59,7 +59,7 @@ async function loadDestination(id) {
         setText('destinationTitle', destination.title);
         setText('destinationLead', destination.description ? destination.description.slice(0, 160) + '...' : '');
         setText('destinationDescription', destination.description);
-        setText('destinationLocationDetail', destination.location || 'Non spécifié');
+        setText('destinationTypeBadge', 'Destination');
 
         // 3. Formatage propre du prix (ex: "850 €")
         const priceEl = document.getElementById('destinationPrice');
@@ -87,15 +87,54 @@ async function loadDestination(id) {
 
         // 6. Génération dynamique de la galerie photo
         renderGallery(destination);
+        renderExperienceDetails(destination);
 
         // 7. Affichage du contenu
         loading.classList.add('hidden');
         content.classList.remove('hidden');
+        requestAnimationFrame(() => content.classList.remove('opacity-0'));
 
     } catch (err) {
         console.error("Erreur de chargement de la destination :", err);
         showError(err.message || 'Impossible de charger les détails de cette destination.');
     }
+}
+
+function renderExperienceDetails(destination) {
+    const highlights = [
+        `Découverte de ${destination.location || 'Madagascar'}`,
+        'Accompagnement par nos experts locaux',
+        'Expérience personnalisable selon vos envies',
+        'Assistance TravelMS avant et pendant le séjour'
+    ];
+    const included = ['Conseils et préparation du voyage', 'Assistance locale', 'Organisation sur mesure'];
+    const excluded = ['Vols internationaux', 'Dépenses personnelles', 'Assurance voyage'];
+
+    const highlightsList = document.getElementById('destinationHighlights');
+    const includedList = document.getElementById('includedList');
+    const excludedList = document.getElementById('excludedList');
+
+    if (highlightsList) {
+        highlightsList.replaceChildren(...highlights.map(item => {
+            const entry = document.createElement('li');
+            entry.className = 'flex items-start gap-3 font-medium text-slate-700';
+            entry.innerHTML = '<span class="mt-0.5 text-brand-500">✓</span>';
+            entry.append(document.createTextNode(item));
+            return entry;
+        }));
+    }
+    if (includedList) includedList.replaceChildren(...included.map(item => listItem('✓', item, 'text-emerald-600')));
+    if (excludedList) excludedList.replaceChildren(...excluded.map(item => listItem('✕', item, 'text-rose-500')));
+}
+
+function listItem(icon, text, colorClass) {
+    const entry = document.createElement('li');
+    entry.className = 'flex gap-2';
+    const marker = document.createElement('span');
+    marker.className = colorClass;
+    marker.textContent = icon;
+    entry.append(marker, document.createTextNode(text));
+    return entry;
 }
 
 /**
@@ -170,7 +209,9 @@ function showError(message) {
     if (loading) loading.classList.add('hidden');
     if (content) content.classList.add('hidden');
     if (errorBox) {
-        errorBox.textContent = message;
+        const messageEl = document.getElementById('error-message');
+        if (messageEl) messageEl.textContent = message;
         errorBox.classList.remove('hidden');
+        errorBox.classList.add('flex');
     }
 }

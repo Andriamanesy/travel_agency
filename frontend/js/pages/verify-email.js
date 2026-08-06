@@ -97,7 +97,8 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
         const token = urlParams.get('token');
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
 
-        const iconEl = document.getElementById('status-icon');
+        const iconContainer = document.getElementById('icon-container');
+        const iconSvg = document.getElementById('icon-svg');
         const titleEl = document.getElementById('status-title');
         const messageEl = document.getElementById('status-message');
         const actionContainer = document.getElementById('action-container');
@@ -105,20 +106,23 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
 
         function showStatus(type, title, message) {
             const palette = {
-                success: ['bg-emerald-100', 'text-emerald-600', '✅'],
-                info: ['bg-blue-100', 'text-blue-600', 'ℹ️'],
-                error: ['bg-rose-100', 'text-rose-600', '✕']
+                success: ['bg-brand-100', 'text-brand-600', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />'],
+                info: ['bg-blue-100', 'text-blue-600', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v4m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" />'],
+                error: ['bg-rose-100', 'text-rose-600', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />']
             }[type];
-            iconEl.className = `w-20 h-20 ${palette[0]} ${palette[1]} rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6`;
-            iconEl.textContent = palette[2];
+            iconContainer.className = `mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full ${palette[0]} ${palette[1]} shadow-inner transition-colors duration-500`;
+            iconSvg.classList.remove('animate-spin');
+            iconSvg.innerHTML = palette[2];
             titleEl.textContent = title;
             messageEl.textContent = message;
-            document.getElementById('security-note').textContent = type === 'info'
+            const note = document.getElementById('security-note');
+            note.textContent = type === 'info'
                 ? 'Votre compte est déjà actif : aucune autre action n’est nécessaire.'
                 : type === 'success'
                     ? 'Votre adresse e-mail est confirmée. Vous pouvez désormais accéder à votre compte.'
                     : 'Le lien doit être complet et valide. Demandez un nouvel e-mail si nécessaire.';
             actionContainer.classList.remove('hidden');
+            requestAnimationFrame(() => actionContainer.classList.remove('opacity-0'));
         }
 
         if (!token) {

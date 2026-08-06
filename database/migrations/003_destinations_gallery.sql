@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS destinations (
 
 CREATE TABLE IF NOT EXISTS destination_images (
     id SERIAL PRIMARY KEY,
-    destination_id INTEGER NOT NULL REFERENCES destinations(id) ON DELETE CASCADE,
+    destination_id UUID NOT NULL REFERENCES destinations(id) ON DELETE CASCADE,
     image_url VARCHAR(512) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

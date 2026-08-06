@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-echo "🚀 Démarrage de l'application..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/common.sh"
 
-# Se positionner automatiquement à la racine du projet (2 niveaux au-dessus de devops/scripts)
-cd "$(dirname "$0")/../.."
+resolve_project_root
+require_docker
 
-docker compose up -d
-echo "✅ Tous les services sont démarrés !"
+log "🚀 Démarrage de l'application..."
+compose up -d --build
+log "✅ Tous les services sont démarrés !"

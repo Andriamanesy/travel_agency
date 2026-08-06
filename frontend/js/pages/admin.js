@@ -11,7 +11,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    const user = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
+    const name = user.name || user.email || 'Administrateur';
+    document.getElementById('admin-name').textContent = name;
+    document.getElementById('admin-avatar').textContent = name.trim().charAt(0).toUpperCase() || 'A';
+
+    const usersMenuButton = document.getElementById('btn-users');
+    const usersMenu = document.getElementById('menu-users');
+    const usersMenuIcon = document.getElementById('icon-users');
+    usersMenuButton?.addEventListener('click', () => {
+        usersMenu.classList.toggle('hidden');
+        usersMenuIcon.classList.toggle('rotate-180', !usersMenu.classList.contains('hidden'));
+    });
+
     await Promise.all([loadUsers(), loadDestinations()]);
+
+    document.getElementById('invite-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await submitInvitation();
+    });
 
     document.getElementById('destination-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -44,23 +62,26 @@ async function loadUsers() {
         response.users.forEach(user => {
             const currentRole = Array.isArray(user.roles) && user.roles.length ? user.roles[0] : 'client';
             const tr = document.createElement('tr');
+            tr.className = 'transition hover:bg-slate-900/60';
             tr.innerHTML = `
-                <td>${escapeHtml(user.id)}</td>
-                <td>${escapeHtml(user.email)}</td>
-                <td>${user.is_verified ? '✅ Vérifié' : '⏳ En attente'}</td>
+                <td class="p-3 font-mono text-slate-500">${escapeHtml(user.id)}</td>
+                <td class="p-3 font-semibold text-white">${escapeHtml(user.email)}</td>
+                <td class="p-3">${user.is_verified ? '<span class="text-emerald-400">✓ Vérifié</span>' : '<span class="text-amber-400">⏳ En attente</span>'}</td>
                 <td>
-                    <select class="role-select" data-user-id="${user.id}">
+                    <select class="role-select rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" data-user-id="${user.id}">
                         <option value="client" ${currentRole === 'client' ? 'selected' : ''}>Client</option>
                         <option value="agent" ${currentRole === 'agent' ? 'selected' : ''}>Agent</option>
                         <option value="admin" ${currentRole === 'admin' ? 'selected' : ''}>Admin</option>
                     </select>
                 </td>
-                <td>
-                    <button class="btn-save-role" data-user-id="${user.id}">Mettre à jour</button>
+                <td class="p-3 text-right">
+                    <button class="btn-save-role rounded-lg bg-brand-700 px-2.5 py-1.5 font-bold text-white hover:bg-brand-800" data-user-id="${user.id}">Mettre à jour</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+
+        document.getElementById('users-count').textContent = response.users.length;
 
         // Activer les boutons de mise à jour de rôle
         document.querySelectorAll('.btn-save-role').forEach(button => {
@@ -78,6 +99,26 @@ async function loadUsers() {
     }
 }
 
+async function submitInvitation() {
+    const successDiv = document.getElementById('invite-success');
+    const errorDiv = document.getElementById('invite-error');
+    successDiv.style.display = 'none';
+    errorDiv.style.display = 'none';
+
+    const email = document.getElementById('invite-email').value.trim();
+    const role = document.getElementById('invite-role').value;
+
+    try {
+        const payload = await apiRequest('/admin/invitations', 'POST', { email, role });
+        successDiv.style.display = 'block';
+        successDiv.textContent = payload.message || 'Invitation envoyée avec succès.';
+        document.getElementById('invite-form').reset();
+    } catch (err) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = err.message || 'Impossible d’envoyer l’invitation.';
+    }
+}
+
 async function loadDestinations() {
     const tbody = document.getElementById('destinations-table-body');
     const errorDiv = document.getElementById('destinations-error-message');
@@ -89,19 +130,22 @@ async function loadDestinations() {
 
         response.destinations.forEach(destination => {
             const tr = document.createElement('tr');
+            tr.className = 'transition hover:bg-slate-900/60';
             tr.innerHTML = `
-                <td>${destination.id}</td>
-                <td>${destination.title}</td>
-                <td>${destination.location}</td>
-                <td>${Number(destination.price).toFixed(2)} €</td>
-                <td>${destination.is_active ? 'Actif' : 'Inactif'}</td>
-                <td>
-                    <button class="btn-edit-destination" data-id="${destination.id}">Modifier</button>
-                    <button class="btn-delete-destination" data-id="${destination.id}">Supprimer</button>
+                <td class="p-3 font-semibold text-white">${escapeHtml(destination.title)}</td>
+                <td class="p-3">${escapeHtml(destination.location)}</td>
+                <td class="p-3">${Number(destination.price).toFixed(2)} €</td>
+                <td class="p-3">${destination.is_active ? '<span class="rounded-full border border-emerald-800/50 bg-emerald-950 px-2 py-1 text-[10px] font-bold text-emerald-400">Actif</span>' : '<span class="rounded-full border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-400">Inactif</span>'}</td>
+                <td class="space-x-1 p-3 text-right">
+                    <button class="btn-edit-destination rounded-lg bg-slate-800 px-2.5 py-1.5 font-bold text-white hover:bg-slate-700" data-id="${destination.id}">Modifier</button>
+                    <button class="btn-delete-destination rounded-lg border border-rose-800 bg-rose-950/50 px-2.5 py-1.5 font-bold text-rose-300 hover:bg-rose-900" data-id="${destination.id}">Supprimer</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+
+        document.getElementById('destinations-count').textContent = response.destinations.length;
+        document.getElementById('active-destinations-count').textContent = response.destinations.filter(destination => destination.is_active).length;
 
         document.querySelectorAll('.btn-edit-destination').forEach(button => {
             button.addEventListener('click', async (e) => {

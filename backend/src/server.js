@@ -4,11 +4,36 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
+
+function loadEnvFile() {
+    const envFilePath = path.join(__dirname, '../../database/.env.db');
+    try {
+        const raw = fs.readFileSync(envFilePath, 'utf8');
+        for (const line of raw.split(/\r?\n/)) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            const separatorIndex = trimmed.indexOf('=');
+            if (separatorIndex === -1) continue;
+            const key = trimmed.slice(0, separatorIndex).trim();
+            const value = trimmed.slice(separatorIndex + 1).trim();
+            if (!process.env[key]) {
+                process.env[key] = value;
+            }
+        }
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            console.warn('[Env] Impossible de charger le fichier database/.env.db:', error.message);
+        }
+    }
+}
+
+loadEnvFile();
 // Formidable v3 expose sa fonction de création sous un export nommé.
 const { formidable } = require('formidable');
 const { Pool } = require('pg');
-const { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail } = require('./mailer');
+const { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail, sendStaffInvitationEmail } = require('./mailer');
 const { handleCatalogRequest } = require('./catalog');
+const { writeAudit } = require('./audit');
 
 const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads');
 const USER_UPLOAD_DIR = path.join(UPLOAD_DIR, 'users');
@@ -27,12 +52,14 @@ const {
     loadAuthorization,
     signAccessToken,
     authenticate,
+    requireAuth,
     issueRefreshToken,
     revokeAll,
     hash,
     checkPermission,
     checkRole,
-    ownerCheck
+    ownerCheck,
+    createAuthorizationGuard
 } = require('./auth');
 
 /**
@@ -61,10 +88,11 @@ const pool = new Pool(
     process.env.DB_HOST
         ? {
               host: process.env.DB_HOST || 'localhost',
-              user: process.env.DB_USER || 'travel_user',
-              password: process.env.DB_PASSWORD || 'travel_password',
-              database: process.env.DB_NAME || 'travel_db',
-              port: process.env.DB_PORT || 5432
+              user: process.env.DB_USER || process.env.POSTGRES_USER || 'travel_user',
+              password: String(process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD || 'travel_password'),
+              database: process.env.DB_NAME || process.env.POSTGRES_DB || 'travel_db',
+              port: Number(process.env.DB_PORT || process.env.PGPORT || 5432),
+              ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : undefined
           }
         : { connectionString: process.env.DATABASE_URL }
 );
@@ -600,7 +628,7 @@ const server = http.createServer(async (req, res) => {
 
         // --- ROUTE : Inscription ---
         if (pathname === '/api/register' && method === 'POST') {
-            const { name, email, password } = await parseJSONBody(req);
+            const { name, email, password, invitation_token: invitationToken } = await parseJSONBody(req);
             if (typeof name !== 'string' || name.trim().length > 100 || !validateEmail(email) || !password) {
                 return sendResponse(res, 400, { error: 'Tous les champs sont obligatoires.' });
             }
@@ -624,7 +652,28 @@ const server = http.createServer(async (req, res) => {
                     [name.trim(), cleanEmail, passwordHash, salt]
                 );
                 const user = result.rows[0];
-                await client.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE code = 'client' ON CONFLICT DO NOTHING`, [user.id]);
+                let assignedRole = 'client';
+
+                if (invitationToken) {
+                    const invitation = await client.query(
+                        `SELECT id, role_code FROM staff_invitations
+                         WHERE token_hash = $1 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > CURRENT_TIMESTAMP
+                         FOR UPDATE`,
+                        [hash(invitationToken)]
+                    );
+
+                    if (invitation.rowCount === 0) {
+                        await client.query('ROLLBACK');
+                        return sendResponse(res, 400, { error: 'Lien d’invitation invalide ou expiré.' });
+                    }
+
+                    assignedRole = invitation.rows[0].role_code || 'agent';
+                    await client.query('UPDATE staff_invitations SET accepted_at = CURRENT_TIMESTAMP, user_id = $1 WHERE id = $2', [user.id, invitation.rows[0].id]);
+                }
+
+                await client.query('DELETE FROM user_roles WHERE user_id = $1', [user.id]);
+                await client.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE code = $2 ON CONFLICT DO NOTHING`, [user.id, assignedRole]);
+                await client.query('UPDATE users SET authz_version=authz_version+1 WHERE id=$1', [user.id]);
                 const verificationToken = await createVerificationToken(client, user.id);
                 await client.query('COMMIT');
                 transactionOpen = false;
@@ -636,7 +685,8 @@ const server = http.createServer(async (req, res) => {
 
                 return sendResponse(res, 201, {
                     message: 'Inscription réussie. Veuillez vérifier votre e-mail.',
-                    user
+                    user,
+                    role: assignedRole
                 });
             } catch (dbErr) {
                 if (transactionOpen) {
@@ -908,14 +958,59 @@ const server = http.createServer(async (req, res) => {
 
         if (pathname === '/api/admin/users' && method === 'GET') {
             const user = await getUserByToken(req);
-            if (!user || !req.auth.permissions.includes('users:read:any')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            if (!user) return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            await createAuthorizationGuard({ roles: ['admin'], permissions: ['users:read:any'] })(req);
             const { rows } = await pool.query(`SELECT u.id,u.name,u.email,u.is_verified,u.is_active,COALESCE(array_agg(r.code) FILTER (WHERE r.code IS NOT NULL),'{}') roles FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles r ON r.id=ur.role_id GROUP BY u.id ORDER BY u.created_at DESC`);
             return sendResponse(res, 200, { users: rows });
         }
 
+        if (pathname === '/api/admin/invitations' && method === 'POST') {
+            const user = await getUserByToken(req);
+            if (!user) return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            await createAuthorizationGuard({ roles: ['admin'], permissions: ['users:invite'] })(req);
+            const { email, role } = await parseJSONBody(req);
+            if (!validateEmail(email) || !['agent'].includes(role || '')) {
+                return sendResponse(res, 400, { error: 'Adresse e-mail et rôle valides requis.' });
+            }
+
+            const cleanEmail = email.toLowerCase().trim();
+            const existingUser = await pool.query('SELECT id FROM users WHERE email=$1', [cleanEmail]);
+            if (existingUser.rows[0]) {
+                return sendResponse(res, 409, { error: 'Un compte existe déjà avec cette adresse e-mail.' });
+            }
+
+            const token = newEmailToken();
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                await client.query(
+                    `INSERT INTO staff_invitations (email, role_code, token_hash, expires_at, invited_by)
+                     VALUES ($1, $2, $3, CURRENT_TIMESTAMP + INTERVAL '7 days', $4)`,
+                    [cleanEmail, role, hash(token), user.id]
+                );
+                await writeAudit(pool, {
+                    actorId: user.id,
+                    action: 'staff.invitation.created',
+                    entityType: 'staff_invitation',
+                    metadata: { email: cleanEmail, role }
+                });
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
+            }
+
+            const publicLink = buildPublicLink('/register.html', token);
+            await sendStaffInvitationEmail(cleanEmail, publicLink);
+            return sendResponse(res, 200, { message: `Invitation envoyée à ${cleanEmail}.` });
+        }
+
         if (pathname === '/api/admin/destinations' && method === 'GET') {
             const user = await getUserByToken(req);
-            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            if (!user) return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            await createAuthorizationGuard({ roles: ['admin'], permissions: ['destinations:manage'] })(req);
             const { rows } = await pool.query(`SELECT id, title, description, price, location, cover_image, is_active, created_at, updated_at FROM destinations ORDER BY created_at DESC`);
             return sendResponse(res, 200, { destinations: rows.map(destination => ({
                 ...destination,
@@ -925,7 +1020,8 @@ const server = http.createServer(async (req, res) => {
 
         if (pathname === '/api/admin/destinations' && method === 'POST') {
             const user = await getUserByToken(req);
-            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            if (!user) return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            await createAuthorizationGuard({ roles: ['admin'], permissions: ['destinations:manage'] })(req);
             await ensureUploadDir();
             await ensureDestinationUploadDir();
 
@@ -1021,7 +1117,8 @@ const server = http.createServer(async (req, res) => {
         const adminDestinationMatch = pathname.match(/^\/api\/admin\/destinations\/([0-9a-fA-F-]{36})$/);
         if (adminDestinationMatch && method === 'PUT') {
             const user = await getUserByToken(req);
-            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            if (!user) return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            await createAuthorizationGuard({ roles: ['admin'], permissions: ['destinations:manage'] })(req);
             const destinationId = adminDestinationMatch[1];
             await ensureUploadDir();
             await ensureDestinationUploadDir();
@@ -1138,7 +1235,8 @@ const server = http.createServer(async (req, res) => {
 
         if (adminDestinationMatch && method === 'DELETE') {
             const user = await getUserByToken(req);
-            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            if (!user) return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            await createAuthorizationGuard({ roles: ['admin'], permissions: ['destinations:manage'] })(req);
             const destinationId = adminDestinationMatch[1];
             const client = await pool.connect();
             let filePaths = [];
@@ -1170,7 +1268,8 @@ const server = http.createServer(async (req, res) => {
         const roleMatch = pathname.match(/^\/api\/admin\/users\/([0-9a-f-]+)\/roles?$/i);
         if (roleMatch && method === 'PUT') {
             const user = await getUserByToken(req);
-            if (!user || !req.auth.permissions.includes('users:update:any')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            if (!user) return sendResponse(res, 401, { error: 'Accès non autorisé.' });
+            await createAuthorizationGuard({ roles: ['admin'], permissions: ['users:update:any'] })(req);
             const { roles } = await parseJSONBody(req);
             if (!Array.isArray(roles) || roles.length === 0 || roles.some(role => !['admin', 'agent', 'client'].includes(role))) {
                 return sendResponse(res, 400, { error: 'Liste de rôles invalide.' });

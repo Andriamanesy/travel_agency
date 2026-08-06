@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-cd "$(dirname "$0")/../.."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/common.sh"
 
-echo "📥 Récupération du code source..."
-git pull origin main
+resolve_project_root
+require_docker
 
-echo "🐳 Rechargement des conteneurs..."
-docker compose up --build -d
+log "📥 Récupération du code source..."
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git pull --ff-only origin main
+else
+    log "⚠️ Répertoire Git introuvable, skip de la mise à jour"
+fi
 
-echo "✅ Mise à jour terminée avec succès !"
+log "🐳 Rechargement des conteneurs..."
+compose up -d --build
+
+log "✅ Mise à jour terminée avec succès !"

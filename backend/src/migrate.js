@@ -3,18 +3,43 @@ const fs = require('fs/promises');
 const path = require('path');
 const { Pool } = require('pg');
 
+function loadEnvFile() {
+    const envFilePath = path.join(__dirname, '../../database/.env.db');
+    try {
+        const raw = require('fs').readFileSync(envFilePath, 'utf8');
+        for (const line of raw.split(/\r?\n/)) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            const separatorIndex = trimmed.indexOf('=');
+            if (separatorIndex === -1) continue;
+            const key = trimmed.slice(0, separatorIndex).trim();
+            const value = trimmed.slice(separatorIndex + 1).trim();
+            if (!process.env[key]) {
+                process.env[key] = value;
+            }
+        }
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            console.warn('[Env] Impossible de charger le fichier database/.env.db:', error.message);
+        }
+    }
+}
+
+loadEnvFile();
+
 const migrationsDirectory = path.join(__dirname, '../migrations');
-const pool = new Pool(
-    process.env.DB_HOST
-        ? {
-              host: process.env.DB_HOST || 'localhost',
-              user: process.env.DB_USER || 'travel_user',
-              password: process.env.DB_PASSWORD || 'travel_password',
-              database: process.env.DB_NAME || 'travel_db',
-              port: process.env.DB_PORT || 5432
-          }
-        : { connectionString: process.env.DATABASE_URL }
-);
+const poolConfig = process.env.DB_HOST
+    ? {
+          host: process.env.DB_HOST || 'localhost',
+          user: process.env.DB_USER || process.env.POSTGRES_USER || 'travel_user',
+          password: String(process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD || 'travel_password'),
+          database: process.env.DB_NAME || process.env.POSTGRES_DB || 'travel_db',
+          port: Number(process.env.DB_PORT || process.env.PGPORT || 5432),
+          ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : undefined
+      }
+    : { connectionString: process.env.DATABASE_URL };
+
+const pool = new Pool(poolConfig);
 
 async function getMigrations() {
     const entries = await fs.readdir(migrationsDirectory, { withFileTypes: true });

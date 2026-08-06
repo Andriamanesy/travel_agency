@@ -178,9 +178,23 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
 
         const email = document.getElementById('email').value.trim();
         const submitBtn = document.getElementById('submit-btn');
+        const buttonText = document.getElementById('btn-text');
+        const spinner = document.getElementById('btn-spinner');
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
 
-        submitBtn.textContent = translations[currentLang]["forgot.sending"];
+        const errorAlert = document.getElementById('error-alert');
+        const errorMessage = document.getElementById('error-message');
+        errorAlert.classList.add('hidden');
+
+        if (!email || !document.getElementById('email').validity.valid) {
+            errorMessage.textContent = 'Saisissez une adresse e-mail valide.';
+            errorAlert.classList.remove('hidden');
+            return;
+        }
+
+        buttonText.textContent = translations[currentLang]["forgot.sending"];
+        buttonText.classList.add('opacity-0');
+        spinner.classList.remove('hidden');
         submitBtn.disabled = true;
 
         try {
@@ -198,18 +212,19 @@ const API_BASE_URL = `${window.TravelConfig?.apiBaseUrl || ''}/api`;
             }
 
             showToast(data.message || translations[currentLang]["forgot.success_default"], "success");
-            submitBtn.textContent = translations[currentLang]["forgot.sent"];
-            document.getElementById('forgot-form').classList.add('hidden');
-            document.getElementById('forgot-success').classList.remove('hidden');
-
-            setTimeout(() => {
-                submitBtn.textContent = translations[currentLang]["forgot.submit"];
-                submitBtn.disabled = false;
-            }, 4000);
+            document.getElementById('success-email').textContent = email;
+            document.getElementById('form-wrapper').classList.add('hidden');
+            const success = document.getElementById('forgot-success');
+            success.classList.remove('hidden');
+            requestAnimationFrame(() => success.classList.remove('opacity-0'));
 
         } catch (err) {
             showToast(err.message, "error");
-            submitBtn.textContent = translations[currentLang]["forgot.submit"];
+            errorMessage.textContent = err.message;
+            errorAlert.classList.remove('hidden');
+            buttonText.textContent = translations[currentLang]["forgot.submit"];
+            buttonText.classList.remove('opacity-0');
+            spinner.classList.add('hidden');
             submitBtn.disabled = false;
         }
     });

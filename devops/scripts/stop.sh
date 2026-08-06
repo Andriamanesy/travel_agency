@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-echo "🛑 Arrêt de l'application..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/common.sh"
 
-# Se positionner automatiquement à la racine du projet
-cd "$(dirname "$0")/../.."
+resolve_project_root
+require_docker
 
-docker compose down
-echo "✅ Stack Docker arrêtée proprement !"
+log "🛑 Arrêt de l'application..."
+compose down
+log "✅ Stack Docker arrêtée proprement !"

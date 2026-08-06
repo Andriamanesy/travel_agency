@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-cd "$(dirname "$0")/../.."
+set -euo pipefail
 
-echo "📊 État des conteneurs de l'application :"
-docker compose ps
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/common.sh"
+
+resolve_project_root
+require_docker
+
+log "📊 État des conteneurs de l'application :"
+compose ps

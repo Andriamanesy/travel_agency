@@ -355,6 +355,7 @@ if (registerForm) {
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
         const termsChecked = document.getElementById('terms').checked;
+        const invitationToken = new URLSearchParams(window.location.search).get('token');
         const submitBtn = document.getElementById('submit-btn');
 
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
@@ -378,7 +379,7 @@ if (registerForm) {
             const response = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password })
+                body: JSON.stringify({ name, email, password, invitation_token: invitationToken })
             });
 
             const data = await response.json();
