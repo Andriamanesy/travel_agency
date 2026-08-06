@@ -76,19 +76,19 @@
                 </div>
 
                 <!-- Message d'alerte / succès -->
-                <div id="alertBox" class="hidden p-4 rounded-2xl text-sm font-medium"></div>
+                <div id="alertBox" class="hidden p-4 rounded-2xl text-sm font-medium transition-all duration-300"></div>
 
-                <!-- Note importante : enctype="multipart/form-data" est obligatoire pour envoyer des fichiers -->
+                <!-- Formulaire -->
                 <form id="profileForm" enctype="multipart/form-data" class="space-y-4">
                     <!-- Informations de base -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Nom complet</label>
-                            <input type="text" id="fullName" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <input type="text" id="fullName" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Adresse e-mail</label>
-                            <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                         </div>
                     </div>
 
@@ -97,7 +97,7 @@
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Téléphone</label>
                             <div class="flex gap-2">
-                                <select id="phoneCode" class="w-1/3 px-2 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm font-semibold">
+                                <select id="phoneCode" class="w-1/3 px-2 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm font-semibold transition">
                                     <option value="+261">🇲🇬 +261</option>
                                     <option value="+33">🇫🇷 +33</option>
                                     <option value="+32">🇧🇪 +32</option>
@@ -110,12 +110,12 @@
                                     <option value="+39">🇮🇹 +39</option>
                                     <option value="+49">🇩🇪 +49</option>
                                 </select>
-                                <input type="text" id="phone" inputmode="numeric" placeholder="340000000" class="w-2/3 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                                <input type="text" id="phone" inputmode="numeric" placeholder="340000000" class="w-2/3 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Date de naissance</label>
-                            <input type="date" id="birthdate" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <input type="date" id="birthdate" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                         </div>
                     </div>
 
@@ -123,7 +123,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Sexe</label>
-                            <select id="gender" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <select id="gender" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                                 <option value="" disabled selected>Sélectionner</option>
                                 <option value="Féminin">Féminin</option>
                                 <option value="Masculin">Masculin</option>
@@ -132,7 +132,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Nationalité</label>
-                            <select id="nationality" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <select id="nationality" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                                 <option value="" disabled selected>Chargement...</option>
                             </select>
                         </div>
@@ -142,33 +142,33 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pays</label>
-                            <select id="country" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <select id="country" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                                 <option value="" disabled selected>Chargement...</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Ville</label>
-                            <select id="city" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <select id="city" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                                 <option value="" disabled selected>Sélectionner d'abord un pays</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Code postal</label>
-                            <input type="text" id="postalCode" placeholder="Auto" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <input type="text" id="postalCode" placeholder="Auto" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                         </div>
                     </div>
 
                     <!-- Adresse postale -->
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Adresse postale</label>
-                        <input type="text" id="address" placeholder="Lot IVX 123 Bis..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        <input type="text" id="address" placeholder="Lot IVX 123 Bis..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                     </div>
 
                     <!-- Langue préférée et Photo de profil (Type Fichier) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Langue préférée</label>
-                            <select id="preferredLang" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <select id="preferredLang" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm transition">
                                 <option value="fr">Français</option>
                                 <option value="en">English</option>
                                 <option value="es">Español</option>
@@ -179,13 +179,14 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Photo de profil (Fichier)</label>
-                            <input type="file" id="avatarFile" accept="image/png, image/jpeg, image/webp" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer">
+                            <input type="file" id="avatarFile" accept="image/png, image/jpeg, image/webp" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer transition">
                         </div>
                     </div>
 
                     <div class="pt-4 flex justify-end">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-blue-600/20 transition text-sm">
-                            Mettre à jour mon profil
+                        <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-blue-600/20 transition text-sm flex items-center gap-2">
+                            <span id="submitBtnText">Mettre à jour mon profil</span>
+                            <span id="submitSpinner" class="hidden animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
                         </button>
                     </div>
                 </form>
@@ -196,6 +197,8 @@
 
     <!-- SCRIPT DE GESTION -->
     <script>
+        // 1. CONFIGURATION CENTRALE
+        const API_BASE_URL = 'http://localhost:5000';
         const token = localStorage.getItem('token');
         let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
 
@@ -203,17 +206,20 @@
             window.location.href = 'login.html';
         }
 
-        // Prévisualisation instantanée de l'image sélectionnée
+        // 2. PRÉVISUALISATION INSTANTANÉE AVEC NETTOYAGE MÉMOIRE
         const avatarFileInput = document.getElementById('avatarFile');
         avatarFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const previewUrl = URL.createObjectURL(file);
-                document.getElementById('avatarDisplay').src = previewUrl;
+                const img = document.getElementById('avatarDisplay');
+                img.src = previewUrl;
+                // Libération de la mémoire une fois chargée
+                img.onload = () => URL.revokeObjectURL(previewUrl);
             }
         });
 
-        // Fonction pour vérifier et mettre à jour dynamiquement l'état du profil
+        // 3. VÉRIFICATION DYNAMIQUE DU STATUT DE PROFIL
         function checkProfileCompletion() {
             const badge = document.getElementById('profileStatusBadge');
             const fullName = document.getElementById('fullName').value.trim();
@@ -223,7 +229,9 @@
             const city = document.getElementById('city').value;
             const birthdate = document.getElementById('birthdate').value;
 
-            if (fullName && email && phone && country && city && birthdate) {
+            const isComplete = fullName && email && phone && country && city && birthdate;
+
+            if (isComplete) {
                 badge.className = "bg-emerald-50 text-emerald-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-300";
                 badge.textContent = "Profil Complet";
             } else {
@@ -232,14 +240,14 @@
             }
         }
 
-        // Bloquer tout caractère autre que des chiffres dans le téléphone
+        // Bloquer tout caractère non numérique dans le téléphone
         const phoneInput = document.getElementById('phone');
         phoneInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/\D/g, '');
             checkProfileCompletion();
         });
 
-        // Villes par pays
+        // 4. DONNÉES GÉOGRAPHIQUES
         const citiesByCountry = {
             "Madagascar": ["Antananarivo", "Toamasina", "Antsirabe", "Fianarantsoa", "Mahajanga", "Toliara", "Antsiranana", "Nosy Be"],
             "France": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille"],
@@ -359,11 +367,11 @@
             });
         }
 
+        // 5. INITIALISATION DES DONNÉES
         document.addEventListener('DOMContentLoaded', () => {
             loadCountries();
             loadNationalities();
             
-            // Pré-remplissage des champs de base
             document.getElementById('fullName').value = userData.name || userData.fullName || '';
             document.getElementById('email').value = userData.email || '';
             
@@ -383,9 +391,10 @@
             document.getElementById('address').value = userData.address || '';
             document.getElementById('preferredLang').value = userData.preferredLang || 'fr';
 
-            // Si une image existe déjà en base, l'afficher
             if (userData.avatar_url) {
-                document.getElementById('avatarDisplay').src = userData.avatar_url;
+                document.getElementById('avatarDisplay').src = userData.avatar_url.startsWith('http')
+                    ? userData.avatar_url
+                    : `${API_BASE_URL}${userData.avatar_url}`;
             }
 
             document.getElementById('userNameDisplay').textContent = userData.name || userData.fullName || 'Voyageur';
@@ -393,25 +402,38 @@
         });
 
         ['fullName', 'email', 'birthdate', 'postalCode', 'address', 'gender', 'nationality', 'preferredLang'].forEach(id => {
-            document.getElementById(id).addEventListener('input', checkProfileCompletion);
-            document.getElementById(id).addEventListener('change', checkProfileCompletion);
+            const el = document.getElementById(id);
+            el.addEventListener('input', checkProfileCompletion);
+            el.addEventListener('change', checkProfileCompletion);
         });
 
+        // 6. SOUMISSION ET GESTION DES ALERTES
         const profileForm = document.getElementById('profileForm');
         const alertBox = document.getElementById('alertBox');
+        const submitBtn = document.getElementById('submitBtn');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const submitSpinner = document.getElementById('submitSpinner');
 
         function showAlert(message, type = 'rose') {
-            if (type === 'rose') {
-                alertBox.className = "p-4 rounded-2xl text-sm font-medium bg-rose-50 text-rose-700 border border-rose-200";
-            } else {
-                alertBox.className = "p-4 rounded-2xl text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
-            }
+            alertBox.className = type === 'rose' 
+                ? "p-4 rounded-2xl text-sm font-medium bg-rose-50 text-rose-700 border border-rose-200 transition-all duration-300"
+                : "p-4 rounded-2xl text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 transition-all duration-300";
             alertBox.textContent = message;
             alertBox.classList.remove('hidden');
         }
 
-        // Soumission du formulaire avec FormData (Prêt pour le serveur local)
-        profileForm.addEventListener('submit', (e) => {
+        function setLoadingState(isLoading) {
+            submitBtn.disabled = isLoading;
+            if (isLoading) {
+                submitBtnText.textContent = "Enregistrement...";
+                submitSpinner.classList.remove('hidden');
+            } else {
+                submitBtnText.textContent = "Mettre à jour mon profil";
+                submitSpinner.classList.add('hidden');
+            }
+        }
+
+        profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const phoneCode = document.getElementById('phoneCode').value;
@@ -434,7 +456,6 @@
                 return;
             }
 
-            // Création d'un objet FormData pour envoyer les champs texte ET le fichier image
             const formData = new FormData();
             formData.append('name', document.getElementById('fullName').value);
             formData.append('email', document.getElementById('email').value);
@@ -448,49 +469,53 @@
             formData.append('address', document.getElementById('address').value);
             formData.append('preferredLang', document.getElementById('preferredLang').value);
 
-            // Ajout du fichier image s'il a été sélectionné
             const imageFile = avatarFileInput.files[0];
             if (imageFile) {
                 formData.append('avatar', imageFile);
             }
 
-            /* 
-              PROCHAINE ÉTAPE CÔTÉ SERVEUR :
-              C'est ici que vous enverrez les données via fetch vers votre route de backend :
-              
-              fetch('/api/profile/update', {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${token}` },
-                  body: formData
-              })
-              .then(res => res.json())
-              .then(data => { ... })
-            */
+            try {
+                setLoadingState(true);
 
-            // Simulation locale pour l'instant (mise à jour du localStorage)
-            userData.name = document.getElementById('fullName').value;
-            userData.email = document.getElementById('email').value;
-            userData.phone = phoneNum ? `${phoneCode} ${phoneNum}` : '';
-            userData.birthdate = document.getElementById('birthdate').value;
-            userData.gender = document.getElementById('gender').value;
-            userData.nationality = document.getElementById('nationality').value;
-            userData.country = document.getElementById('country').value;
-            userData.city = cityInput;
-            userData.postalCode = postalInput;
-            userData.address = document.getElementById('address').value;
-            userData.preferredLang = document.getElementById('preferredLang').value;
+                const response = await fetch(`${API_BASE_URL}/api/profile/update`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
 
-            localStorage.setItem('travelms_user', JSON.stringify(userData));
-            localStorage.setItem('user', JSON.stringify(userData));
+                const data = await response.json();
 
-            document.getElementById('userNameDisplay').textContent = userData.name;
-            checkProfileCompletion();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Erreur lors de la sauvegarde sur le serveur.");
+                }
 
-            showAlert("✅ Votre profil a été mis à jour avec succès !", "emerald");
+                userData = data.user;
+                localStorage.setItem('travelms_user', JSON.stringify(userData));
+                localStorage.setItem('user', JSON.stringify(userData));
 
-            setTimeout(() => {
-                alertBox.classList.add('hidden');
-            }, 4500);
+                if (userData.avatar_url) {
+                    document.getElementById('avatarDisplay').src = userData.avatar_url.startsWith('http') 
+                        ? userData.avatar_url 
+                        : `${API_BASE_URL}${userData.avatar_url}`;
+                }
+
+                document.getElementById('userNameDisplay').textContent = userData.name;
+                checkProfileCompletion();
+
+                showAlert("✅ Votre profil et votre photo ont été enregistrés sur le serveur !", "emerald");
+
+                setTimeout(() => {
+                    alertBox.classList.add('hidden');
+                }, 4500);
+
+            } catch (error) {
+                console.error("Erreur de sauvegarde :", error);
+                showAlert(`❌ ${error.message}`);
+            } finally {
+                setLoadingState(false);
+            }
         });
 
         document.getElementById('logoutBtn').addEventListener('click', () => {

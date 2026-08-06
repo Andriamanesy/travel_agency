@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "formidable": "^3.5.4",
+    "pg": "^8.22.0"
+  }
+}
