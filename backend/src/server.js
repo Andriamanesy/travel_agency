@@ -7,13 +7,15 @@ const fs = require('fs');
 // Formidable v3 expose sa fonction de création sous un export nommé.
 const { formidable } = require('formidable');
 const { Pool } = require('pg');
-const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
+const { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail } = require('./mailer');
+const { handleCatalogRequest } = require('./catalog');
 
 const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads');
 const USER_UPLOAD_DIR = path.join(UPLOAD_DIR, 'users');
 const DESTINATION_UPLOAD_DIR = path.join(UPLOAD_DIR, 'destinations');
 const CIRCUIT_UPLOAD_DIR = path.join(UPLOAD_DIR, 'circuits');
 const BANNER_UPLOAD_DIR = path.join(UPLOAD_DIR, 'banners');
+const GUIDE_UPLOAD_DIR = path.join(UPLOAD_DIR, 'guides');
 const ALLOWED_IMAGE_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 if (typeof fetch !== 'function') {
@@ -136,7 +138,8 @@ async function ensureMediaDirectories() {
         ensureDirectory(USER_UPLOAD_DIR),
         ensureDirectory(DESTINATION_UPLOAD_DIR),
         ensureDirectory(CIRCUIT_UPLOAD_DIR),
-        ensureDirectory(BANNER_UPLOAD_DIR)
+        ensureDirectory(BANNER_UPLOAD_DIR),
+        ensureDirectory(GUIDE_UPLOAD_DIR)
     ]);
 }
 
@@ -367,7 +370,8 @@ function validateDestinationPayload(body, isUpdate = false) {
         price,
         location: raw.location?.trim?.() || '',
         cover_image: raw.cover_image?.trim?.() || '',
-        is_active: raw.is_active === undefined ? true : parseBoolean(raw.is_active)
+        is_active: raw.is_active === undefined ? true : parseBoolean(raw.is_active),
+        category_id: raw.category_id === undefined || raw.category_id === '' ? null : Number(raw.category_id)
     };
 
     const errors = [];
@@ -377,6 +381,9 @@ function validateDestinationPayload(body, isUpdate = false) {
     if (!payload.cover_image && !raw.has_cover_upload) errors.push('Une image de couverture ou son URL est requise.');
     if (Number.isNaN(payload.price)) {
         errors.push('Le prix est invalide.');
+    }
+    if (payload.category_id !== null && (!Number.isInteger(payload.category_id) || payload.category_id < 1)) {
+        errors.push('La catégorie est invalide.');
     }
 
     if (errors.length > 0) {
@@ -513,6 +520,20 @@ const server = http.createServer(async (req, res) => {
             }
         }
 
+        if (await handleCatalogRequest({
+            pathname,
+            method,
+            parsedUrl,
+            req,
+            res,
+            pool,
+            sendResponse,
+            parseJSONBody,
+            getUserByToken,
+            slugify,
+            sendBookingConfirmationEmail
+        })) return;
+
         // --- ROUTE : Liste publique des destinations ---
         if (pathname === '/api/destinations' && method === 'GET') {
             const page = Number(parsedUrl.query.page) >= 1 ? Number(parsedUrl.query.page) : 1;
@@ -522,21 +543,36 @@ const server = http.createServer(async (req, res) => {
                 : 'created_at_desc';
 
             const orderBy = {
-                price_asc: 'price ASC',
-                price_desc: 'price DESC',
-                created_at_asc: 'created_at ASC',
-                created_at_desc: 'created_at DESC'
+                price_asc: 'd.price ASC',
+                price_desc: 'd.price DESC',
+                created_at_asc: 'd.created_at ASC',
+                created_at_desc: 'd.created_at DESC'
             }[sort];
 
             const offset = (page - 1) * limit;
-            const totalResult = await pool.query('SELECT COUNT(*)::int AS count FROM destinations WHERE is_active = TRUE');
+            const search = typeof parsedUrl.query.q === 'string' ? parsedUrl.query.q.trim() : '';
+            const categoryId = Number.parseInt(parsedUrl.query.category_id, 10);
+            const filters = ['d.is_active = TRUE'];
+            const values = [];
+            if (search) {
+                values.push(`%${search}%`);
+                filters.push(`(d.title ILIKE $${values.length} OR d.description ILIKE $${values.length} OR d.location ILIKE $${values.length})`);
+            }
+            if (Number.isInteger(categoryId) && categoryId > 0) {
+                values.push(categoryId);
+                filters.push(`d.category_id = $${values.length}`);
+            }
+            const where = filters.join(' AND ');
+            const totalResult = await pool.query(`SELECT COUNT(*)::int AS count FROM destinations d WHERE ${where}`, values);
+            values.push(limit, offset);
             const { rows } = await pool.query(
-                `SELECT id, title, description, price, location, cover_image, created_at
-                 FROM destinations
-                 WHERE is_active = TRUE
+                `SELECT d.id, d.title, d.description, d.price, d.location, d.cover_image, d.created_at,
+                        d.category_id, c.name AS category_name, c.slug AS category_slug
+                 FROM destinations d LEFT JOIN categories c ON c.id=d.category_id
+                 WHERE ${where}
                  ORDER BY ${orderBy}
-                 LIMIT $1 OFFSET $2`,
-                [limit, offset]
+                 LIMIT $${values.length - 1} OFFSET $${values.length}`,
+                values
             );
             return sendResponse(res, 200, {
                 destinations: rows.map(destination => ({
@@ -911,6 +947,7 @@ const server = http.createServer(async (req, res) => {
                 price: fields.price,
                 location: fields.location,
                 cover_image: fields.cover_image || fields.image_url,
+                category_id: fields.category_id,
                 is_active: fields.is_active,
                 has_cover_upload: Boolean(coverFile)
             });
@@ -923,10 +960,10 @@ const server = http.createServer(async (req, res) => {
                 await client.query('BEGIN');
                 const { rows } = await client.query(
                     `INSERT INTO destinations
-                        (title, description, price, location, cover_image, is_active)
-                     VALUES ($1,$2,$3,$4,$5,$6)
-                     RETURNING id, title, description, price, location, cover_image, is_active, created_at, updated_at`,
-                    [payload.title, payload.description, payload.price, payload.location, coverImageUrl, payload.is_active]
+                        (title, description, price, location, cover_image, is_active, category_id)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7)
+                     RETURNING id, title, description, price, location, cover_image, is_active, category_id, created_at, updated_at`,
+                    [payload.title, payload.description, payload.price, payload.location, coverImageUrl, payload.is_active, payload.category_id]
                 );
                 const destination = rows[0];
 
@@ -1007,6 +1044,7 @@ const server = http.createServer(async (req, res) => {
                 price: fields.price,
                 location: fields.location,
                 cover_image: fields.cover_image || fields.image_url,
+                category_id: fields.category_id,
                 is_active: fields.is_active,
                 has_cover_upload: Boolean(coverFile)
             });
@@ -1047,10 +1085,10 @@ const server = http.createServer(async (req, res) => {
                 const result = await client.query(
                     `UPDATE destinations SET
                         title=$1, description=$2, price=$3, location=$4, cover_image=$5,
-                        is_active=$6, updated_at=CURRENT_TIMESTAMP
-                     WHERE id=$7
-                     RETURNING id, title, description, price, location, cover_image, is_active, created_at, updated_at`,
-                    [payload.title, payload.description, payload.price, payload.location, coverImageUrl, payload.is_active, destinationId]
+                        is_active=$6, category_id=$7, updated_at=CURRENT_TIMESTAMP
+                     WHERE id=$8
+                     RETURNING id, title, description, price, location, cover_image, is_active, category_id, created_at, updated_at`,
+                    [payload.title, payload.description, payload.price, payload.location, coverImageUrl, payload.is_active, payload.category_id, destinationId]
                 );
 
                 const gallery = [];
@@ -1355,7 +1393,9 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
         console.error('[Erreur Interne]', err);
         const statusCode = err.statusCode || 500;
-        const errorMessage = statusCode === 400 ? err.message : 'Erreur interne du serveur.';
+        const errorMessage = [400, 401, 403, 404, 409].includes(statusCode)
+            ? err.message
+            : 'Erreur interne du serveur.';
         sendResponse(res, statusCode, { error: errorMessage });
     }
 });

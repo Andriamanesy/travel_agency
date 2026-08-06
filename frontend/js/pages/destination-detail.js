@@ -31,6 +31,7 @@ async function loadDestination(id) {
         document.getElementById('destinationLocationDetail').textContent = destination.location;
         document.getElementById('destinationPrice').textContent = `${Number(destination.price).toFixed(2)} €`;
         document.getElementById('destinationStatus').textContent = destination.is_active ? 'Disponible' : 'Indisponible';
+        document.getElementById('destinationBookingLink').href = `/booking.html?destination_id=${encodeURIComponent(destination.id)}`;
 
         galleryGrid.innerHTML = '';
         const galleryItems = Array.isArray(destination.gallery) ? destination.gallery : [];

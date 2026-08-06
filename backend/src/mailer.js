@@ -106,6 +106,31 @@ function resetFallback(link) {
     });
 }
 
+function bookingConfirmationContent(booking) {
+    const subject = `Réservation reçue – ${booking.offer_title} | Travel Agency`;
+    const amount = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Number(booking.total_price));
+    const details = `${booking.offer_title} · du ${booking.start_date} au ${booking.end_date} · ${booking.participants_count} participant${booking.participants_count > 1 ? 's' : ''}`;
+    const text = [
+        `Bonjour ${booking.customer_name || ''},`,
+        '',
+        'Votre demande de réservation a bien été reçue.',
+        details,
+        `Montant total : ${amount}`,
+        '',
+        'Statut : en attente de confirmation. Notre équipe vous recontactera prochainement.'
+    ].join('\n');
+    const html = emailShell({
+        eyebrow: 'RÉSERVATION REÇUE',
+        title: 'Votre voyage se prépare',
+        message: `Bonjour ${booking.customer_name || ''}, votre demande de réservation a bien été enregistrée.`,
+        action: 'Voir mes réservations',
+        link: `${process.env.PUBLIC_APP_URL || 'http://localhost:8080'}/dashboard.html`,
+        notice: `<strong>${booking.offer_title}</strong><br>Du ${booking.start_date} au ${booking.end_date} · ${booking.participants_count} participant${booking.participants_count > 1 ? 's' : ''}<br><strong>Montant total : ${amount}</strong><br><br>Votre réservation est <strong>en attente de confirmation</strong>.`,
+        accent: '#0f766e'
+    });
+    return { subject, text, html };
+}
+
 function sendVerificationEmail(to, link) {
     return sendMail({ to, ...verificationContent(link) });
 }
@@ -114,4 +139,8 @@ function sendPasswordResetEmail(to, link) {
     return sendMail({ to, ...resetContent(link) });
 }
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail };
+function sendBookingConfirmationEmail(to, booking) {
+    return sendMail({ to, ...bookingConfirmationContent(booking) });
+}
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail };
