@@ -102,7 +102,7 @@
                         </div>
                     </div>
 
-                    <!-- Sexe et Nationalité (Dynamique par API) -->
+                    <!-- Sexe et Nationalité (Sécurisée) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Sexe</label>
@@ -116,7 +116,7 @@
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Nationalité</label>
                             <select id="nationality" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
-                                <option value="" disabled selected>Chargement des nationalités...</option>
+                                <option value="" disabled selected>Chargement...</option>
                             </select>
                         </div>
                     </div>
@@ -126,7 +126,7 @@
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pays</label>
                             <select id="country" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
-                                <option value="" disabled selected>Chargement des pays...</option>
+                                <option value="" disabled selected>Chargement...</option>
                             </select>
                         </div>
                         <div>
@@ -175,7 +175,7 @@
         </div>
     </main>
 
-    <!-- SCRIPT DE GESTION ET API -->
+    <!-- SCRIPT DE GESTION ET SÉCURISATION -->
     <script>
         const token = localStorage.getItem('token');
         let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
@@ -184,11 +184,18 @@
             window.location.href = 'login.html';
         }
 
-        // Chargement dynamique des pays via l'API REST Countries
+        // Chargement sécurisé des pays avec solution de secours (fallback) intégrée
         async function loadCountries() {
             const countrySelect = document.getElementById('country');
+            const fallbackCountries = [
+                "Afrique du Sud", "Algérie", "Allemagne", "Belgique", "Brésil", "Canada", 
+                "Chine", "Espagne", "États-Unis", "France", "Italie", "Madagascar", 
+                "Maroc", "Royaume-Uni", "Suisse", "Tunisie"
+            ].sort();
+
             try {
                 const response = await fetch('https://restcountries.com/v3.1/all?fields=name,translations');
+                if (!response.ok) throw new Error('Erreur réseau');
                 const countries = await response.json();
 
                 countries.sort((a, b) => {
@@ -203,57 +210,48 @@
                     const option = document.createElement('option');
                     option.value = frenchName;
                     option.textContent = frenchName;
-                    if (userData.country === frenchName) {
-                        option.selected = true;
-                    }
+                    if (userData.country === frenchName) option.selected = true;
                     countrySelect.appendChild(option);
                 });
             } catch (error) {
-                console.error("Erreur chargement pays:", error);
-                countrySelect.innerHTML = '<option value="" disabled selected>Erreur de chargement</option>';
-            }
-        }
-
-        // Chargement dynamique des nationalités via l'API REST Countries
-        async function loadNationalities() {
-            const natSelect = document.getElementById('nationality');
-            try {
-                const response = await fetch('https://restcountries.com/v3.1/all?fields=name,translations,demonyms');
-                const countries = await response.json();
-
-                let nationalities = [];
-                countries.forEach(country => {
-                    const nat = country.demonyms?.fra?.m || country.translations?.fra?.common;
-                    if (nat && !nationalities.includes(nat)) {
-                        nationalities.push(nat);
-                    }
-                });
-
-                nationalities.sort((a, b) => a.localeCompare(b));
-
-                natSelect.innerHTML = '<option value="" disabled selected>Sélectionner la nationalité</option>';
-                nationalities.forEach(nat => {
+                console.warn("Utilisation de la liste de secours pour les pays.");
+                countrySelect.innerHTML = '<option value="" disabled selected>Sélectionner le pays</option>';
+                fallbackCountries.forEach(country => {
                     const option = document.createElement('option');
-                    option.value = nat;
-                    option.textContent = nat;
-                    if (userData.nationality === nat) {
-                        option.selected = true;
-                    }
-                    natSelect.appendChild(option);
+                    option.value = country;
+                    option.textContent = country;
+                    if (userData.country === country) option.selected = true;
+                    countrySelect.appendChild(option);
                 });
-            } catch (error) {
-                console.error("Erreur chargement nationalités:", error);
-                natSelect.innerHTML = '<option value="" disabled selected>Erreur de chargement</option>';
             }
         }
 
-        // Exécution au chargement de la page
+        // Chargement sécurisé des nationalités (liste propre et garantie sans erreur)
+        function loadNationalities() {
+            const natSelect = document.getElementById('nationality');
+            const nationalities = [
+                "Malgache", "Française", "Belge", "Suisse", "Canadienne", "Américaine", 
+                "Algérienne", "Allemande", "Britannique", "Espagnole", "Italienne", 
+                "Marocaine", "Tunisienne", "Sénégalaise", "Portugaise", "Autre"
+            ].sort();
+
+            natSelect.innerHTML = '<option value="" disabled selected>Sélectionner la nationalité</option>';
+            nationalities.forEach(nat => {
+                const option = document.createElement('option');
+                option.value = nat;
+                option.textContent = nat;
+                if (userData.nationality === nat) option.selected = true;
+                natSelect.appendChild(option);
+            });
+        }
+
+        // Initialisation au chargement
         document.addEventListener('DOMContentLoaded', () => {
             loadCountries();
             loadNationalities();
         });
 
-        // Pré-remplissage des champs de base
+        // Pré-remplissage des champs
         document.getElementById('fullName').value = userData.name || userData.fullName || '';
         document.getElementById('email').value = userData.email || '';
         document.getElementById('phone').value = userData.phone || '';
@@ -273,18 +271,44 @@
         const profileForm = document.getElementById('profileForm');
         const alertBox = document.getElementById('alertBox');
 
+        function showAlert(message, type = 'rose') {
+            if (type === 'rose') {
+                alertBox.className = "p-4 rounded-2xl text-sm font-medium bg-rose-50 text-rose-700 border border-rose-200";
+            } else {
+                alertBox.className = "p-4 rounded-2xl text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
+            }
+            alertBox.textContent = message;
+            alertBox.classList.remove('hidden');
+        }
+
         profileForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
+            // 1. Validation Téléphone
             const phoneInput = document.getElementById('phone').value.trim();
             const phoneRegex = /^\+?[0-9\s\-\(\)]{8,20}$/;
             if (phoneInput && !phoneRegex.test(phoneInput)) {
-                alertBox.className = "p-4 rounded-2xl text-sm font-medium bg-rose-50 text-rose-700 border border-rose-200";
-                alertBox.textContent = "⚠️ Veuillez entrer un numéro de téléphone valide.";
-                alertBox.classList.remove('hidden');
+                showAlert("⚠️ Veuillez entrer un numéro de téléphone valide.");
                 return;
             }
 
+            // 2. Validation Ville (Lettres, espaces, tirets et accents uniquement)
+            const cityInput = document.getElementById('city').value.trim();
+            const cityRegex = /^[a-zA-ZÀ-ÿ\s\-]{2,50}$/;
+            if (cityInput && !cityRegex.test(cityInput)) {
+                showAlert("⚠️ Le nom de la ville ne doit contenir que des lettres.");
+                return;
+            }
+
+            // 3. Validation Code postal (Alphanumérique, espaces, tirets de 2 à 10 caractères)
+            const postalInput = document.getElementById('postalCode').value.trim();
+            const postalRegex = /^[a-zA-Z0-9\s\-]{2,10}$/;
+            if (postalInput && !postalRegex.test(postalInput)) {
+                showAlert("⚠️ Veuillez entrer un code postal valide.");
+                return;
+            }
+
+            // Enregistrement des données sécurisées
             userData.name = document.getElementById('fullName').value;
             userData.fullName = userData.name;
             userData.email = document.getElementById('email').value;
@@ -293,8 +317,8 @@
             userData.gender = document.getElementById('gender').value;
             userData.nationality = document.getElementById('nationality').value;
             userData.country = document.getElementById('country').value;
-            userData.city = document.getElementById('city').value;
-            userData.postalCode = document.getElementById('postalCode').value;
+            userData.city = cityInput;
+            userData.postalCode = postalInput;
             userData.address = document.getElementById('address').value;
             userData.preferredLang = document.getElementById('preferredLang').value;
             userData.avatar = document.getElementById('avatar').value;
@@ -307,9 +331,7 @@
                 document.getElementById('avatarDisplay').src = userData.avatar;
             }
 
-            alertBox.className = "p-4 rounded-2xl text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
-            alertBox.textContent = "✅ Votre profil a été mis à jour avec succès !";
-            alertBox.classList.remove('hidden');
+            showAlert("✅ Votre profil a été mis à jour avec succès !", "emerald");
 
             setTimeout(() => {
                 alertBox.classList.add('hidden');
