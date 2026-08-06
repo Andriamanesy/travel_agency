@@ -718,6 +718,50 @@ const server = http.createServer(async (req, res) => {
             });
         }
 
+        // --- ROUTE : Renvoyer l'e-mail de vérification ---
+        if (pathname === '/api/resend-verification' && method === 'POST') {
+            const { email } = await parseJSONBody(req);
+            if (!validateEmail(email)) {
+                return sendResponse(res, 400, { error: 'Veuillez renseigner une adresse e-mail valide.' });
+            }
+
+            const cleanEmail = email.toLowerCase().trim();
+            const client = await pool.connect();
+            let verificationToken;
+            try {
+                await client.query('BEGIN');
+                const result = await client.query(
+                    'SELECT id, is_verified FROM users WHERE email = $1 FOR UPDATE',
+                    [cleanEmail]
+                );
+                if (result.rowCount > 0 && !result.rows[0].is_verified) {
+                    verificationToken = await createVerificationToken(client, result.rows[0].id);
+                }
+                await client.query('COMMIT');
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
+            }
+
+            if (verificationToken) {
+                try {
+                    await sendVerificationEmail(
+                        cleanEmail,
+                        buildPublicLink('/verify-email.html', verificationToken)
+                    );
+                } catch (error) {
+                    console.error('[SMTP] Renvoi de vérification impossible :', error.message);
+                }
+            }
+
+            // Même réponse pour les comptes inconnus ou déjà validés afin de ne pas exposer les comptes existants.
+            return sendResponse(res, 200, {
+                message: 'Si un compte non vérifié correspond à cette adresse, un nouvel e-mail de vérification vient d’être envoyé.'
+            });
+        }
+
         // --- ROUTE : Mot de passe oublié ---
         if (pathname === '/api/forgot-password' && method === 'POST') {
             const { email } = await parseJSONBody(req);

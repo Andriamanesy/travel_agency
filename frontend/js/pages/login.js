@@ -20,6 +20,11 @@ const translations = {
         "login.no_account": "Pas encore de compte ?",
         "login.success_msg": "Connexion réussie ! Redirection...",
         "login.error_default": "Email ou mot de passe incorrect.",
+        "login.verify_title": "Votre adresse e-mail n’est pas encore vérifiée.",
+        "login.verify_subtitle": "Renvoyez un e-mail de confirmation, puis ouvrez le nouveau lien reçu.",
+        "login.resend": "Renvoyer l’e-mail de vérification",
+        "login.resending": "Envoi en cours...",
+        "login.resend_sent": "Si ce compte n’est pas encore vérifié, un nouvel e-mail vient d’être envoyé.",
         "footer.rights": "Tous droits réservés."
     },
     en: {
@@ -226,6 +231,7 @@ if (loginForm) {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const submitBtn = document.getElementById('submit-btn');
+        const verificationHelp = document.getElementById('verification-help');
 
         const currentLang = localStorage.getItem('travelms_lang') || 'fr';
         submitBtn.textContent = translations[currentLang]["login.submitting"];
@@ -241,6 +247,9 @@ if (loginForm) {
             const data = await response.json();
 
             if (!response.ok) {
+                if (response.status === 403) {
+                    verificationHelp.classList.remove('hidden');
+                }
                 throw new Error(data.error || data.message || translations[currentLang]["login.error_default"]);
             }
 
@@ -265,6 +274,37 @@ if (loginForm) {
             showToast(err.message, "error");
             submitBtn.textContent = translations[currentLang]["login.submit"];
             submitBtn.disabled = false;
+        }
+    });
+}
+
+const resendVerificationBtn = document.getElementById('resend-verification-btn');
+if (resendVerificationBtn) {
+    resendVerificationBtn.addEventListener('click', async () => {
+        const email = document.getElementById('email').value.trim();
+        const currentLang = localStorage.getItem('travelms_lang') || 'fr';
+        if (!email) {
+            document.getElementById('email').focus();
+            showToast('Saisissez votre adresse e-mail pour recevoir un nouveau lien.', 'error');
+            return;
+        }
+
+        resendVerificationBtn.disabled = true;
+        resendVerificationBtn.textContent = translations[currentLang]['login.resending'] || translations.fr['login.resending'];
+        try {
+            const response = await fetch('/api/resend-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || translations[currentLang]['login.error_default']);
+            showToast(data.message || translations[currentLang]['login.resend_sent'] || translations.fr['login.resend_sent'], 'success');
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            resendVerificationBtn.disabled = false;
+            resendVerificationBtn.textContent = translations[currentLang]['login.resend'] || translations.fr['login.resend'];
         }
     });
 }

@@ -30,7 +30,8 @@ window.TravelConfig = Object.freeze({
             '/api/refresh',
             '/api/forgot-password',
             '/api/reset-password',
-            '/api/verify'
+            '/api/verify',
+            '/api/resend-verification'
         ].includes(pathname);
     }
 
