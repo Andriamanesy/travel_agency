@@ -3,163 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Tableau de Bord — TravelMS</title>
-    <link rel="icon" href="/assets/favicon.ico">
-    <!-- Tailwind CSS CDN -->
+    <title>TravelMS - Mon Tableau de bord</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-800 font-sans">
+<body class="bg-slate-50 font-sans text-slate-800">
 
-    <!-- En-tête fixe -->
+    <!-- NAVIGATION -->
     <header class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-50">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="index.html" class="text-2xl font-black text-blue-600 tracking-tight no-underline">Travel<span class="text-slate-900">MS</span></a>
+            <a href="index.html" class="text-2xl font-black text-blue-600 tracking-tight">Travel<span class="text-slate-900">MS</span></a>
+            
             <div class="flex items-center space-x-6">
-                <span id="userNameDisplay" class="font-semibold text-slate-700 text-sm md:text-base">Chargement...</span>
-                <button id="logoutBtn" class="bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 px-4 py-2 rounded-xl text-sm font-semibold transition">Déconnexion</button>
+                <!-- Sélecteur de langue -->
+                <select id="langSwitch" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer">
+                    <option value="fr">🇫🇷 FR</option>
+                    <option value="en">🇬🇧 EN</option>
+                    <option value="es">🇪🇸 ES</option>
+                    <option value="ru">🇷🇺 RU</option>
+                    <option value="it">🇮🇹 IT</option>
+                    <option value="zh">🇨🇳 ZH</option>
+                </select>
+
+                <button id="logoutBtn" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-4 py-2 rounded-xl font-medium transition text-sm">
+                    Déconnexion
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Contenu principal -->
-    <main class="max-w-7xl mx-auto px-6 w-full pt-28 pb-16 flex-1">
+    <!-- CONTENU PRINCIPAL DU DASHBOARD -->
+    <main class="pt-28 pb-16 max-w-5xl mx-auto px-6">
         
-        <!-- Bannière de bienvenue -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 md:p-10 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-            <div>
-                <h1 id="welcomeTitle" class="text-2xl md:text-3xl font-extrabold mb-2">Heureux de vous revoir !</h1>
-                <p class="text-blue-100 text-sm md:text-base">Gérez vos réservations et découvrez de nouvelles destinations sur-mesure.</p>
-            </div>
-            <a href="index.html#destinations" class="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-xl font-bold shadow-lg transition whitespace-nowrap">Explorer de nouveaux horizons</a>
-        </div>
-
-        <!-- Statistiques rapides -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl font-bold">✈️</div>
+        <!-- En-tête de bienvenue -->
+        <div class="mb-8 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <!-- Avatar / Photo de profil (Niveau 2) -->
+                <div class="relative">
+                    <img id="avatarDisplay" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="w-16 h-16 rounded-full object-cover border-2 border-blue-600 shadow-md">
+                </div>
                 <div>
-                    <div class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Voyages réservés</div>
-                    <div class="text-2xl font-black text-slate-900">1</div>
+                    <h1 class="text-2xl font-extrabold text-slate-900">Bonjour, <span id="userNameDisplay" class="text-blue-600">Voyageur</span> 👋</h1>
+                    <p class="text-slate-500 text-sm mt-1">Complétez votre profil pour pouvoir effectuer une réservation en toute sérénité.</p>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
-                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">⭐</div>
-                <div>
-                    <div class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Statut du compte</div>
-                    <div class="text-2xl font-black text-slate-900">Actif</div>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
-                <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl font-bold">🎁</div>
-                <div>
-                    <div class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Points fidélité</div>
-                    <div class="text-2xl font-black text-slate-900">350 pts</div>
-                </div>
+            <div class="bg-amber-50 text-amber-700 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider">
+                Profil Partiel
             </div>
         </div>
 
-        <!-- Section des voyages en cours / réservations -->
-        <div class="space-y-6">
-            <h2 class="text-xl md:text-2xl font-extrabold text-slate-900">Vos prochains séjours</h2>
+        <!-- Grille des sections du Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Carte de réservation -->
-                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col sm:flex-row hover:shadow-md transition">
-                    <div class="sm:w-48 h-48 sm:h-auto overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80" alt="Bali" class="w-full h-full object-cover transform hover:scale-105 transition duration-500">
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full">Confirmé</span>
-                            <h3 class="text-lg font-bold text-slate-900 mt-2">Échappée à Bali</h3>
-                            <p class="text-slate-500 text-sm">Départ le 15 Octobre 2026 • 10 jours</p>
-                        </div>
-                        <div class="flex items-center justify-between border-t border-slate-100 pt-4">
-                            <span class="text-lg font-extrabold text-blue-600">790 €</span>
-                            <button onclick="showToast('Détails de la réservation bientôt disponibles !', 'info')" class="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">Voir les détails →</button>
-                        </div>
-                    </div>
-                </div>
+            <!-- Colonne de gauche : Navigation interne -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-2 h-fit">
+                <a href="#profile" class="flex items-center space-x-3 px-4 py-3 rounded-2xl bg-blue-50 text-blue-600 font-semibold transition">
+                    <span>👤</span> <span>Mon Profil (Niveau 2)</span>
+                </a>
+                <a href="#reservations" class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-slate-50 font-medium transition">
+                    <span>✈️</span> <span>Mes Réservations</span>
+                </a>
+                <a href="#security" class="flex items-center space-x-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-slate-50 font-medium transition">
+                    <span>🔒</span> <span>Sécurité</span>
+                </a>
             </div>
-        </div>
 
+            <!-- Colonne de droite : Formulaire étendu (Niveau 2 — Profil Complet) -->
+            <div class="md:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <h2 class="text-xl font-bold text-slate-900">Informations du Profil</h2>
+                    <p class="text-slate-500 text-sm">Renseignez vos informations personnelles (optionnelles mais requises pour voyager).</p>
+                </div>
+
+                <!-- Message de succès / alerte -->
+                <div id="alertBox" class="hidden p-4 rounded-2xl text-sm font-medium"></div>
+
+                <form id="profileForm" class="space-y-4">
+                    <!-- Informations de base -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Nom complet</label>
+                            <input type="text" id="fullName" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Adresse e-mail</label>
+                            <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Niveau 2 — Champs additionnels -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Téléphone</label>
+                            <input type="tel" id="phone" placeholder="+261 34 00 000 00" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Date de naissance</label>
+                            <input type="date" id="birthdate" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Sexe</label>
+                            <select id="gender" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                                value="" disabled selected>Sélectionner</option>
+                                <option value="Féminin">Féminin</option>
+                                <option value="Masculin">Masculin</option>
+                                <option value="Autre">Autre / Non spécifié</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Nationalité</label>
+                            <input type="text" id="nationality" placeholder="Malgache, Française..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Adresse détaillée -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Adresse postale</label>
+                        <input type="text" id="address" placeholder="Lot IVX 123 Bis..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Ville</label>
+                            <input type="text" id="city" placeholder="Antananarivo" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pays</label>
+                            <input type="text" id="country" placeholder="Madagascar" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Code postal</label>
+                            <input type="text" id="postalCode" placeholder="101" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Langue préférée</label>
+                            <select id="preferredLang" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                                <option value="fr">Français</option>
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="ru">Русский</option>
+                                <option value="it">Italiano</option>
+                                <option value="zh">中文</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">URL de la photo de profil</label>
+                            <input type="url" id="avatar" placeholder="https://exemple.com/photo.jpg" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-blue-600/20 transition text-sm">
+                            Mettre à jour mon profil
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
     </main>
 
-    <!-- Pied de page -->
-    <footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm mt-auto">
-        <div class="max-w-7xl mx-auto px-6">
-            <p>&copy; <span id="current-year"></span> TravelMS. Tous droits réservés.</p>
-        </div>
-    </footer>
-
-    <!-- Scripts -->
+    <!-- SCRIPT DE GESTION DU PROFIL ÉTENDU -->
     <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-
-        // 1. Vérification de la session utilisateur et du token au chargement
-        const storedUser = localStorage.getItem('travelms_user') || localStorage.getItem('user');
+        // Vérification de la session
         const token = localStorage.getItem('token');
+        let userData = JSON.parse(localStorage.getItem('travelms_user') || localStorage.getItem('user') || '{}');
 
-        if (!storedUser || !token) {
-            // Si l'utilisateur ou le token est absent, redirection vers le login
+        if (!token && !userData.email) {
             window.location.href = 'login.html';
-        } else {
-            try {
-                const user = JSON.parse(storedUser);
-                const userName = user.name || 'Voyageur';
-                document.getElementById('userNameDisplay').textContent = `Bonjour, ${userName}`;
-                
-                const welcomeTitle = document.getElementById('welcomeTitle');
-                if (welcomeTitle) {
-                    welcomeTitle.textContent = `Heureux de vous revoir, ${userName} !`;
-                }
-            } catch (e) {
-                // En cas de données corrompues dans le localStorage
-                localStorage.clear();
-                window.location.href = 'login.html';
-            }
         }
 
-        // 2. Gestion propre du bouton de déconnexion
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('travelms_user');
-                localStorage.removeItem('user');
-                window.location.href = 'login.html';
-            });
+        // Pré-remplissage des champs avec les données stockées
+        document.getElementById('fullName').value = userData.name || userData.fullName || '';
+        document.getElementById('email').value = userData.email || '';
+        document.getElementById('phone').value = userData.phone || '';
+        document.getElementById('birthdate').value = userData.birthdate || '';
+        document.getElementById('gender').value = userData.gender || '';
+        document.getElementById('nationality').value = userData.nationality || '';
+        document.getElementById('address').value = userData.address || '';
+        document.getElementById('city').value = userData.city || '';
+        document.getElementById('country').value = userData.country || '';
+        document.getElementById('postalCode').value = userData.postalCode || '';
+        document.getElementById('preferredLang').value = userData.preferredLang || 'fr';
+        document.getElementById('avatar').value = userData.avatar || '';
+
+        // Affichage dynamique dans l'en-tête
+        document.getElementById('userNameDisplay').textContent = userData.name || userData.fullName || 'Voyageur';
+        if (userData.avatar) {
+            document.getElementById('avatarDisplay').src = userData.avatar;
         }
 
-        // 3. Fonction Toast pour les notifications
-        function showToast(message, type = 'success') {
-            let container = document.getElementById('toast-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'toast-container';
-                container.className = 'fixed top-5 right-5 z-50 flex flex-col space-y-3';
-                document.body.appendChild(container);
+        // Gestion de la soumission du formulaire de profil (Niveau 2)
+        const profileForm = document.getElementById('profileForm');
+        const alertBox = document.getElementById('alertBox');
+
+        profileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Mise à jour de l'objet utilisateur
+            userData.name = document.getElementById('fullName').value;
+            userData.fullName = userData.name;
+            userData.email = document.getElementById('email').value;
+            userData.phone = document.getElementById('phone').value;
+            userData.birthdate = document.getElementById('birthdate').value;
+            userData.gender = document.getElementById('gender').value;
+            userData.nationality = document.getElementById('nationality').value;
+            userData.address = document.getElementById('address').value;
+            userData.city = document.getElementById('city').value;
+            userData.country = document.getElementById('country').value;
+            userData.postalCode = document.getElementById('postalCode').value;
+            userData.preferredLang = document.getElementById('preferredLang').value;
+            userData.avatar = document.getElementById('avatar').value;
+
+            // Sauvegarde dans le localStorage
+            localStorage.setItem('travelms_user', JSON.stringify(userData));
+            localStorage.setItem('user', JSON.stringify(userData));
+
+            // Actualisation visuelle instantanée
+            document.getElementById('userNameDisplay').textContent = userData.name;
+            if (userData.avatar) {
+                document.getElementById('avatarDisplay').src = userData.avatar;
             }
-            
-            const toast = document.createElement('div');
-            const bgClass = type === 'success' ? 'bg-emerald-600' : (type === 'info' ? 'bg-blue-600' : 'bg-rose-600');
-            
-            toast.className = `${bgClass} text-white px-6 py-3.5 rounded-2xl shadow-xl flex items-center space-x-3 transition-all transform translate-y-2 opacity-0 duration-300 font-medium text-sm`;
-            
-            const icon = type === 'success' ? '✅' : (type === 'info' ? 'ℹ️' : '⚠️');
-            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
-            
-            container.appendChild(toast);
-            
+
+            // Message de succès
+            alertBox.className = "p-4 rounded-2xl text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
+            alertBox.textContent = "✅ Votre profil a été mis à jour avec succès ! Vous pouvez maintenant réserver un voyage.";
+            alertBox.classList.remove('hidden');
+
             setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-            
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
-        }
+                alertBox.classList.add('hidden');
+            }, 4500);
+        });
+
+        // Déconnexion
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('travelms_user');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        });
+
+        // Sélecteur de langue global
+        const savedLang = localStorage.getItem('travelms_lang') || 'fr';
+        document.getElementById('langSwitch').value = savedLang;
+        document.getElementById('langSwitch').addEventListener('change', (e) => {
+            localStorage.setItem('travelms_lang', e.target.value);
+            window.location.reload();
+        });
     </script>
 
 </body>
