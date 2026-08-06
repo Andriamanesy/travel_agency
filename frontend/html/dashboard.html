@@ -136,7 +136,7 @@
                         </div>
                     </div>
 
-                    <!-- Pays, Ville (Dépendante) et Code postal -->
+                    <!-- Pays, Ville (Dépendante) et Code postal (Automatique) -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Pays</label>
@@ -152,7 +152,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Code postal</label>
-                            <input type="text" id="postalCode" placeholder="101" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+                            <input type="text" id="postalCode" placeholder="Auto" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
                         </div>
                     </div>
 
@@ -201,7 +201,7 @@
             window.location.href = 'login.html';
         }
 
-        // Bloquer automatiquement tout caractère autre que des chiffres dans le champ téléphone
+        // Bloquer tout caractère autre que des chiffres dans le téléphone
         const phoneInput = document.getElementById('phone');
         phoneInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/\D/g, '');
@@ -223,6 +223,19 @@
             "Allemagne": ["Berlin", "Hambourg", "Munich", "Francfort"]
         };
 
+        // Correspondance indicative des codes postaux par ville principale
+        const postalCodesByCity = {
+            "Antananarivo": "101", "Toamasina": "501", "Antsirabe": "110", "Fianarantsoa": "301", 
+            "Mahajanga": "401", "Toliara": "601", "Antsiranana": "201", "Nosy Be": "207",
+            "Paris": "75001", "Lyon": "69001", "Marseille": "13001", "Toulouse": "31000", 
+            "Nice": "06000", "Nantes": "44000", "Strasbourg": "67000", "Montpellier": "34000", 
+            "Bordeaux": "33000", "Lille": "59000", "Bruxelles": "1000", "Anvers": "2000", 
+            "Genève": "1201", "Zurich": "8001", "Lausanne": "1000", "Montréal": "H3A 0G4", 
+            "Toronto": "M5V 2H1", "New York": "10001", "Alger": "16000", "Oran": "31000", 
+            "Casablanca": "20000", "Rabat": "10000", "Tunis": "1000", "Madrid": "28001", 
+            "Barcelone": "08001", "Rome": "00100", "Milan": "20121", "Berlin": "10115", "Munich": "80331"
+        };
+
         function updateCities(selectedCountry, preselectedCity = '') {
             const citySelect = document.getElementById('city');
             citySelect.innerHTML = '<option value="" disabled selected>Sélectionner la ville</option>';
@@ -238,6 +251,15 @@
                 citySelect.appendChild(option);
             });
         }
+
+        // Remplissage automatique du code postal lors du choix de la ville
+        document.getElementById('city').addEventListener('change', (e) => {
+            const selectedCity = e.target.value;
+            const postalInput = document.getElementById('postalCode');
+            if (postalCodesByCity[selectedCity]) {
+                postalInput.value = postalCodesByCity[selectedCity];
+            }
+        });
 
         async function loadCountries() {
             const countrySelect = document.getElementById('country');
@@ -282,6 +304,7 @@
 
         document.getElementById('country').addEventListener('change', (e) => {
             updateCities(e.target.value);
+            document.getElementById('postalCode.value') = ''; // Réinitialiser le code postal si le pays change
         });
 
         function loadNationalities() {
@@ -311,7 +334,6 @@
         document.getElementById('fullName').value = userData.name || userData.fullName || '';
         document.getElementById('email').value = userData.email || '';
         
-        // Gestion du pré-remplissage du téléphone (Séparation Code / Numéro)
         if (userData.phone) {
             const parts = userData.phone.trim().split(' ');
             if (parts.length >= 2 && parts[0].startsWith('+')) {
@@ -350,7 +372,6 @@
         profileForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
-            // Validation Téléphone (Uniquement des chiffres entre 6 et 12 caractères)
             const phoneCode = document.getElementById('phoneCode').value;
             const phoneNum = phoneInput.value.trim();
             if (phoneNum && !/^\d{6,12}$/.test(phoneNum)) {
@@ -358,14 +379,12 @@
                 return;
             }
 
-            // Validation Ville
             const cityInput = document.getElementById('city').value;
             if (!cityInput) {
                 showAlert("⚠️ Veuillez sélectionner une ville.");
                 return;
             }
 
-            // Validation Code postal
             const postalInput = document.getElementById('postalCode').value.trim();
             const postalRegex = /^[a-zA-Z0-9\s\-]{2,10}$/;
             if (postalInput && !postalRegex.test(postalInput)) {
@@ -373,7 +392,6 @@
                 return;
             }
 
-            // Enregistrement combiné de l'indicatif et du numéro
             userData.name = document.getElementById('fullName').value;
             userData.fullName = userData.name;
             userData.email = document.getElementById('email').value;
