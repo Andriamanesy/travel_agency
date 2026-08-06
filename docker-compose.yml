@@ -4,7 +4,7 @@ services:
     container_name: travel_db
     environment:
       POSTGRES_USER: travel_user
-      POSTGRES_PASSWORD: travel_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-travel_password}
       POSTGRES_DB: travel_db
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -25,14 +25,16 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
+      NODE_ENV: production
       DB_HOST: database
       DB_USER: travel_user
-      DB_PASSWORD: travel_password
+      DB_PASSWORD: ${DB_PASSWORD:-travel_password}
       DB_NAME: travel_db
       # URL publique utilisée dans les liens de vérification et de réinitialisation.
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://travelms.example.com}
       # Secret long et aléatoire obligatoire : ne jamais fournir de valeur par défaut.
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Définissez JWT_ACCESS_SECRET avant le déploiement}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
     depends_on:
       database:
         condition: service_healthy

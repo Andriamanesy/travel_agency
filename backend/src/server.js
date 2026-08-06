@@ -6,9 +6,19 @@ const fs = require('fs');
 // Formidable v3 expose sa fonction de création sous un export nommé.
 const { formidable } = require('formidable');
 const { Pool } = require('pg');
-const { loadAuthorization, signAccessToken, authenticate, issueRefreshToken, revokeAll, hash } = require('./auth');
 
 const PASSWORD_MIN_LENGTH = 6;
+const {
+    loadAuthorization,
+    signAccessToken,
+    authenticate,
+    issueRefreshToken,
+    revokeAll,
+    hash,
+    checkPermission,
+    checkRole,
+    ownerCheck
+} = require('./auth');
 
 /**
  * Construit les liens envoyés par e-mail à partir de l'URL publique du site.
@@ -445,6 +455,29 @@ const server = http.createServer(async (req, res) => {
             return sendResponse(res, 200, { users: rows });
         }
 
+        const roleMatch = pathname.match(/^\/api\/admin\/users\/([0-9a-f-]+)\/roles$/i);
+        if (roleMatch && method === 'PUT') {
+            const user = await getUserByToken(req);
+            if (!user || !req.auth.permissions.includes('users:update:any')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            const { roles } = await parseJSONBody(req);
+            if (!Array.isArray(roles) || roles.length === 0 || roles.some(role => !['admin', 'agent', 'client'].includes(role))) {
+                return sendResponse(res, 400, { error: 'Liste de rôles invalide.' });
+            }
+            const targetId = roleMatch[1];
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const target = await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [targetId]);
+                if (!target.rows[0]) { await client.query('ROLLBACK'); return sendResponse(res, 404, { error: 'Utilisateur introuvable.' }); }
+                await client.query('DELETE FROM user_roles WHERE user_id=$1', [targetId]);
+                await client.query(`INSERT INTO user_roles (user_id,role_id) SELECT $1,id FROM roles WHERE code = ANY($2::text[])`, [targetId, roles]);
+                await client.query('UPDATE users SET authz_version=authz_version+1 WHERE id=$1', [targetId]);
+                await client.query('UPDATE refresh_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=$1 AND revoked_at IS NULL', [targetId]);
+                await client.query('COMMIT');
+                return sendResponse(res, 200, { message: 'Rôles mis à jour ; les sessions existantes ont été révoquées.' });
+            } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
+        }
+
         // --- ROUTE : Changement de mot de passe ---
         if (pathname === '/api/change-password' && method === 'PUT') {
             const user = await getUserByToken(req);
@@ -648,6 +681,21 @@ const server = http.createServer(async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Serveur Node.js natif démarré sur le port ${PORT}`);
-});
+async function bootstrapAdmin() {
+    const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+    if (!email) return;
+    const result = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
+    if (!result.rows[0]) {
+        console.warn('[RBAC] BOOTSTRAP_ADMIN_EMAIL ne correspond à aucun utilisateur.');
+        return;
+    }
+    const userId = result.rows[0].id;
+    await pool.query('DELETE FROM user_roles WHERE user_id=$1', [userId]);
+    await pool.query(`INSERT INTO user_roles (user_id,role_id) SELECT $1,id FROM roles WHERE code='admin'`, [userId]);
+    await revokeAll(pool, userId);
+    console.log('[RBAC] Administrateur initial configuré.');
+}
+
+bootstrapAdmin()
+    .then(() => server.listen(PORT, () => console.log(`Serveur Node.js natif démarré sur le port ${PORT}`)))
+    .catch(error => { console.error('[RBAC] Initialisation impossible:', error); process.exit(1); });
