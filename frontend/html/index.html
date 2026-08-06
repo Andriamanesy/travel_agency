@@ -15,6 +15,7 @@
             <div class="text-2xl font-black text-blue-600 tracking-tight">Travel<span class="text-slate-900">MS</span></div>
             <nav class="hidden md:flex space-x-8 font-medium text-slate-600">
                 <a href="#" class="text-blue-600" data-i18n="nav.home">Accueil</a>
+                <a href="#destinations" class="hover:text-blue-600 transition" data-i18n="nav.destinations">Destinations</a>
                 <a href="#circuits" class="hover:text-blue-600 transition" data-i18n="nav.circuits">Circuits à Madagascar</a>
                 <a href="#features" class="hover:text-blue-600 transition" data-i18n="nav.why">Pourquoi nous ?</a>
             </nav>
@@ -54,7 +55,17 @@
         </div>
     </section>
 
-    <!-- 3. SECTION CIRCUITS PHARES À MADAGASCAR -->
+    <!-- 3. SECTION DESTINATIONS DYNAMIQUES -->
+    <section id="destinations" class="py-20 max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Destinations incontournables</h2>
+            <p class="text-slate-500 text-base">Découvrez les meilleures destinations de Madagascar mises à jour directement depuis votre espace d’administration.</p>
+        </div>
+
+        <div id="destinationCards" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+    </section>
+
+    <!-- 4. SECTION CIRCUITS PHARES À MADAGASCAR -->
     <section id="circuits" class="py-20 max-w-7xl mx-auto px-6">
         <div class="text-center max-w-2xl mx-auto mb-16">
             <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4" data-i18n="circuits.title">Nos Circuits Phares à Madagascar</h2>

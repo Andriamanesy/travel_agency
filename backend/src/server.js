@@ -8,6 +8,14 @@ const { formidable } = require('formidable');
 const { Pool } = require('pg');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
 
+const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads');
+const DESTINATION_UPLOAD_DIR = path.join(UPLOAD_DIR, 'destinations');
+const ALLOWED_IMAGE_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+if (typeof fetch !== 'function') {
+    throw new Error('Le runtime Node.js doit supporter fetch() (Node 18+).');
+}
+
 const PASSWORD_MIN_LENGTH = 6;
 const {
     loadAuthorization,
@@ -55,6 +63,28 @@ const pool = new Pool(
         : { connectionString: process.env.DATABASE_URL }
 );
 
+const publicAppOrigin = (() => {
+    const raw = process.env.PUBLIC_APP_URL;
+    if (!raw) return null;
+    try {
+        return new URL(raw).origin;
+    } catch {
+        return null;
+    }
+})();
+
+function getCorsOrigin(origin) {
+    if (process.env.NODE_ENV !== 'production') {
+        return origin || '*';
+    }
+
+    if (!origin || !publicAppOrigin) {
+        return null;
+    }
+
+    return origin === publicAppOrigin ? origin : null;
+}
+
 function newEmailToken() {
     return crypto.randomBytes(32).toString('base64url');
 }
@@ -88,10 +118,57 @@ async function createPasswordResetToken(client, userId) {
 }
 
 // Création du dossier de stockage des photos sur le serveur (s'il n'existe pas)
-const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads', 'avatars');
+
+async function ensureDirectory(dir) {
+    await fs.promises.mkdir(dir, { recursive: true });
+}
 
 async function ensureUploadDir() {
-    await fs.promises.mkdir(UPLOAD_DIR, { recursive: true });
+    await ensureDirectory(UPLOAD_DIR);
+}
+
+async function ensureDestinationUploadDir() {
+    await ensureDirectory(DESTINATION_UPLOAD_DIR);
+}
+
+function sanitizeFileName(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 180);
+}
+
+function buildDestinationFileName(destinationId, originalName) {
+    const ext = path.extname(originalName) || '.jpg';
+    const baseName = sanitizeFileName(path.basename(originalName, ext));
+    const timestamp = Math.floor(Date.now() / 1000);
+    return `dest_${destinationId}_${timestamp}_${baseName}${ext}`;
+}
+
+function toFileArray(value) {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+}
+
+async function moveFileToDestinationDir(srcFilePath, destFileName) {
+    const destPath = path.join(DESTINATION_UPLOAD_DIR, destFileName);
+    await fs.promises.rename(srcFilePath, destPath);
+    return destPath;
+}
+
+async function cleanupUploadedPaths(paths) {
+    await Promise.all(paths.map(async (filePath) => {
+        try {
+            await fs.promises.unlink(filePath);
+        } catch (error) {
+            if (error.code !== 'ENOENT') {
+                console.warn('[Upload] Échec du nettoyage du fichier :', filePath, error.message);
+            }
+        }
+    }));
 }
 
 function parseMultipartForm(form, req) {
@@ -101,6 +178,27 @@ function parseMultipartForm(form, req) {
             resolve({ fields, files });
         });
     });
+}
+
+async function getDestinationGallery(destinationId) {
+    const { rows } = await pool.query(
+        `SELECT id, image_url, created_at FROM destination_images WHERE destination_id = $1 ORDER BY created_at ASC`,
+        [destinationId]
+    );
+    return rows;
+}
+
+async function getDestinationById(id) {
+    const { rows } = await pool.query('SELECT * FROM destinations WHERE id = $1', [id]);
+    const destination = rows[0] || null;
+    if (!destination) return null;
+    const gallery = await getDestinationGallery(destination.id);
+    return {
+        ...destination,
+        cover_image: destination.cover_image || destination.image_url || '',
+        image_url: destination.cover_image || destination.image_url || '',
+        gallery
+    };
 }
 
 async function removeFileIfExists(filePath) {
@@ -191,6 +289,58 @@ function validateBirthdate(birthdate) {
     return null;
 }
 
+function slugify(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+}
+
+function parseBoolean(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value !== 'string') return false;
+    return ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+}
+
+function validateDestinationPayload(body, isUpdate = false) {
+    const price = body.price === undefined || body.price === null || body.price === ''
+        ? NaN
+        : Number(body.price);
+
+    const payload = {
+        title: body.title?.trim?.() || '',
+        description: body.description?.trim?.() || '',
+        price,
+        location: body.location?.trim?.() || '',
+        cover_image: body.cover_image?.trim?.() || '',
+        is_active: body.is_active === undefined ? true : parseBoolean(body.is_active)
+    };
+
+    const errors = [];
+    if (!payload.title) errors.push('Le titre de la destination est requis.');
+    if (!payload.location) errors.push('Le lieu de la destination est requis.');
+    if (!payload.description) errors.push('La description est requise.');
+    if (!payload.cover_image) errors.push('L’URL de l’image de couverture est requise.');
+    if (Number.isNaN(payload.price)) {
+        errors.push('Le prix est invalide.');
+    }
+
+    if (errors.length > 0) {
+        const error = new Error(errors.join(' '));
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return payload;
+}
+
+function isUuid(value) {
+    return typeof value === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
+}
+
 // Fonction sécurisée pour parser le corps d'une requête JSON
 function parseJSONBody(req) {
     return new Promise((resolve, reject) => {
@@ -218,9 +368,10 @@ function parseJSONBody(req) {
 
 // Configuration des en-têtes CORS et réponse JSON
 function sendResponse(res, statusCode, data, extraHeaders = {}) {
+    const allowedOrigin = getCorsOrigin(res._origin);
     res.writeHead(statusCode, {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin } : {}),
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         ...extraHeaders
@@ -237,10 +388,18 @@ async function getUserByToken(req) {
 
 // Création du serveur HTTP natif
 const server = http.createServer(async (req, res) => {
+    res._origin = req.headers.origin || null;
+
     // Gestion des requêtes preflight CORS (OPTIONS)
     if (req.method === 'OPTIONS') {
+        const origin = getCorsOrigin(req.headers.origin);
+        if (!origin) {
+            res.writeHead(403);
+            res.end();
+            return;
+        }
         res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': origin,
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization'
         });
@@ -255,7 +414,15 @@ const server = http.createServer(async (req, res) => {
     try {
         // --- 1. SERVICE DES FICHIERS STATIQUES (Pour afficher les images uploadées) ---
         if (pathname.startsWith('/uploads/') && method === 'GET') {
-            const filePath = path.join(__dirname, '../public', pathname);
+            const uploadBase = path.join(__dirname, '../public', 'uploads');
+            const filePath = path.normalize(path.join(__dirname, '../public', pathname));
+            const relativePath = path.relative(uploadBase, filePath);
+            if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+                res.writeHead(403, { 'Content-Type': 'text/plain' });
+                res.end('Accès refusé');
+                return;
+            }
+
             fs.readFile(filePath, (err, content) => {
                 if (err) {
                     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -288,6 +455,46 @@ const server = http.createServer(async (req, res) => {
                 console.warn('[RestCountries]', error.message);
                 return sendResponse(res, 503, { error: 'Service de pays temporairement indisponible.' });
             }
+        }
+
+        // --- ROUTE : Liste publique des destinations ---
+        if (pathname === '/api/destinations' && method === 'GET') {
+            const page = Number(parsedUrl.query.page) >= 1 ? Number(parsedUrl.query.page) : 1;
+            const limit = Number(parsedUrl.query.limit) >= 1 && Number(parsedUrl.query.limit) <= 100 ? Number(parsedUrl.query.limit) : 12;
+            const sort = ['price_asc', 'price_desc', 'created_at_asc', 'created_at_desc'].includes(parsedUrl.query.sort)
+                ? parsedUrl.query.sort
+                : 'created_at_desc';
+
+            const orderBy = {
+                price_asc: 'price ASC',
+                price_desc: 'price DESC',
+                created_at_asc: 'created_at ASC',
+                created_at_desc: 'created_at DESC'
+            }[sort];
+
+            const offset = (page - 1) * limit;
+            const totalResult = await pool.query('SELECT COUNT(*)::int AS count FROM destinations WHERE is_active = TRUE');
+            const { rows } = await pool.query(
+                `SELECT id, title, description, price, location, cover_image, created_at
+                 FROM destinations
+                 WHERE is_active = TRUE
+                 ORDER BY ${orderBy}
+                 LIMIT $1 OFFSET $2`,
+                [limit, offset]
+            );
+            return sendResponse(res, 200, {
+                destinations: rows.map(destination => ({
+                    ...destination,
+                    image_url: destination.cover_image
+                })),
+                pagination: {
+                    page,
+                    limit,
+                    total: totalResult.rows[0].count,
+                    pages: Math.ceil(totalResult.rows[0].count / limit),
+                    sort
+                }
+            });
         }
 
         // --- ROUTE : Inscription ---
@@ -538,6 +745,220 @@ const server = http.createServer(async (req, res) => {
             if (!user || !req.auth.permissions.includes('users:read:any')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
             const { rows } = await pool.query(`SELECT u.id,u.name,u.email,u.is_active,COALESCE(array_agg(r.code) FILTER (WHERE r.code IS NOT NULL),'{}') roles FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles r ON r.id=ur.role_id GROUP BY u.id ORDER BY u.created_at DESC`);
             return sendResponse(res, 200, { users: rows });
+        }
+
+        if (pathname === '/api/admin/destinations' && method === 'GET') {
+            const user = await getUserByToken(req);
+            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            const { rows } = await pool.query(`SELECT id, title, description, price, location, cover_image, is_active, created_at, updated_at FROM destinations ORDER BY created_at DESC`);
+            return sendResponse(res, 200, { destinations: rows.map(destination => ({
+                ...destination,
+                image_url: destination.cover_image
+            })) });
+        }
+
+        if (pathname === '/api/admin/destinations' && method === 'POST') {
+            const user = await getUserByToken(req);
+            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            await ensureUploadDir();
+            await ensureDestinationUploadDir();
+
+            const form = formidable({
+                uploadDir: DESTINATION_UPLOAD_DIR,
+                keepExtensions: true,
+                multiples: true,
+                maxFileSize: 5 * 1024 * 1024,
+                filter: ({ mimetype }) => !mimetype || ALLOWED_IMAGE_MIMETYPES.includes(mimetype)
+            });
+
+            const { fields, files } = await parseMultipartForm(form, req);
+            const coverFile = toFileArray(files.cover_image)[0];
+            const galleryFiles = toFileArray(files.gallery);
+
+            const payload = validateDestinationPayload({
+                title: fields.title,
+                description: fields.description,
+                price: fields.price,
+                location: fields.location,
+                cover_image: fields.cover_image || fields.image_url,
+                is_active: fields.is_active
+            });
+
+            const client = await pool.connect();
+            const movedFiles = [];
+            let coverImageUrl = payload.cover_image;
+
+            try {
+                await client.query('BEGIN');
+                const { rows } = await client.query(
+                    `INSERT INTO destinations
+                        (title, description, price, location, cover_image, is_active)
+                     VALUES ($1,$2,$3,$4,$5,$6)
+                     RETURNING id, title, description, price, location, cover_image, is_active, created_at, updated_at`,
+                    [payload.title, payload.description, payload.price, payload.location, coverImageUrl, payload.is_active]
+                );
+                const destination = rows[0];
+
+                if (coverFile) {
+                    const fileName = buildDestinationFileName(destination.id, coverFile.originalFilename || coverFile.newFilename || 'cover.jpg');
+                    const destPath = await moveFileToDestinationDir(coverFile.filepath, fileName);
+                    movedFiles.push(destPath);
+                    coverImageUrl = `/uploads/destinations/${fileName}`;
+                    await client.query('UPDATE destinations SET cover_image=$1 WHERE id=$2', [coverImageUrl, destination.id]);
+                }
+
+                const gallery = [];
+                for (let i = 0; i < galleryFiles.length; i += 1) {
+                    const galleryFile = galleryFiles[i];
+                    if (!galleryFile || !galleryFile.filepath) continue;
+                    const fileName = buildDestinationFileName(destination.id, galleryFile.originalFilename || galleryFile.newFilename || `gallery-${i}.jpg`);
+                    const destPath = await moveFileToDestinationDir(galleryFile.filepath, fileName);
+                    movedFiles.push(destPath);
+                    const imageUrl = `/uploads/destinations/${fileName}`;
+                    const result = await client.query(
+                        `INSERT INTO destination_images (destination_id, image_url)
+                         VALUES ($1,$2)
+                         RETURNING id, image_url, created_at`,
+                        [destination.id, imageUrl]
+                    );
+                    gallery.push(result.rows[0]);
+                }
+
+                await client.query('COMMIT');
+                return sendResponse(res, 201, {
+                    destination: {
+                        ...destination,
+                        cover_image: coverImageUrl,
+                        image_url: coverImageUrl,
+                        gallery
+                    }
+                });
+            } catch (error) {
+                await client.query('ROLLBACK');
+                await cleanupUploadedPaths(movedFiles);
+                if (coverFile) {
+                    await removeFileIfExists(coverFile.filepath);
+                }
+                if (Array.isArray(galleryFiles)) {
+                    for (const file of galleryFiles) {
+                        if (file?.filepath) await removeFileIfExists(file.filepath);
+                    }
+                }
+                throw error;
+            } finally {
+                client.release();
+            }
+        }
+
+        const adminDestinationMatch = pathname.match(/^\/api\/admin\/destinations\/([0-9a-fA-F-]{36})$/);
+        if (adminDestinationMatch && method === 'PUT') {
+            const user = await getUserByToken(req);
+            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            const destinationId = adminDestinationMatch[1];
+            await ensureUploadDir();
+            await ensureDestinationUploadDir();
+
+            const form = formidable({
+                uploadDir: DESTINATION_UPLOAD_DIR,
+                keepExtensions: true,
+                multiples: true,
+                maxFileSize: 5 * 1024 * 1024,
+                filter: ({ mimetype }) => !mimetype || ALLOWED_IMAGE_MIMETYPES.includes(mimetype)
+            });
+
+            const { fields, files } = await parseMultipartForm(form, req);
+            const coverFile = toFileArray(files.cover_image)[0];
+            const galleryFiles = toFileArray(files.gallery);
+
+            const payload = validateDestinationPayload({
+                title: fields.title,
+                description: fields.description,
+                price: fields.price,
+                location: fields.location,
+                cover_image: fields.cover_image || fields.image_url,
+                is_active: fields.is_active
+            });
+
+            const client = await pool.connect();
+            const movedFiles = [];
+
+            try {
+                await client.query('BEGIN');
+                const current = await client.query('SELECT cover_image FROM destinations WHERE id = $1', [destinationId]);
+                if (current.rowCount === 0) {
+                    await client.query('ROLLBACK');
+                    return sendResponse(res, 404, { error: 'Destination introuvable.' });
+                }
+
+                let coverImageUrl = payload.cover_image || current.rows[0].cover_image;
+                if (coverFile) {
+                    const fileName = buildDestinationFileName(destinationId, coverFile.originalFilename || coverFile.newFilename || 'cover.jpg');
+                    const destPath = await moveFileToDestinationDir(coverFile.filepath, fileName);
+                    movedFiles.push(destPath);
+                    coverImageUrl = `/uploads/destinations/${fileName}`;
+                    if (current.rows[0].cover_image && current.rows[0].cover_image.startsWith('/uploads/destinations/')) {
+                        await removeFileIfExists(path.join(__dirname, '../public', current.rows[0].cover_image));
+                    }
+                }
+
+                const result = await client.query(
+                    `UPDATE destinations SET
+                        title=$1, description=$2, price=$3, location=$4, cover_image=$5,
+                        is_active=$6, updated_at=CURRENT_TIMESTAMP
+                     WHERE id=$7
+                     RETURNING id, title, description, price, location, cover_image, is_active, created_at, updated_at`,
+                    [payload.title, payload.description, payload.price, payload.location, coverImageUrl, payload.is_active, destinationId]
+                );
+
+                const gallery = [];
+                for (let i = 0; i < galleryFiles.length; i += 1) {
+                    const galleryFile = galleryFiles[i];
+                    if (!galleryFile || !galleryFile.filepath) continue;
+                    const fileName = buildDestinationFileName(destinationId, galleryFile.originalFilename || galleryFile.newFilename || `gallery-${i}.jpg`);
+                    const destPath = await moveFileToDestinationDir(galleryFile.filepath, fileName);
+                    movedFiles.push(destPath);
+                    const imageUrl = `/uploads/destinations/${fileName}`;
+                    const insertResult = await client.query(
+                        `INSERT INTO destination_images (destination_id, image_url)
+                         VALUES ($1,$2)
+                         RETURNING id, image_url, created_at`,
+                        [destinationId, imageUrl]
+                    );
+                    gallery.push(insertResult.rows[0]);
+                }
+
+                await client.query('COMMIT');
+                return sendResponse(res, 200, {
+                    destination: {
+                        ...result.rows[0],
+                        image_url: coverImageUrl,
+                        gallery
+                    }
+                });
+            } catch (error) {
+                await client.query('ROLLBACK');
+                await cleanupUploadedPaths(movedFiles);
+                if (coverFile) {
+                    await removeFileIfExists(coverFile.filepath);
+                }
+                if (Array.isArray(galleryFiles)) {
+                    for (const file of galleryFiles) {
+                        if (file?.filepath) await removeFileIfExists(file.filepath);
+                    }
+                }
+                throw error;
+            } finally {
+                client.release();
+            }
+        }
+
+        if (adminDestinationMatch && method === 'DELETE') {
+            const user = await getUserByToken(req);
+            if (!user || !req.auth.permissions.includes('destinations:manage')) return sendResponse(res, 403, { error: 'Permission insuffisante.' });
+            const destinationId = adminDestinationMatch[1];
+            const result = await pool.query('DELETE FROM destinations WHERE id=$1 RETURNING id', [destinationId]);
+            if (result.rowCount === 0) return sendResponse(res, 404, { error: 'Destination introuvable.' });
+            return sendResponse(res, 200, { message: 'Destination supprimée.' });
         }
 
         const roleMatch = pathname.match(/^\/api\/admin\/users\/([0-9a-f-]+)\/roles$/i);

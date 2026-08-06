@@ -12,3 +12,28 @@ async function fetchHomeMessage() {
         return { error: "Impossible de joindre le Backend ou la Base de données." };
     }
 }
+
+async function apiRequest(path, method = 'GET', body = null) {
+    const url = `${API_BASE_URL}${path}`;
+    const options = {
+        method,
+        headers: {}
+    };
+
+    if (body !== null) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, options);
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        const message = payload?.error || payload?.message || `Erreur HTTP : ${response.status}`;
+        throw new Error(message);
+    }
+
+    return payload;
+}
+
+export { fetchHomeMessage, apiRequest };

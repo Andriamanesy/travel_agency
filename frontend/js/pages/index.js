@@ -3,6 +3,7 @@
     const translations = {
         fr: {
             "nav.home": "Accueil",
+            "nav.destinations": "Destinations",
             "nav.circuits": "Circuits à Madagascar",
             "nav.why": "Pourquoi nous ?",
             "nav.login": "Connexion",
@@ -39,6 +40,7 @@
         },
         en: {
             "nav.home": "Home",
+            "nav.destinations": "Destinations",
             "nav.circuits": "Madagascar Tours",
             "nav.why": "Why us?",
             "nav.login": "Sign In",
@@ -75,6 +77,7 @@
         },
         es: {
             "nav.home": "Inicio",
+            "nav.destinations": "Destinos",
             "nav.circuits": "Circuitos en Madagascar",
             "nav.why": "¿Por qué nosotros?",
             "nav.login": "Iniciar sesión",
@@ -111,6 +114,7 @@
         },
         ru: {
             "nav.home": "Главная",
+            "nav.destinations": "Направления",
             "nav.circuits": "Туры на Мадагаскар",
             "nav.why": "Почему мы?",
             "nav.login": "Войти",
@@ -147,6 +151,7 @@
         },
         it: {
             "nav.home": "Home",
+            "nav.destinations": "Destinazioni",
             "nav.circuits": "Tour in Madagascar",
             "nav.why": "Perché noi?",
             "nav.login": "Accedi",
@@ -183,6 +188,7 @@
         },
         zh: {
             "nav.home": "首页",
+            "nav.destinations": "目的地",
             "nav.circuits": "马达加斯加旅游线路",
             "nav.why": "为什么选择我们",
             "nav.login": "登录",
@@ -243,6 +249,7 @@
         if (select) select.value = lang;
     }
 
+    const API_BASE_URL = window.TravelConfig?.apiBaseUrl || '';
     const savedLang = localStorage.getItem('travelms_lang') || 'fr';
     setLanguage(savedLang);
 
@@ -278,4 +285,53 @@
             }
             window.location.reload();
         });
+    }
+
+    loadDestinationCards();
+
+    async function loadDestinationCards() {
+        const container = document.getElementById('destinationCards');
+        if (!container) return;
+        container.innerHTML = `<div class="col-span-1 md:col-span-3 text-center text-slate-500">Chargement des destinations...</div>`;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/destinations`);
+            if (!response.ok) throw new Error('Impossible de charger les destinations.');
+            const payload = await response.json();
+            if (!Array.isArray(payload.destinations) || payload.destinations.length === 0) {
+                container.innerHTML = `<div class="col-span-1 md:col-span-3 text-center text-slate-500">Aucune destination disponible pour le moment.</div>`;
+                return;
+            }
+
+            container.innerHTML = payload.destinations.map(destination => {
+                const shortDescription = destination.description ? destination.description.slice(0, 120).trim() : '';
+                return `
+                    <article class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-xl transition duration-300 group">
+                        <div>
+                            <div class="relative h-64 overflow-hidden">
+                                <img src="${destination.image_url}" alt="${destination.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold px-3.5 py-1.5 rounded-full">${destination.location}</div>
+                            </div>
+
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-3">
+                                    <h3 class="text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition">${destination.title}</h3>
+                                    <span class="text-blue-600 font-extrabold text-lg whitespace-nowrap ml-2">${Number(destination.price).toFixed(2)} €</span>
+                                </div>
+                                <p class="text-slate-500 text-sm leading-relaxed mb-4">${shortDescription}${shortDescription.length === 120 ? '…' : ''}</p>
+                            </div>
+                        </div>
+
+                        <div class="px-6 pb-6 pt-0">
+                            <a href="/destination-detail.html?id=${encodeURIComponent(destination.id)}" class="w-full bg-slate-50 hover:bg-blue-600 text-slate-700 hover:text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition duration-200 shadow-sm">
+                                <span>Voir la destination →</span>
+                            </a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        } catch (error) {
+            container.innerHTML = `<div class="col-span-1 md:col-span-3 text-center text-rose-600">Erreur de chargement des destinations.</div>`;
+            console.error(error);
+        }
     }

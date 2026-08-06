@@ -373,3 +373,12 @@ const API_BASE_URL = window.TravelConfig.apiBaseUrl;
         localStorage.setItem('travelms_lang', e.target.value);
         window.location.reload();
     });
+    // Exemple à inclure dans votre script de tableau de bord
+    const userRole = localStorage.getItem('user_role'); 
+    if (userRole === 'admin') {
+        const nav = document.querySelector('nav');
+        const adminLink = document.createElement('a');
+        adminLink.href = 'admin-destinations.html';
+        adminLink.textContent = 'Administration';
+        nav.appendChild(adminLink);
+    }
