@@ -87,8 +87,11 @@ services:
       - travel-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
-      interval: 15s
+      # localhost peut résoudre vers ::1 alors que la configuration Nginx du
+      # conteneur n'écoute pas nécessairement en IPv6. La boucle IPv4 est
+      # l'endpoint réellement publié par ce service.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:80/ || exit 1"]
+      interval: 5s
       timeout: 5s
       retries: 5
 

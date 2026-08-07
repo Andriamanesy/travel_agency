@@ -109,6 +109,8 @@ Le déploiement attend désormais la sonde Docker du frontend pendant 60 seconde
 
 Sur le serveur, vérifiez que `.env` contient `PUBLIC_APP_URL=http://192.168.88.226` et `FRONTEND_PORT=8080`, puis installez le reverse proxy `devops/nginx/travel-agency.conf` dans Nginx hôte avant de lancer le déploiement. Après `./devops/scripts/deploy.sh`, exécutez `bash ./devops/scripts/production-verify.sh`. Ce contrôle non destructif vérifie le chemin complet Nginx hôte → React Docker → API, l'absence de redirection à la racine et une redirection legacy. Les scénarios avec authentification doivent ensuite être joués avec des comptes de recette.
 
+Les commandes d'installation du site Nginx doivent être lancées depuis la racine du dépôt (`/opt/travel_agency`), et non depuis `devops/scripts/`, afin que le chemin `devops/nginx/travel-agency.conf` soit résolu correctement.
+
 L'ancien client statique `frontend/` est décommissionné : il n'est plus référencé par Docker Compose ni par les scripts de déploiement. Il peut être retiré du dépôt dans une suppression dédiée une fois l'archive de rollback validée.
 
 ### Back-office
