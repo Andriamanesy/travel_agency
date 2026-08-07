@@ -5,12 +5,13 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './app/App'
 import { queryClient } from './lib/query-client'
+import { SessionBootstrap } from './features/auth/components/SessionBootstrap'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <SessionBootstrap><App /></SessionBootstrap>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,

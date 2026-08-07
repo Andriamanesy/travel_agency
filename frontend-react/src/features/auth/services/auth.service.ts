@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client'
-import type { LoginResponse } from '../types'
+import type { LoginResponse, User } from '../types'
+import { setAccessToken } from '@/lib/session'
 import type { LoginValues } from '../schemas/login.schema'
 import type { ChangePasswordValues, EmailValues, RegisterValues, ResetPasswordValues } from '../schemas/password.schema'
 
@@ -11,4 +12,10 @@ export const authService = {
   forgotPassword: (values: EmailValues) => apiClient.post<{ message: string }>('/forgot-password', values, { skipRefresh: true }),
   resetPassword: (token: string, values: ResetPasswordValues) => apiClient.post<{ message: string }>('/reset-password', { token, password: values.password }, { skipRefresh: true }),
   changePassword: ({ currentPassword, newPassword }: ChangePasswordValues) => apiClient.put<{ message: string }>('/change-password', { currentPassword, newPassword }),
+  restore: async (): Promise<{ token: string; user: User }> => {
+    const { token } = await apiClient.post<{ token: string }>('/refresh', undefined, { skipRefresh: true })
+    setAccessToken(token)
+    const user = await apiClient.get<User>('/profile', { skipRefresh: true })
+    return { token, user }
+  },
 }

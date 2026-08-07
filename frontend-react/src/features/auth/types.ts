@@ -5,6 +5,7 @@ export interface User {
   phone?: string | null
   address?: string | null
   avatar_url?: string | null
+  is_verified?: boolean
 }
 
 export interface LoginResponse { token: string; user: User }

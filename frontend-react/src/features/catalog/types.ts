@@ -5,6 +5,7 @@ export interface CatalogItem {
   id: string
   title?: string
   name?: string
+  email?: string | null
   description?: string | null
   address?: string | null
   bio?: string | null

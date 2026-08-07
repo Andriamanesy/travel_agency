@@ -1,5 +1,5 @@
 import { API_URL } from '@/lib/env'
-import { clearSession, getAccessToken } from '@/lib/session'
+import { clearSession, getAccessToken, setAccessToken } from '@/lib/session'
 
 export class ApiError extends Error {
   readonly status: number
@@ -29,7 +29,7 @@ async function refreshToken() {
   refreshRequest ??= fetch(`${API_URL}/api/refresh`, {
     method: 'POST', credentials: 'include',
   }).then((response) => parseResponse<{ token: string }>(response)).then(({ token }) => {
-    localStorage.setItem('token', token)
+    setAccessToken(token)
     return token
   }).finally(() => { refreshRequest = null })
   return refreshRequest

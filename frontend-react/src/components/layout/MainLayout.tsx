@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { authService } from '@/features/auth/services/auth.service'
 import { clearSession } from '@/lib/session'
+import { useSessionStore } from '@/features/auth/store/session.store'
 
 const links = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -10,15 +11,16 @@ const links = [
   { to: '/destinations', label: 'Destinations' },
   { to: '/catalog/circuits', label: 'Catalogue' },
   { to: '/bookings', label: 'Mes réservations' },
-  { to: '/admin/bookings', label: 'Administration' },
-  { to: '/admin/destinations', label: 'Admin destinations' },
-  { to: '/admin/catalog/circuits', label: 'Admin catalogue' },
-  { to: '/admin/access', label: 'Admin utilisateurs' },
+  { to: '/admin/bookings', label: 'Administration', admin: true },
+  { to: '/admin/destinations', label: 'Admin destinations', admin: true },
+  { to: '/admin/catalog/circuits', label: 'Admin catalogue', admin: true },
+  { to: '/admin/access', label: 'Admin utilisateurs', admin: true },
 ]
 
 export function MainLayout() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const isAdmin = useSessionStore((state) => state.roles.includes('admin'))
 
   async function logout() {
     try { await authService.logout() } catch { /* Local logout must remain available offline. */ }
@@ -46,7 +48,7 @@ export function MainLayout() {
         </div>
 
         <nav className="mt-8 flex flex-col gap-2">
-          {links.map((link) => (
+          {links.filter((link) => !link.admin || isAdmin).map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
