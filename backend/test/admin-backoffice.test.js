@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { makePdf, validateResource, circuitPayload } = require('../src/admin-backoffice');
+const { makePdf, validateResource, circuitPayload, handleAdminBackoffice } = require('../src/admin-backoffice');
 
 test('la validation refuse une remise percentage supérieure à 100', () => {
   assert.throws(
@@ -26,4 +26,16 @@ test('un circuit avancé normalise son itinéraire et ses départs', () => {
   const circuit = circuitPayload({ destination_id: '00000000-0000-4000-8000-000000000001', title: 'Nord', description: 'Une aventure complète', price: 2500, duration_days: 3, capacity: 12, cover_image: '', is_active: true, inclusions: ['Guide'], exclusions: ['Vol international'], itineraries: [{ day_number: 1, title: 'Arrivée', description: 'Accueil', accommodation: 'Lodge', meals: 'Dîner' }], departures: [{ start_date: '2027-01-10', end_date: '2027-01-13', total_places: 12, reserved_places: 2, status: 'open' }] });
   assert.equal(circuit.departures[0].reserved_places, 2);
   assert.equal(circuit.itineraries[0].day_number, 1);
+});
+
+test('un handler Back-Office signale au routeur que sa réponse a été traitée', async () => {
+  const responses = [];
+  const handled = await handleAdminBackoffice({
+    pathname: '/api/v1/admin/analytics', method: 'GET', req: { auth: { roles: ['admin'] } }, res: {}, parsedUrl: { query: {} }, parseJSONBody: async () => ({}),
+    getUserByToken: async () => ({ id: 'admin' }),
+    sendResponse: (_res, status, payload) => { responses.push({ status, payload }); return true; },
+    pool: { query: async () => ({ rows: [{ revenue: 0, cancelled: 0, total: 0, booking_month: 0, booking_year: 0, count: 0 }] }) },
+  });
+  assert.equal(handled, true);
+  assert.equal(responses[0].status, 200);
 });

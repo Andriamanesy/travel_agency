@@ -466,6 +466,9 @@ function sendResponse(res, statusCode, data, extraHeaders = {}) {
         ...extraHeaders
     });
     res.end(JSON.stringify(data));
+    // Les handlers modulaires renvoient cette valeur au routeur principal :
+    // elle indique que la requête a été traitée et empêche le fallback 404.
+    return true;
 }
 
 // Récupération sécurisée de l'utilisateur par token
@@ -1537,10 +1540,13 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Route par défaut (404 Not Found)
-        sendResponse(res, 404, { error: 'Route introuvable.' });
+        return sendResponse(res, 404, { error: 'Route introuvable.' });
 
     } catch (err) {
         console.error('[Erreur Interne]', err);
+        // Une réponse a pu être écrite par un handler avant qu'une erreur
+        // asynchrone ne remonte. Ne jamais tenter d'écrire une seconde fois.
+        if (res.headersSent || res.writableEnded) return;
         const statusCode = err.statusCode || 500;
         const errorMessage = [400, 401, 403, 404, 409].includes(statusCode)
             ? err.message
