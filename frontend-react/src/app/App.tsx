@@ -24,6 +24,7 @@ import { NotFoundPage } from '@/routes/NotFoundPage'
 import { RoleRoute } from '@/routes/RoleRoute'
 import { LegacyBookingRedirect } from '@/routes/LegacyBookingRedirect'
 import { CircuitBookingPage } from '@/features/booking/pages/CircuitBookingPage'
+import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage'
 
 export default function App() {
   return (
@@ -54,7 +55,7 @@ export default function App() {
             <Route path="/admin/catalog/:entity" element={<AdminCatalogPage />} />
             <Route path="/admin/catalog" element={<Navigate to="/admin/catalog/circuits" replace />} />
             <Route path="/admin/access" element={<AdminAccessPage />} />
-            <Route path="/admin" element={<Navigate to="/admin/access" replace />} />
+            <Route path="/admin" element={<AdminDashboardPage />} />
           </Route>
         </Route>
       </Route>

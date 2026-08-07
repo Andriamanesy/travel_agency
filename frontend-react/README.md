@@ -1,6 +1,6 @@
 # TravelMS React
 
-Frontend React 19, Vite et TypeScript destiné à remplacer progressivement `../frontend`.
+Frontend React 18+, Vite et TypeScript : client web final de TravelMS. Le frontend legacy est retiré de la production et reste archivé dans le tag Git `legacy-frontend-v1.0`.
 
 ## Démarrer
 
@@ -15,6 +15,8 @@ Le serveur API est celui de `../backend` (port 3000 par défaut). En production,
 ## Déploiement Docker
 
 `docker-compose.yml` construit directement ce dossier pour le service `frontend`. Le Dockerfile compile Vite puis sert uniquement `dist/` via Nginx. Les requêtes `/api` et `/uploads` sont proxyfiées vers le backend, et les routes React sont prises en charge lors d’un accès direct ou d’un rafraîchissement.
+
+Depuis la racine du dépôt :
 
 ```bash
 ./devops/scripts/deploy.sh
@@ -32,7 +34,7 @@ Après déploiement, l’interface React est disponible à l’URL configurée (
 
 ## Migration suivie
 
-| Ancien écran (`frontend/html`) | Route React | État |
+| Ancien écran HTML legacy | Route React | État |
 | --- | --- | --- |
 | `index.html` | `/` | déjà migré |
 | `login.html` | `/login` | déjà migré |
@@ -47,6 +49,6 @@ Après déploiement, l’interface React est disponible à l’URL configurée (
 | `admin-bookings.html` | `/admin/bookings` | déjà migré |
 | `admin-destinations.html` | `/admin/destinations` | déjà migré |
 | `admin-catalog.html` | `/admin/catalog/:entity` | déjà migré |
-| `admin.html` | `/admin/access` | déjà migré |
+| `admin.html` | `/admin` | déjà migré |
 
-Chaque écran migré doit être testé contre l’API réelle puis recevoir une redirection Nginx de l’URL historique vers sa route React. Ne retirez les fichiers legacy qu’après validation fonctionnelle et bascule de trafic.
+Toutes les routes métier sont désormais migrées. Les URL HTML historiques sont conservées par Nginx sous forme de redirections 301 ; ne les retirez qu’après la période de compatibilité convenue.

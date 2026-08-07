@@ -1,6 +1,6 @@
 # Architecture front-end React
 
-`frontend-react` est l'unique client web déployé : une application React 19, Vite et TypeScript, livrée comme une SPA statique par Nginx. Le backend Node et l'API restent inchangés : Nginx proxyfie `/api` et `/uploads` vers eux afin de conserver une seule origine en production.
+`frontend-react` est l'unique client web déployé : une application React 18+, Vite et TypeScript, livrée comme une SPA statique par Nginx. Le backend Node/Express et l'API restent inchangés : Nginx proxyfie `/api` et `/uploads` vers eux afin de conserver une seule origine en production.
 
 ## Structure cible
 
@@ -51,19 +51,18 @@ Le JWT d'accès n'est jamais persisté dans `localStorage` : il reste en mémoir
 
 Nginx sert explicitement `/` et `/index.html` comme le fichier SPA, sans règle de redirection. Cette distinction est importante : `try_files $uri $uri/ /index.html` reconnaissait `/` comme un répertoire, chargeait `index.html`, puis la redirection legacy de ce fichier renvoyait vers `/` — une boucle infinie. Le fallback des deep links est désormais `try_files $uri /index.html`; seules les anciennes URLs `.html` métier sont redirigées vers leurs routes React.
 
-Le service Compose `frontend` construit uniquement `frontend-react/`. Le dossier `frontend/` est hors chemin de production et ne doit servir que d'archive de rollback jusqu'à sa suppression planifiée. `devops/scripts/healthcheck.sh` vérifie aussi que la racine ne retourne pas d'en-tête `Location`.
+Le service Compose `frontend` construit uniquement `frontend-react/`. L'ancien dossier `frontend/` est supprimé ; son dernier état est conservé dans le tag Git `legacy-frontend-v1.0`. `devops/scripts/healthcheck.sh` vérifie aussi que la racine ne retourne pas d'en-tête `Location`.
 
-## Inventaire legacy et plan de migration
+## Livraison et compatibilité legacy
 
-| Domaine legacy | Route React | État de parité | Priorité suivante |
+| Domaine legacy | Route React | État de livraison |
 | --- | --- | --- | --- |
-| Authentification : connexion, inscription, vérification, réinitialisation, changement | `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`, `/change-password` | migré ; session Zustand + refresh-cookie consolidés | P0 terminé |
-| Destinations | `/destinations`, `/destinations/:destinationId` | lecture et réservation destination migrées | P1 : conserver les paramètres `id` des anciens liens |
-| Catalogue | `/catalog/:entity`, `/catalog/:entity/:itemId` | liste et détail migrés | P1 : branche de réservation des circuits |
-| Réservations client et administration | `/bookings`, `/bookings/new`, `/booking/:tourId`, `/admin/bookings` | destinations et circuits migrés ; contacts/options sauvegardés, total recalculé côté serveur | P1 terminé |
-| Profil et tableau de bord | `/profile`, `/dashboard` | édition complète, avatar, préférences, historique, détail et annulation conditionnelle migrés | P2 terminé |
-| Administration : utilisateurs, destinations, catalogue | `/admin/*` | CRUD et invitations présents, circuits validés avec Zod et archivage ; réservations globales filtrables | P2 : tests de permissions complémentaires |
-| Accueil et internationalisation | `/` | présentation React disponible | P3 : contenu API, recherche réelle et langues du legacy |
+| Authentification | `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`, `/change-password` | livré : session Zustand, refresh-cookie, modal et toast de bienvenue |
+| Catalogue et destinations | `/catalog/:entity`, `/catalog/:entity/:itemId`, `/destinations/*` | livré : consultation, filtres et compatibilité des liens |
+| Réservations | `/bookings`, `/bookings/new`, `/booking/:tourId` | livré : tunnel guidé, contacts pré-remplis et suivi client |
+| Espace client | `/dashboard`, `/profile` | livré : profil, voyages à venir, historique et annulation conditionnelle |
+| Administration | `/admin`, `/admin/*` | livré : tableau de bord, alertes, CRUD catalogue/destinations, réservations et accès |
+| Accueil | `/` | livré : contenu personnalisé Client et redirection directe Admin |
 
 Le tunnel circuit réside dans `features/booking` (singulier) afin de séparer sa nouvelle expérience guidée du module historique `features/bookings`, conservé durant la transition pour les réservations destination et leur historique. Les anciens liens `booking.html?tour_id=…` et `booking.html?circuit_id=…` sont redirigés vers `/booking/:tourId` avec leurs paramètres conservés ; les détails catalogue et destination gardent aussi leurs identifiants.
 
@@ -71,20 +70,10 @@ Les options actuellement supportées sont la protection annulation (35 € par v
 
 `features/profile` synchronise toute mise à jour réussie avec le store de session et son cache TanStack Query. `features/dashboard` consomme les réservations utilisateur, distingue à venir et historique, et expose l'annulation uniquement pour une demande `pending` dont le départ est futur. Le backend applique la même règle ; les justificatifs restent volontairement indisponibles tant qu'aucun service de facturation n'est implémenté.
 
-L'ordre recommandé est donc : 1) achever i18n, recherche et pagination ; 2) ajouter une facturation/téléchargement de justificatif ; 3) retirer `features/bookings` après recette complète des réservations destination. Chaque étape doit inclure une recette avec les liens issus d'e-mails et un rollback Nginx vérifié.
-
-## Migration incrémentale (Strangler Fig)
-
-1. Stabiliser les contrats API existants et écrire les tests de non-régression les plus critiques côté backend.
-2. Migrer un écran verticalement : type + schéma, service, hook Query, composants, page et test. Conserver l'ancienne page jusqu'à la recette de cet écran.
-3. Exposer la route React derrière Nginx et ajouter une redirection depuis l'URL HTML historique, avec les paramètres de query conservés quand ils sont utiles.
-4. Déployer les deux implémentations durant la recette, suivre les erreurs client/API, puis basculer la route. Supprimer le legacy seulement après un rollback vérifié.
-5. Répéter par parcours métier : authentification, catalogue lecture, réservation, administration. Les migrations de base de données restent rétrocompatibles pendant toute la bascule.
-
-Pièges à éviter : dupliquer l'état API dans un store, stocker un secret dans `VITE_*`, perdre les `token` des liens e-mail pendant les redirections, oublier le fallback SPA Nginx, casser les cookies `Secure`/`SameSite` selon l'environnement, et supprimer les pages legacy avant la validation d'un rollback.
+Les URL legacy sont redirigées par Nginx vers la SPA ; le tag Git `legacy-frontend-v1.0` est le point de sauvegarde du client historique. Les redirections ne doivent être supprimées qu’après la période de compatibilité définie par l’équipe.
 
 ## Déploiement
 
-Le point d'entrée réel du dépôt est `devops/scripts/` (il n'existe pas de dossier `deploy/script/`). `docker-compose.yml` démarre dans l'ordre PostgreSQL, les migrations, le backend, puis `frontend-react`. Le build React est multi-stage : Node compile `dist`, Nginx ne reçoit que les fichiers statiques. Le frontend Docker est publié uniquement sur `127.0.0.1:8080` par défaut (`FRONTEND_PORT` permet une surcharge) afin de laisser le port 80 au Nginx hôte. Installez `devops/nginx/travel-agency.conf` sur l'hôte : il proxyfie toute l'origine `http://192.168.88.226` vers ce bundle React. Utiliser `./devops/scripts/start.sh` pour démarrer localement et `./devops/scripts/deploy.sh` pour une machine de déploiement sur la branche `main`.
+Le point d'entrée réel du dépôt est `devops/scripts/`. `docker-compose.yml` démarre dans l'ordre PostgreSQL, les migrations, le backend, puis `frontend-react`. Le build React est multi-stage : Node compile `dist`, Nginx ne reçoit que les fichiers statiques. Le frontend Docker est publié uniquement sur `127.0.0.1:8080` par défaut (`FRONTEND_PORT` permet une surcharge) afin de laisser le port 80 au Nginx hôte. Installez `devops/nginx/travel-agency.conf` sur l'hôte : il proxyfie toute l'origine publique vers ce bundle React. Utiliser `./devops/scripts/start.sh` pour démarrer la pile locale et `./devops/scripts/deploy.sh` pour déployer la branche `main`.
 
 En production, la séquence vérifiable est : Nginx hôte (`:80`) → `127.0.0.1:8080` (Nginx du conteneur React) → `/api` et `/uploads` vers le backend Docker. `devops/scripts/production-verify.sh` couvre les réponses publiques de cette chaîne ; la recette authentifiée reste un contrôle fonctionnel manuel, car elle exige des utilisateurs de test et ne doit jamais embarquer d'identifiants dans les scripts.

@@ -8,9 +8,12 @@ interface SessionState {
   status: SessionStatus
   user: User | null
   roles: string[]
+  welcome: { title: string; message: string; admin: boolean } | null
   authenticate: (user: User, roles: string[]) => void
   updateUser: (user: Partial<User>) => void
   clear: () => void
+  dismissWelcome: () => void
+  showWelcome: (welcome: NonNullable<SessionState['welcome']>) => void
 }
 
 /**
@@ -22,9 +25,18 @@ export const useSessionStore = create<SessionState>()(persist(
     status: 'restoring',
     user: null,
     roles: [],
-    authenticate: (user, roles) => set({ status: 'authenticated', user, roles }),
+    welcome: null,
+    authenticate: (user, roles) => {
+      const admin = roles.includes('admin')
+      const firstName = user.name?.trim().split(/\s+/)[0] || 'voyageur'
+      set({ status: 'authenticated', user, roles, welcome: admin
+        ? { title: 'Espace d’administration activé', message: 'Vos indicateurs et alertes sont prêts.', admin: true }
+        : { title: `Bienvenue de retour, ${firstName} !`, message: 'Votre prochaine escapade vous attend. 👋', admin: false } })
+    },
     updateUser: (user) => set((state) => ({ user: state.user ? { ...state.user, ...user } : state.user })),
-    clear: () => set({ status: 'anonymous', user: null, roles: [] }),
+    clear: () => set({ status: 'anonymous', user: null, roles: [], welcome: null }),
+    dismissWelcome: () => set({ welcome: null }),
+    showWelcome: (welcome) => set({ welcome }),
   }),
   {
     name: 'travelms-session-ui',

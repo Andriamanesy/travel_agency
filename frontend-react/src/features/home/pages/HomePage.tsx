@@ -1,11 +1,9 @@
-import { ChevronDown, LayoutDashboard, LogOut, UserRound } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { AuthModal } from '@/features/auth/components/AuthModal'
-import { authService } from '@/features/auth/services/auth.service'
 import { useSessionStore } from '@/features/auth/store/session.store'
-import { clearSession } from '@/lib/session'
-import { mediaUrl } from '@/lib/api-client'
+import { Navbar } from '@/components/layout/Navbar'
+import { useCustomerBookings } from '@/features/dashboard/hooks/useCustomerBookings'
 
 const destinations = [
   {
@@ -60,37 +58,16 @@ const experiences = [
 export function HomePage() {
   const navigate = useNavigate()
   const [authOpen, setAuthOpen] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
   const user = useSessionStore((state) => state.user)
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
-  const initials = user?.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'TM'
-  const logout = async () => { try { await authService.logout() } catch { /* La déconnexion locale doit rester possible. */ } clearSession(); setProfileOpen(false); setNotice('Vous êtes maintenant déconnecté.') }
+  const isAdmin = useSessionStore((state) => state.roles.includes('admin'))
+  const bookings = useCustomerBookings({ enabled: authenticated && !isAdmin })
+  const upcoming = (bookings.data?.bookings ?? []).find((booking) => booking.status !== 'cancelled' && new Date(`${booking.start_date}T00:00:00`) >= new Date())
+  const firstName = user?.name.trim().split(/\s+/)[0]
+  if (authenticated && isAdmin) return <Navigate to="/admin" replace />
   return (
     <main className="min-h-screen bg-white text-slate-800">
-      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-          <a href="#" className="flex items-center gap-2 text-2xl font-black tracking-tight text-slate-900">
-            <span className="text-emerald-700">🌍</span>
-            <span>
-              Travel<span className="text-emerald-700">MS</span>
-            </span>
-          </a>
-
-          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 lg:flex">
-            <a href="#destinations" className="transition hover:text-emerald-700">Destinations</a>
-            <a href="#experiences" className="transition hover:text-emerald-700">Expériences</a>
-            <a href="#contact" className="transition hover:text-emerald-700">Contact</a>
-          </nav>
-
-          <div className="relative flex items-center gap-3">
-            {authenticated && user ? <><Link to="/dashboard" className="hidden rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 sm:block">Tableau de bord</Link><button type="button" onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300"><span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg bg-emerald-100 text-xs text-emerald-800">{user.avatar_url ? <img src={mediaUrl(user.avatar_url)} alt="" className="h-full w-full object-cover" /> : initials}</span><span className="hidden max-w-24 truncate sm:block">{user.name}</span><ChevronDown size={15} /></button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-52 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl"><Link onClick={() => setProfileOpen(false)} to="/dashboard" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><LayoutDashboard size={16} />Tableau de bord</Link><Link onClick={() => setProfileOpen(false)} to="/profile" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><UserRound size={16} />Mon profil</Link><button type="button" onClick={logout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50"><LogOut size={16} />Déconnexion</button></div>}</> : <button type="button" onClick={() => setAuthOpen(true)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-emerald-600 hover:text-emerald-800">Se connecter</button>}
-            <Link to="/destinations" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-700/20 transition hover:bg-emerald-800">
-              Explorer
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar onAuthenticate={() => setAuthOpen(true)} />
 
       <section
         className="relative flex min-h-[86vh] items-center justify-center bg-cover bg-center px-6 py-24 text-white"
@@ -101,9 +78,7 @@ export function HomePage() {
       >
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-300">TravelMS</p>
-          <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl">
-            Explorez Madagascar avec des voyages pensée pour l’exception
-          </h1>
+          <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl">{authenticated && firstName ? `Ravi de vous revoir, ${firstName} ! Où souhaitez-vous partir ?` : 'Explorez Madagascar avec des voyages pensés pour l’exception'}</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-100 sm:text-xl">
             Découvrez des destinations inoubliables, des circuits uniques et des hébergements de prestige au cœur de la Grande Île.
           </p>
@@ -133,6 +108,8 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {authenticated && <section className="mx-auto -mt-10 relative z-10 max-w-5xl px-6"><div className="flex flex-col gap-4 rounded-3xl border border-emerald-100 bg-white p-5 shadow-xl shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[.25em] text-emerald-700">Votre prochain départ</p><p className="mt-1 font-bold text-slate-900">{upcoming ? `${upcoming.offer_title ?? 'Votre circuit'} · ${new Date(`${upcoming.start_date}T00:00:00`).toLocaleDateString('fr-FR')}` : 'Votre prochaine aventure reste à imaginer.'}</p></div><Link to={upcoming ? '/bookings' : '/dashboard'} className="shrink-0 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700">{upcoming ? 'Voir ma réservation' : 'Accéder à mon espace'}</Link></div></section>}
 
       <section id="destinations" className="mx-auto max-w-7xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
@@ -190,8 +167,7 @@ export function HomePage() {
           </div>
         </div>
       </footer>
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate('/dashboard')} onNotice={(message) => { setNotice(message); window.setTimeout(() => setNotice(null), 4500) }} />
-      {notice && <div role="status" className="fixed bottom-5 right-5 z-[110] max-w-sm rounded-2xl border border-emerald-100 bg-slate-950 px-5 py-4 text-sm font-semibold text-white shadow-2xl"><span className="mr-2 text-emerald-300">✓</span>{notice}</div>}
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate(useSessionStore.getState().roles.includes('admin') ? '/admin' : '/dashboard')} />
     </main>
   )
 }

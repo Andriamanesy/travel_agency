@@ -3,7 +3,7 @@ import { bookingsService } from '@/features/bookings/services/bookings.service'
 
 const bookingsKey = ['bookings', 'me'] as const
 
-export const useCustomerBookings = () => useQuery({ queryKey: bookingsKey, queryFn: bookingsService.mine })
+export const useCustomerBookings = (options?: { enabled?: boolean }) => useQuery({ queryKey: bookingsKey, queryFn: bookingsService.mine, ...options })
 
 export function useCancelCustomerBooking() {
   const queryClient = useQueryClient()
