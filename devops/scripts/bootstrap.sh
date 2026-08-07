@@ -37,9 +37,6 @@ if ! docker exec "$DB_CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/nu
     fail "La base de données n'est pas disponible après le délai imparti"
 fi
 
-log "🗄️ Exécution des migrations..."
-compose run --rm migrate
-
 log "✅ Initialisation terminée avec succès !"
 log "🌐 Frontend : http://localhost:8080"
 log "🔧 Backend : http://localhost:3000"

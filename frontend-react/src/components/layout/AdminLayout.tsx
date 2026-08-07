@@ -11,6 +11,7 @@ const navigation = [
   { to: '/admin/marketing', label: 'Marketing & promos', icon: Megaphone },
   { to: '/admin/reviews', label: 'Avis clients', icon: Star },
   { to: '/admin/users', label: 'Utilisateurs', icon: Users },
+  { to: '/admin/users/roles', label: 'Rôles & permissions', icon: Users },
   { to: '/admin/settings', label: 'Paramètres', icon: Settings },
 ]
 

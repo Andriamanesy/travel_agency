@@ -10,7 +10,7 @@ export function useAdminActions() {
   const client = useQueryClient()
   const refresh = (key: string[]) => client.invalidateQueries({ queryKey: key })
   return {
-    saveDestination: useMutation({ mutationFn: ({ id, form }: { id: string | null; form: FormData }) => adminService.saveDestination(id, form), onSuccess: () => refresh(['admin', 'destinations']) }),
+    saveDestination: useMutation({ mutationFn: ({ id, values }: { id: string | null; values: Record<string, unknown> }) => adminService.saveDestination(id, values), onSuccess: () => refresh(['admin', 'destinations']) }),
     deleteDestination: useMutation({ mutationFn: adminService.deleteDestination, onSuccess: () => refresh(['admin', 'destinations']) }),
     saveCatalog: useMutation({ mutationFn: ({ entity, id, values }: { entity: CatalogEntity; id: string | null; values: Record<string, unknown> }) => adminService.saveCatalog(entity, id, values), onSuccess: (_, { entity }) => refresh(['admin', entity]) }),
     deleteCatalog: useMutation({ mutationFn: ({ entity, id }: { entity: CatalogEntity; id: string }) => adminService.deleteCatalog(entity, id), onSuccess: (_, { entity }) => refresh(['admin', entity]) }),

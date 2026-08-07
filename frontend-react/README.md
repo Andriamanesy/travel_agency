@@ -14,7 +14,7 @@ Le serveur API est celui de `../backend` (port 3000 par défaut). En production,
 
 ## Déploiement Docker
 
-`docker-compose.yml` construit directement ce dossier pour le service `frontend`. Le Dockerfile compile Vite puis sert uniquement `dist/` via Nginx. Les requêtes `/api` et `/uploads` sont proxyfiées vers le backend, et les routes React sont prises en charge lors d’un accès direct ou d’un rafraîchissement.
+`docker-compose.yml` construit directement ce dossier pour le service `frontend-react`. Le Dockerfile compile Vite puis sert uniquement `dist/` via Nginx. Les requêtes `/api` et `/uploads` sont proxyfiées vers le backend, et les routes React sont prises en charge lors d’un accès direct ou d’un rafraîchissement.
 
 Depuis la racine du dépôt :
 

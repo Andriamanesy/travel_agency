@@ -7,7 +7,7 @@
     "start": "node src/server.js",
     "migrate": "node src/migrate.js",
     "db:seed": "node src/seed.js",
-    "build": "node --check src/server.js && node --check src/catalog.js && node --check src/admin-backoffice.js && node --check src/auth.js && node --check src/migrate.js",
+    "build": "node --check src/server.js && node --check src/catalog.js && node --check src/admin-backoffice.js && node --check src/admin-rbac.js && node --check src/landing.js && node --check src/auth.js && node --check src/migrate.js && node --check src/seed.js",
     "lint": "npm run build",
     "test": "node --test"
   },

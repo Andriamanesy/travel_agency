@@ -1,7 +1,7 @@
 services:
-  db:
+  postgres:
     image: postgres:15-alpine
-    container_name: travel_db
+    container_name: travel_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -16,25 +16,6 @@ services:
       timeout: 5s
       retries: 5
 
-  migrate:
-    build: ./backend
-    container_name: travel_migrate
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${DB_NAME:-travel_agency_db}
-    depends_on:
-      db:
-        condition: service_healthy
-    command: ["npm", "run", "migrate"]
-    volumes:
-      - ./database/migrations:/app/migrations:ro
-    networks:
-      - travel-net
-    restart: "no"
-
   backend:
     build: ./backend
     container_name: travel_backend
@@ -43,7 +24,8 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      DB_HOST: db
+      DB_HOST: postgres
+      DB_PORT: 5432
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${DB_NAME:-travel_agency_db}
@@ -51,6 +33,8 @@ services:
       # afin que les liens e-mail et les cookies restent sur la même origine.
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:8080}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      # Données déterministes uniquement pour recette/développement.
+      ALLOW_DEMO_SEED: ${ALLOW_DEMO_SEED:-true}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       # Mail settings: in dev default to MailHog service added below
       SMTP_HOST: ${SMTP_HOST:-mailhog}
@@ -60,12 +44,13 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-no-reply@travel-agency.local}
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     networks:
       - travel-net
     volumes:
       - ./uploads:/app/public/uploads
+      - ./database/migrations:/app/migrations:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
@@ -73,7 +58,7 @@ services:
       timeout: 5s
       retries: 5
 
-  frontend:
+  frontend-react:
     build: ./frontend-react
     container_name: travel_frontend
     ports:

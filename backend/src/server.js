@@ -34,6 +34,8 @@ const { Pool } = require('pg');
 const { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail, sendStaffInvitationEmail } = require('./mailer');
 const { handleCatalogRequest } = require('./catalog');
 const { handleAdminBackoffice } = require('./admin-backoffice');
+const { handleAdminRbac } = require('./admin-rbac');
+const { handleLandingApi } = require('./landing');
 const { writeAudit } = require('./audit');
 
 const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads');
@@ -459,7 +461,7 @@ function sendResponse(res, statusCode, data, extraHeaders = {}) {
     res.writeHead(statusCode, {
         'Content-Type': 'application/json',
         ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin } : {}),
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         ...extraHeaders
     });
@@ -487,7 +489,7 @@ const server = http.createServer(async (req, res) => {
         }
         res.writeHead(204, {
             'Access-Control-Allow-Origin': origin,
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization'
         });
         res.end();
@@ -564,6 +566,14 @@ const server = http.createServer(async (req, res) => {
             getUserByToken,
             slugify,
             sendBookingConfirmationEmail
+        })) return;
+
+        if (await handleLandingApi({
+            pathname, method, req, res, pool, sendResponse, parseJSONBody, getUserByToken
+        })) return;
+
+        if (await handleAdminRbac({
+            pathname, method, parsedUrl, req, res, pool, sendResponse, parseJSONBody, getUserByToken
         })) return;
 
         if (await handleAdminBackoffice({
@@ -689,6 +699,7 @@ const server = http.createServer(async (req, res) => {
 
                 await client.query('DELETE FROM user_roles WHERE user_id = $1', [user.id]);
                 await client.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE code = $2 ON CONFLICT DO NOTHING`, [user.id, assignedRole]);
+                await client.query(`UPDATE users SET role_id = (SELECT id FROM roles WHERE code=$1) WHERE id=$2`, [assignedRole, user.id]);
                 await client.query('UPDATE users SET authz_version=authz_version+1 WHERE id=$1', [user.id]);
                 const verificationToken = await createVerificationToken(client, user.id);
                 await client.query('COMMIT');
@@ -1315,7 +1326,7 @@ const server = http.createServer(async (req, res) => {
                 if (!target.rows[0]) { await client.query('ROLLBACK'); return sendResponse(res, 404, { error: 'Utilisateur introuvable.' }); }
                 await client.query('DELETE FROM user_roles WHERE user_id=$1', [targetId]);
                 await client.query(`INSERT INTO user_roles (user_id,role_id) SELECT $1,id FROM roles WHERE code = ANY($2::text[])`, [targetId, roles]);
-                await client.query('UPDATE users SET authz_version=authz_version+1 WHERE id=$1', [targetId]);
+                await client.query(`UPDATE users SET role_id = (SELECT id FROM roles WHERE code=$1), authz_version=authz_version+1 WHERE id=$2`, [roles[0], targetId]);
                 await client.query('UPDATE refresh_tokens SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=$1 AND revoked_at IS NULL', [targetId]);
                 await client.query('COMMIT');
                 return sendResponse(res, 200, { message: 'Rôles mis à jour ; les sessions existantes ont été révoquées.' });

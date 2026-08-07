@@ -11,10 +11,13 @@ RUN npm install --production
 # Copie du code source
 COPY src/ ./src/
 COPY templates/ ./templates/
+COPY docker-entrypoint.sh /usr/local/bin/travelms-entrypoint
+RUN chmod +x /usr/local/bin/travelms-entrypoint
 
 # Répertoires persistants montés sous /app/public/uploads par Docker Compose.
 RUN mkdir -p /app/public/uploads/users /app/public/uploads/destinations /app/public/uploads/circuits /app/public/uploads/banners /app/public/uploads/guides
 
 EXPOSE 3000
 
+ENTRYPOINT ["/usr/local/bin/travelms-entrypoint"]
 CMD ["npm", "start"]

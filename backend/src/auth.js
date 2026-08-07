@@ -5,7 +5,7 @@ const accessSecret = () => process.env.JWT_ACCESS_SECRET || null;
 const hash = token => crypto.createHash('sha256').update(token).digest('hex');
 
 async function loadAuthorization(pool, userId) {
-    const { rows } = await pool.query(`SELECT u.id,u.is_active,u.authz_version, COALESCE(array_agg(DISTINCT r.code) FILTER (WHERE r.code IS NOT NULL),'{}') roles, COALESCE(array_agg(DISTINCT p.code) FILTER (WHERE p.code IS NOT NULL),'{}') permissions FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles r ON r.id=ur.role_id LEFT JOIN role_permissions rp ON rp.role_id=r.id LEFT JOIN permissions p ON p.id=rp.permission_id WHERE u.id=$1 GROUP BY u.id`, [userId]);
+    const { rows } = await pool.query(`SELECT u.id,u.is_active,u.authz_version, COALESCE(array_agg(DISTINCT r.code) FILTER (WHERE r.code IS NOT NULL),'{}') roles, COALESCE(array_agg(DISTINCT p.code) FILTER (WHERE p.code IS NOT NULL),'{}') permissions FROM users u LEFT JOIN roles r ON r.id=COALESCE(u.role_id,(SELECT ur.role_id FROM user_roles ur WHERE ur.user_id=u.id LIMIT 1)) LEFT JOIN role_permissions rp ON rp.role_id=r.id LEFT JOIN permissions p ON p.id=rp.permission_id WHERE u.id=$1 GROUP BY u.id`, [userId]);
     return rows[0] || null;
 }
 
@@ -77,6 +77,8 @@ function checkPermission(...requiredPermissions) {
     };
 }
 
+function requirePermission(permissionCode) { return checkPermission(permissionCode); }
+
 /**
  * ownerResolver doit toujours lire le propriétaire depuis PostgreSQL.
  * Ne jamais utiliser un userId fourni dans req.body comme preuve de propriété.
@@ -125,6 +127,7 @@ module.exports = {
     hash,
     checkRole,
     checkPermission,
+    requirePermission,
     ownerCheck,
     createAuthorizationGuard
 };

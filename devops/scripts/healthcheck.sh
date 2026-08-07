@@ -46,7 +46,7 @@ else
     health_ok=false
 fi
 
-if docker ps --format '{{.Names}}' | grep -q "^travel_db$"; then
+if docker ps --format '{{.Names}}' | grep -q "^travel_postgres$"; then
     if docker exec "$DB_CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" | grep -q "accepting connections"; then
         log "🟢 Database (PostgreSQL) : OK"
     else

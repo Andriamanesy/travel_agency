@@ -51,7 +51,7 @@ resolve_project_root() {
 
 resolve_db_settings() {
     load_env_file
-    DB_CONTAINER="${DB_CONTAINER:-travel_db}"
+    DB_CONTAINER="${DB_CONTAINER:-travel_postgres}"
     DB_USER="${DB_USER:-${POSTGRES_USER:-travel_user}}"
     DB_NAME="${DB_NAME:-${POSTGRES_DB:-travel_agency_db}}"
 }

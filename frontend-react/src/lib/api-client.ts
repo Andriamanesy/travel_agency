@@ -72,6 +72,7 @@ export const apiClient = {
   get: <T>(path: string, options?: ApiOptions) => request<T>(path, options),
   post: <T>(path: string, body?: unknown, options?: ApiOptions) => request<T>(path, { ...options, method: 'POST', body }),
   put: <T>(path: string, body?: unknown, options?: ApiOptions) => request<T>(path, { ...options, method: 'PUT', body }),
+  patch: <T>(path: string, body?: unknown, options?: ApiOptions) => request<T>(path, { ...options, method: 'PATCH', body }),
   delete: <T>(path: string, options?: ApiOptions) => request<T>(path, { ...options, method: 'DELETE' }),
   form: <T>(path: string, method: 'POST' | 'PUT', body: FormData) => requestForm<T>(path, method, body),
   download: async (path: string) => {

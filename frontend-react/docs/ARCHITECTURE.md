@@ -51,7 +51,7 @@ Le JWT d'accès n'est jamais persisté dans `localStorage` : il reste en mémoir
 
 Nginx sert explicitement `/` et `/index.html` comme le fichier SPA, sans règle de redirection. Cette distinction est importante : `try_files $uri $uri/ /index.html` reconnaissait `/` comme un répertoire, chargeait `index.html`, puis la redirection legacy de ce fichier renvoyait vers `/` — une boucle infinie. Le fallback des deep links est désormais `try_files $uri /index.html`; seules les anciennes URLs `.html` métier sont redirigées vers leurs routes React.
 
-Le service Compose `frontend` construit uniquement `frontend-react/`. L'ancien dossier `frontend/` est supprimé ; son dernier état est conservé dans le tag Git `legacy-frontend-v1.0`. `devops/scripts/healthcheck.sh` vérifie aussi que la racine ne retourne pas d'en-tête `Location`.
+Le service Compose `frontend-react` construit uniquement `frontend-react/`. L'ancien dossier `frontend/` est supprimé ; son dernier état est conservé dans le tag Git `legacy-frontend-v1.0`. `devops/scripts/healthcheck.sh` vérifie aussi que la racine ne retourne pas d'en-tête `Location`.
 
 ## Livraison et compatibilité legacy
 
@@ -74,6 +74,6 @@ Les URL legacy sont redirigées par Nginx vers la SPA ; le tag Git `legacy-front
 
 ## Déploiement
 
-Le point d'entrée réel du dépôt est `devops/scripts/`. `docker-compose.yml` démarre dans l'ordre PostgreSQL, les migrations, le backend, puis `frontend-react`. Le build React est multi-stage : Node compile `dist`, Nginx ne reçoit que les fichiers statiques. Le frontend Docker est publié uniquement sur `127.0.0.1:8080` par défaut (`FRONTEND_PORT` permet une surcharge) afin de laisser le port 80 au Nginx hôte. Installez `devops/nginx/travel-agency.conf` sur l'hôte : il proxyfie toute l'origine publique vers ce bundle React. Utiliser `./devops/scripts/start.sh` pour démarrer la pile locale et `./devops/scripts/deploy.sh` pour déployer la branche `main`.
+Le point d'entrée réel du dépôt est `devops/scripts/`. `docker-compose.yml` démarre dans l'ordre PostgreSQL, backend (migrations puis seed de démonstration), puis `frontend-react`. Le build React est multi-stage : Node compile `dist`, Nginx ne reçoit que les fichiers statiques. Le frontend Docker est publié uniquement sur `127.0.0.1:8080` par défaut (`FRONTEND_PORT` permet une surcharge) afin de laisser le port 80 au Nginx hôte. Installez `devops/nginx/travel-agency.conf` sur l'hôte : il proxyfie toute l'origine publique vers ce bundle React. Utiliser `./devops/scripts/start.sh` pour démarrer la pile locale et `./devops/scripts/deploy.sh` pour déployer la branche `main`.
 
 En production, la séquence vérifiable est : Nginx hôte (`:80`) → `127.0.0.1:8080` (Nginx du conteneur React) → `/api` et `/uploads` vers le backend Docker. `devops/scripts/production-verify.sh` couvre les réponses publiques de cette chaîne ; la recette authentifiée reste un contrôle fonctionnel manuel, car elle exige des utilisateurs de test et ne doit jamais embarquer d'identifiants dans les scripts.

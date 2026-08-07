@@ -17,9 +17,22 @@ async function user(client, { name, email, password, role }) {
     VALUES($1,$2,$3,'',TRUE,TRUE) ON CONFLICT(email) DO UPDATE SET name=EXCLUDED.name,password_hash=EXCLUDED.password_hash,is_verified=TRUE,is_active=TRUE
     RETURNING id`, [name, email, passwordHash]);
   const id = result.rows[0].id;
+  const roleResult = await client.query('SELECT id FROM roles WHERE code=$1', [role]);
+  if (!roleResult.rows[0]) throw new Error(`Rôle de démonstration introuvable : ${role}`);
   await client.query('DELETE FROM user_roles WHERE user_id=$1', [id]);
-  await client.query(`INSERT INTO user_roles(user_id,role_id) SELECT $1,id FROM roles WHERE code=$2`, [id, role]);
+  await client.query('INSERT INTO user_roles(user_id,role_id) VALUES($1,$2)', [id, roleResult.rows[0].id]);
+  await client.query('UPDATE users SET role_id=$1,authz_version=authz_version+1 WHERE id=$2', [roleResult.rows[0].id, id]);
   return id;
+}
+
+async function demoRole(client, { code, name, description, permissions }) {
+  const role = await client.query(`INSERT INTO roles(code,label,name,description,is_system) VALUES($1,$2,$2,$3,FALSE)
+    ON CONFLICT(code) DO UPDATE SET label=EXCLUDED.label,name=EXCLUDED.name,description=EXCLUDED.description
+    RETURNING id`, [code, name, description]);
+  const permissionRows = await client.query('SELECT id,code FROM permissions WHERE code = ANY($1::text[])', [permissions]);
+  if (permissionRows.rowCount !== permissions.length) throw new Error(`Permissions manquantes pour le rôle ${code}`);
+  await client.query('DELETE FROM role_permissions WHERE role_id=$1', [role.rows[0].id]);
+  for (const permission of permissionRows.rows) await client.query('INSERT INTO role_permissions(role_id,permission_id) VALUES($1,$2)', [role.rows[0].id, permission.id]);
 }
 
 async function destination(client, values) {
@@ -35,7 +48,7 @@ async function circuit(client, destinationId, values) {
     ? await client.query('UPDATE circuits SET destination_id=$1,title=$2,description=$3,price=$4,duration_days=$5,capacity=$6,cover_image=$7,inclusions=$8,exclusions=$9,is_active=TRUE,updated_at=CURRENT_TIMESTAMP WHERE id=$10 RETURNING id', [...data, existing.rows[0].id])
     : await client.query('INSERT INTO circuits(destination_id,title,description,price,duration_days,capacity,cover_image,inclusions,exclusions,is_active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,TRUE) RETURNING id', data);
   const id = result.rows[0].id;
-  await Promise.all(['circuit_images', 'circuit_itineraries', 'circuit_departures'].map(table => client.query(`DELETE FROM ${table} WHERE circuit_id=$1`, [id])));
+  for (const table of ['circuit_images', 'circuit_itineraries', 'circuit_departures']) await client.query(`DELETE FROM ${table} WHERE circuit_id=$1`, [id]);
   for (const image of values.gallery) await client.query('INSERT INTO circuit_images(circuit_id,image_url) VALUES($1,$2)', [id, image]);
   for (const [index, item] of values.itinerary.entries()) await client.query('INSERT INTO circuit_itineraries(circuit_id,day_number,title,description,accommodation,meals) VALUES($1,$2,$3,$4,$5,$6)', [id, index + 1, item.title, item.description, item.accommodation, item.meals]);
   for (const departure of values.departures) await client.query('INSERT INTO circuit_departures(circuit_id,start_date,end_date,total_places,reserved_places,status) VALUES($1,$2,$3,$4,$5,$6)', [id, departure.start, departure.end, departure.total, departure.reserved, departure.status]);
@@ -47,7 +60,11 @@ async function seed() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const adminId = await user(client, { name: 'Administrateur TravelMS', email: 'admin@travelms.com', password: 'admin123', role: 'admin' });
+    await demoRole(client, { code: 'catalog_manager', name: 'Manager Catalogue', description: 'Gestion du catalogue et du marketing.', permissions: ['circuits:read', 'circuits:write', 'circuits:delete', 'marketing:manage', 'content:manage'] });
+    await demoRole(client, { code: 'support_agent', name: 'Agent Support', description: 'Suivi des réservations et modération des avis.', permissions: ['bookings:read', 'bookings:write', 'bookings:cancel', 'reviews:moderate'] });
+    const adminId = await user(client, { name: 'Super Administrateur TravelMS', email: 'admin@travelms.com', password: 'admin123', role: 'super_admin' });
+    await user(client, { name: 'Manager Catalogue', email: 'catalogue@travelms.com', password: 'manager123', role: 'catalog_manager' });
+    await user(client, { name: 'Agent Support', email: 'support@travelms.com', password: 'support123', role: 'support_agent' });
     const clientId = await user(client, { name: 'Client Démonstration', email: 'client@travelms.com', password: 'user123', role: 'client' });
     const nosyBe = await destination(client, { title: 'Nosy Be', description: 'Île volcanique aux plages préservées.', price: 950, location: 'Madagascar', cover: image('1507525428034-b723cf961d3e') });
     const isalo = await destination(client, { title: 'Massif de l’Isalo', description: 'Canyons, savane et piscines naturelles.', price: 740, location: 'Madagascar', cover: image('1544735716-392fe2489ffa') });
@@ -64,7 +81,8 @@ async function seed() {
     ];
     for (const row of bookingRows) await client.query('INSERT INTO bookings(user_id,circuit_id,start_date,end_date,participants_count,total_price,status,contact_name,contact_email,contact_phone,booking_options,internal_notes,cancellation_reason) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)', [clientId, ...row.slice(0, 6), 'Client Démonstration', 'client@travelms.com', '+261 34 00 000 00', JSON.stringify({ cancellation_protection: false, airport_transfer: true }), row[6], row[7]]);
     await client.query(`INSERT INTO posts(title,slug,excerpt,content,cover_image,author_id,tags,status,published_at) VALUES('Préparer son voyage à Madagascar','preparer-voyage-madagascar','Nos conseils essentiels.','Guide pratique pour organiser un séjour inoubliable à Madagascar.', $1,$2,ARRAY['Conseils','Madagascar'],'published',CURRENT_TIMESTAMP) ON CONFLICT(slug) DO UPDATE SET title=EXCLUDED.title,content=EXCLUDED.content,updated_at=CURRENT_TIMESTAMP`, [image('1464822759023-fed622ff2c3b'), adminId]);
-    await client.query(`DELETE FROM banners WHERE title='Saison sèche 2027'; INSERT INTO banners(title,subtitle,image_url,cta_label,cta_url,display_order,is_active) VALUES('Saison sèche 2027','-15% sur nos départs sélectionnés',$1,'Découvrir les circuits','/catalog/circuits',1,TRUE)`, [image('1476900543704-4312b7869e30')]);
+    await client.query(`DELETE FROM banners WHERE title='Saison sèche 2027'`);
+    await client.query(`INSERT INTO banners(title,subtitle,image_url,cta_label,cta_url,display_order,is_active) VALUES('Saison sèche 2027','-15% sur nos départs sélectionnés',$1,'Découvrir les circuits','/catalog/circuits',1,TRUE)`, [image('1476900543704-4312b7869e30')]);
     await client.query(`INSERT INTO coupons(code,discount_type,discount_value,valid_from,valid_until,max_uses,is_active) VALUES('SAISONSECHE15','percent',15,'2027-04-01','2027-10-31',100,TRUE) ON CONFLICT(code) DO UPDATE SET discount_value=15,valid_from=EXCLUDED.valid_from,valid_until=EXCLUDED.valid_until,is_active=TRUE`);
     await client.query('DELETE FROM reviews WHERE user_id=$1', [clientId]);
     await client.query(`INSERT INTO reviews(user_id,circuit_id,rating,comment,status,admin_response,responded_by,responded_at) VALUES($1,$2,5,'Une équipe attentive et un voyage exceptionnel.','approved','Merci pour votre confiance !',$3,CURRENT_TIMESTAMP)`, [clientId, circuits[0], adminId]);

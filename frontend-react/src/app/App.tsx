@@ -19,7 +19,6 @@ import { CatalogDetailPage } from '@/features/catalog/pages/CatalogDetailPage'
 import { AdminBookingsPage } from '@/features/admin/pages/AdminBookingsPage'
 import { AdminDestinationsPage } from '@/features/admin/pages/AdminDestinationsPage'
 import { AdminCatalogPage } from '@/features/admin/pages/AdminCatalogPage'
-import { AdminAccessPage } from '@/features/admin/pages/AdminAccessPage'
 import { NotFoundPage } from '@/routes/NotFoundPage'
 import { RoleRoute } from '@/routes/RoleRoute'
 import { LegacyBookingRedirect } from '@/routes/LegacyBookingRedirect'
@@ -30,6 +29,8 @@ import { AdminContentPage } from '@/features/admin/pages/AdminContentPage'
 import { AdminMarketingPage } from '@/features/admin/pages/AdminMarketingPage'
 import { AdminReviewsPage } from '@/features/admin/pages/AdminReviewsPage'
 import { AdminSettingsPage } from '@/features/admin/pages/AdminSettingsPage'
+import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage'
+import { AdminRolesPage } from '@/features/admin/pages/AdminRolesPage'
 
 export default function App() {
   return (
@@ -65,7 +66,8 @@ export default function App() {
               <Route path="content" element={<AdminContentPage />} />
               <Route path="marketing" element={<AdminMarketingPage />} />
               <Route path="reviews" element={<AdminReviewsPage />} />
-              <Route path="users" element={<AdminAccessPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="users/roles" element={<AdminRolesPage />} />
               <Route path="access" element={<Navigate to="/admin/users" replace />} />
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>

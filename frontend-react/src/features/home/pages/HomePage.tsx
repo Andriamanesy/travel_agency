@@ -7,33 +7,8 @@ import { Navbar } from '@/components/layout/Navbar'
 import { useCustomerBookings } from '@/features/dashboard/hooks/useCustomerBookings'
 import { useCatalog } from '@/features/catalog/hooks/useCatalog'
 import { mediaUrl } from '@/lib/api-client'
-
-const destinations = [
-  {
-    title: 'Nosy Be',
-    description: 'Plages de sable blanc, récifs coralliens protégés et ambiance tropicale incomparable.',
-    price: '850 €',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    title: 'Sainte-Marie',
-    description: 'Sanctuaire authentique des baleines à bosse et plages sauvages préservées.',
-    price: '720 €',
-    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    title: 'Morondava',
-    description: "L'Avenue des Baobabs mythique au coucher du soleil et porte d'entrée des Tsingy.",
-    price: '690 €',
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    title: 'Parc de l\'Isalo',
-    description: 'Le Colorado malgache : canyons profonds, piscines naturelles et faune endémique.',
-    price: '910 €',
-    image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
-  },
-]
+import { Skeleton } from '@/components/feedback/Skeleton'
+import { useFeaturedCircuits, useFeaturedDestinations } from '../hooks/useHomeFeatured'
 
 const experiences = [
   {
@@ -71,6 +46,8 @@ export function HomePage() {
   const bookings = useCustomerBookings({ enabled: authenticated && !isAdmin })
   const upcoming = (bookings.data?.bookings ?? []).find((booking) => booking.status !== 'cancelled' && new Date(`${booking.start_date}T00:00:00`) >= new Date())
   const inspirations = useCatalog('circuits', '', authenticated && !isAdmin && !upcoming)
+  const featuredDestinations = useFeaturedDestinations()
+  const featuredCircuits = useFeaturedCircuits()
   const firstName = user?.name.trim().split(/\s+/)[0]
   const searchCatalog = (event: FormEvent) => { event.preventDefault(); const params = new URLSearchParams(); if (destination.trim()) params.set('destination', destination.trim()); if (departureDate) params.set('date', departureDate); if (travelType) params.set('type', travelType); navigate(`/catalog?${params.toString()}`) }
   const requestedPath = (location.state as { from?: string; authMessage?: string } | null)?.from
@@ -132,6 +109,8 @@ export function HomePage() {
       {authenticated && <section className="mx-auto -mt-10 relative z-10 max-w-5xl px-6"><div className="flex flex-col gap-4 rounded-3xl border border-emerald-100 bg-white p-5 shadow-xl shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[.25em] text-emerald-700">Votre prochain départ</p><p className="mt-1 font-bold text-slate-900">{upcoming ? `${upcoming.offer_title ?? 'Votre circuit'} · ${new Date(`${upcoming.start_date}T00:00:00`).toLocaleDateString('fr-FR')}` : 'Votre prochaine aventure reste à imaginer.'}</p></div><Link to={upcoming ? '/bookings' : '/dashboard'} className="shrink-0 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700">{upcoming ? 'Voir ma réservation' : 'Accéder à mon espace'}</Link></div></section>}
       {authenticated && !upcoming && <section className="mx-auto max-w-7xl px-6 pt-20"><div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-sm font-semibold uppercase tracking-[.3em] text-emerald-600">Inspirations</p><h2 className="mt-2 text-3xl font-black text-slate-900">Inspirations pour votre prochain voyage</h2><p className="mt-2 text-slate-600">Une sélection de circuits pensés pour vous faire repartir.</p></div><Link to="/catalog" className="font-bold text-emerald-700">Voir toutes les offres</Link></div><div className="grid gap-6 md:grid-cols-3">{inspirations.data?.circuits?.slice(0, 3).map((circuit) => <Link key={circuit.id} to={`/catalog/circuits/${circuit.id}`} className="group overflow-hidden rounded-3xl bg-slate-950 shadow-lg"><div className="h-44 overflow-hidden bg-slate-800">{circuit.cover_image && <img src={mediaUrl(circuit.cover_image)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}</div><div className="p-5 text-white"><p className="text-lg font-black">{circuit.title ?? 'Circuit signature'}</p><p className="mt-2 text-sm text-slate-300">À partir de {Number(circuit.price ?? 0).toFixed(0)} €</p></div></Link>)}</div></section>}
 
+      <section className="mx-auto max-w-7xl px-6 pt-20"><div className="mb-10 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[.35em] text-emerald-600">Circuits à la une</p><h2 className="mt-3 text-3xl font-extrabold text-slate-900">Des départs conçus pour l’aventure</h2></div><Link to="/catalog/circuits" className="font-bold text-emerald-700">Voir les circuits</Link></div><div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{featuredCircuits.isPending ? Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-80" />) : featuredCircuits.data?.circuits.length ? featuredCircuits.data.circuits.map((circuit) => <Link key={circuit.id} to={`/catalog/circuits/${circuit.id}`} className="group overflow-hidden rounded-3xl bg-slate-950 shadow-lg"><div className="h-48 bg-slate-800">{circuit.cover_image && <img src={mediaUrl(circuit.cover_image)} alt={circuit.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}</div><div className="p-5 text-white"><p className="text-xs font-bold uppercase tracking-[.2em] text-emerald-300">{circuit.destination_title}</p><h3 className="mt-2 text-xl font-black">{circuit.title}</h3><p className="mt-2 text-sm text-slate-300">{circuit.duration_days} jours · dès {Number(circuit.price).toFixed(0)} €</p><p className="mt-2 text-xs text-slate-400">{circuit.next_departure ? `Prochain départ : ${new Date(`${circuit.next_departure}T00:00:00`).toLocaleDateString('fr-FR')}` : 'Départs à venir'}</p></div></Link>) : <div className="col-span-full rounded-3xl border border-dashed border-slate-300 p-10 text-center text-slate-500">Aucun circuit publié pour le moment. Revenez bientôt découvrir nos prochaines aventures.</div>}</div></section>
+
       <section id="destinations" className="mx-auto max-w-7xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-600">Destinations populaires</p>
@@ -139,24 +118,24 @@ export function HomePage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {destinations.map((destination) => (
-            <article key={destination.title} className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+          {featuredDestinations.isPending ? Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-96" />) : featuredDestinations.data?.destinations.length ? featuredDestinations.data.destinations.map((destination) => (
+            <article key={destination.id} className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
               <div className="h-48 overflow-hidden">
-                <img src={destination.image} alt={destination.title} className="h-full w-full object-cover transition duration-500 hover:scale-105" />
+                {destination.cover_image && <img src={mediaUrl(destination.cover_image)} alt={destination.title} className="h-full w-full object-cover transition duration-500 hover:scale-105" />}
               </div>
               <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-lg font-black text-slate-900">{destination.title}</h3>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">{destination.price}</span>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">dès {Number(destination.price).toFixed(0)} €</span>
                 </div>
                 <p className="mt-3 text-sm leading-6 text-slate-500">{destination.description}</p>
                 <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Offre premium</span>
-                  <Link to="/destinations" className="text-sm font-bold text-emerald-700">Voir l’offre</Link>
+                  <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">{destination.circuit_count} circuit(s)</span>
+                  <Link to={`/destinations/${destination.id}`} className="text-sm font-bold text-emerald-700">Voir l’offre</Link>
                 </div>
               </div>
             </article>
-          ))}
+          )) : <div className="col-span-full rounded-3xl border border-dashed border-slate-300 p-10 text-center text-slate-500">Aucune destination mise en avant pour le moment.</div>}
         </div>
       </section>
 
