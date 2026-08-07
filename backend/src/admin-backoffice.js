@@ -100,10 +100,84 @@ async function listBookings(pool, query) {
   return { bookings: rows.rows, pagination: { page, limit, total: count.rows[0].count, pages: Math.ceil(count.rows[0].count / limit) } };
 }
 
+function optionalDate(value, label) {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00Z`))) throw httpError(400, `${label} est invalide.`);
+  return value;
+}
+
+function stringList(value, label) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some(item => typeof item !== 'string' || !item.trim() || item.trim().length > 500)) throw httpError(400, `${label} est invalide.`);
+  return value.map(item => item.trim());
+}
+
+function circuitPayload(body) {
+  if (!isPlainObject(body) || !isUuid(body.destination_id)) throw httpError(400, 'La destination est invalide.');
+  const requiredText = (key, label, max) => { if (typeof body[key] !== 'string' || !body[key].trim() || body[key].trim().length > max) throw httpError(400, `${label} est invalide.`); return body[key].trim(); };
+  const integer = (source, key, min, max, label) => { const value = Number(source[key]); if (!Number.isFinite(value) || value < min || value > max || !Number.isInteger(value)) throw httpError(400, `${label} est invalide.`); return value; };
+  const availableFrom = optionalDate(body.available_from, 'La date de disponibilité'); const availableTo = optionalDate(body.available_to, 'La date de disponibilité');
+  if (availableFrom && availableTo && availableTo <= availableFrom) throw httpError(400, 'La fin de disponibilité doit être postérieure au début.');
+  if (typeof body.is_active !== 'boolean') throw httpError(400, 'Le statut de publication est invalide.');
+  const itineraries = Array.isArray(body.itineraries) ? body.itineraries : [];
+  const departures = Array.isArray(body.departures) ? body.departures : [];
+  if (itineraries.length > 365 || departures.length > 100) throw httpError(400, 'Trop d’étapes ou de départs.');
+  const normalizedItineraries = itineraries.map((item, index) => {
+    if (!isPlainObject(item) || !Number.isInteger(item.day_number) || item.day_number !== index + 1) throw httpError(400, 'Les jours de l’itinéraire doivent être consécutifs.');
+    const title = typeof item.title === 'string' ? item.title.trim() : '';
+    if (!title || title.length > 255 || typeof item.description !== 'string' || item.description.length > 10000) throw httpError(400, 'Une étape d’itinéraire est invalide.');
+    for (const field of ['accommodation', 'meals']) if (item[field] !== undefined && (typeof item[field] !== 'string' || item[field].length > 255)) throw httpError(400, 'Les informations d’étape sont invalides.');
+    return { day_number: item.day_number, title, description: item.description.trim(), accommodation: String(item.accommodation || '').trim(), meals: String(item.meals || '').trim() };
+  });
+  const normalizedDepartures = departures.map(item => {
+    if (!isPlainObject(item)) throw httpError(400, 'Un départ est invalide.'); const startDate = optionalDate(item.start_date, 'La date de départ'); const endDate = optionalDate(item.end_date, 'La date de retour');
+    const totalPlaces = integer(item, 'total_places', 1, 10000, 'Le nombre de places'); const reservedPlaces = item.reserved_places === undefined ? 0 : integer(item, 'reserved_places', 0, totalPlaces, 'Le nombre de places réservées');
+    if (!startDate || !endDate || endDate <= startDate || !['open', 'closed', 'cancelled'].includes(item.status || 'open')) throw httpError(400, 'Un départ est invalide.');
+    return { start_date: startDate, end_date: endDate, total_places: totalPlaces, reserved_places: reservedPlaces, status: item.status || 'open' };
+  });
+  if (new Set(normalizedDepartures.map(item => item.start_date)).size !== normalizedDepartures.length) throw httpError(400, 'Deux départs ne peuvent pas avoir la même date de début.');
+  const price = Number(body.price); if (!Number.isFinite(price) || price < 0 || price > 10000000) throw httpError(400, 'Le prix est invalide.');
+  return { destination_id: body.destination_id, title: requiredText('title', 'Le titre', 255), description: requiredText('description', 'La description', 10000), price, duration_days: integer(body, 'duration_days', 1, 365, 'La durée'), capacity: integer(body, 'capacity', 1, 10000, 'La capacité'), available_from: availableFrom, available_to: availableTo, cover_image: typeof body.cover_image === 'string' ? body.cover_image.trim() : '', is_active: body.is_active, gallery_urls: stringList(body.gallery_urls || [], 'La galerie'), inclusions: stringList(body.inclusions || [], 'Les inclusions'), exclusions: stringList(body.exclusions || [], 'Les exclusions'), itineraries: normalizedItineraries, departures: normalizedDepartures };
+}
+
+async function circuitDetails(pool, id) {
+  const circuit = await pool.query('SELECT * FROM circuits WHERE id=$1', [id]); if (!circuit.rows[0]) return null;
+  const [gallery, itineraries, departures] = await Promise.all([pool.query('SELECT image_url FROM circuit_images WHERE circuit_id=$1 ORDER BY created_at', [id]), pool.query('SELECT id,day_number,title,description,accommodation,meals FROM circuit_itineraries WHERE circuit_id=$1 ORDER BY day_number', [id]), pool.query('SELECT id,start_date,end_date,total_places,reserved_places,status FROM circuit_departures WHERE circuit_id=$1 ORDER BY start_date', [id])]);
+  return { ...circuit.rows[0], gallery_urls: gallery.rows.map(row => row.image_url), itineraries: itineraries.rows, departures: departures.rows };
+}
+
+async function saveCircuit(pool, body, id = null) {
+  const payload = circuitPayload(body); const client = await pool.connect();
+  try {
+    await client.query('BEGIN'); let circuit;
+    if (id) {
+      const result = await client.query(`UPDATE circuits SET destination_id=$1,title=$2,description=$3,price=$4,duration_days=$5,capacity=$6,available_from=$7,available_to=$8,cover_image=$9,is_active=$10,inclusions=$11,exclusions=$12,updated_at=CURRENT_TIMESTAMP WHERE id=$13 RETURNING *`, [payload.destination_id, payload.title, payload.description, payload.price, payload.duration_days, payload.capacity, payload.available_from, payload.available_to, payload.cover_image, payload.is_active, JSON.stringify(payload.inclusions), JSON.stringify(payload.exclusions), id]);
+      if (!result.rows[0]) throw httpError(404, 'Circuit introuvable.'); circuit = result.rows[0];
+    } else {
+      const result = await client.query(`INSERT INTO circuits(destination_id,title,description,price,duration_days,capacity,available_from,available_to,cover_image,is_active,inclusions,exclusions) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`, [payload.destination_id, payload.title, payload.description, payload.price, payload.duration_days, payload.capacity, payload.available_from, payload.available_to, payload.cover_image, payload.is_active, JSON.stringify(payload.inclusions), JSON.stringify(payload.exclusions)]); circuit = result.rows[0];
+    }
+    await Promise.all([client.query('DELETE FROM circuit_images WHERE circuit_id=$1', [circuit.id]), client.query('DELETE FROM circuit_itineraries WHERE circuit_id=$1', [circuit.id]), client.query('DELETE FROM circuit_departures WHERE circuit_id=$1', [circuit.id])]);
+    for (const imageUrl of payload.gallery_urls) await client.query('INSERT INTO circuit_images(circuit_id,image_url) VALUES($1,$2)', [circuit.id, imageUrl]);
+    for (const item of payload.itineraries) await client.query('INSERT INTO circuit_itineraries(circuit_id,day_number,title,description,accommodation,meals) VALUES($1,$2,$3,$4,$5,$6)', [circuit.id, item.day_number, item.title, item.description, item.accommodation, item.meals]);
+    for (const item of payload.departures) await client.query('INSERT INTO circuit_departures(circuit_id,start_date,end_date,total_places,reserved_places,status) VALUES($1,$2,$3,$4,$5,$6)', [circuit.id, item.start_date, item.end_date, item.total_places, item.reserved_places, item.status]);
+    await client.query('COMMIT'); return circuitDetails(pool, circuit.id);
+  } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
+}
+
 async function handleAdminBackoffice(context) {
   const { pathname, method, req, res, pool, parseJSONBody, sendResponse, getUserByToken, parsedUrl } = context;
   if (!pathname.startsWith('/api/v1/admin/')) return false;
   await requireAdmin(req, getUserByToken);
+
+  const circuitRoute = pathname.match(new RegExp(`^/api/v1/admin/circuits(?:/(${UUID}))?$`, 'i'));
+  if (circuitRoute) {
+    const circuitId = circuitRoute[1];
+    if (method === 'GET' && circuitId) { const circuit = await circuitDetails(pool, circuitId); if (!circuit) throw httpError(404, 'Circuit introuvable.'); return sendResponse(res, 200, { circuit }); }
+    if (method === 'GET') { const rows = await pool.query('SELECT * FROM circuits ORDER BY created_at DESC'); const circuits = await Promise.all(rows.rows.map(row => circuitDetails(pool, row.id))); return sendResponse(res, 200, { circuits }); }
+    if (method === 'POST' && !circuitId) return sendResponse(res, 201, { circuit: await saveCircuit(pool, await parseJSONBody(req)) });
+    if (method === 'PUT' && circuitId) return sendResponse(res, 200, { circuit: await saveCircuit(pool, await parseJSONBody(req), circuitId) });
+    throw httpError(405, 'Méthode non autorisée.');
+  }
 
   if (pathname === '/api/v1/admin/analytics' && method === 'GET') {
     const [revenue, bookings, customers, popular] = await Promise.all([
@@ -153,4 +227,4 @@ async function handleAdminBackoffice(context) {
   throw httpError(405, 'Méthode non autorisée.');
 }
 
-module.exports = { handleAdminBackoffice, makePdf, validateResource };
+module.exports = { handleAdminBackoffice, makePdf, validateResource, circuitPayload };

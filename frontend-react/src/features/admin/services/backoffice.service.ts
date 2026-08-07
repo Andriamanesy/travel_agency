@@ -7,6 +7,8 @@ export type AdminBookingDetail = AdminRecord & { status: 'pending' | 'confirmed'
 
 const base = '/v1/admin'
 export const backofficeService = {
+  circuits: () => apiClient.get<{ circuits: AdminRecord[] }>(`${base}/circuits`),
+  saveCircuit: (id: string | null, values: Record<string, unknown>) => id ? apiClient.put<{ circuit: AdminRecord }>(`${base}/circuits/${id}`, values) : apiClient.post<{ circuit: AdminRecord }>(`${base}/circuits`, values),
   analytics: () => apiClient.get<Analytics>(`${base}/analytics`),
   bookings: (params = '') => apiClient.get<{ bookings: AdminBookingDetail[]; pagination: { page: number; limit: number; total: number; pages: number } }>(`${base}/bookings${params}`),
   updateBooking: (id: string, values: Partial<Pick<AdminBookingDetail, 'status' | 'internal_notes' | 'cancellation_reason'>>) => apiClient.put<{ booking: AdminBookingDetail }>(`${base}/bookings/${id}`, values),

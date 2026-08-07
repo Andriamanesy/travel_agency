@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "migrate": "node src/migrate.js",
+    "db:seed": "node src/seed.js",
     "build": "node --check src/server.js && node --check src/catalog.js && node --check src/admin-backoffice.js && node --check src/auth.js && node --check src/migrate.js",
     "lint": "npm run build",
     "test": "node --test"
