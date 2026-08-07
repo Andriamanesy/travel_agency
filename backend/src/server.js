@@ -716,7 +716,7 @@ const server = http.createServer(async (req, res) => {
 
         // --- ROUTE : Connexion ---
         if (pathname === '/api/login' && method === 'POST') {
-            const { email, password } = await parseJSONBody(req);
+            const { email, password, remember = true } = await parseJSONBody(req);
             if (!validateEmail(email) || typeof password !== 'string' || !password) {
                 return sendResponse(res, 400, { error: 'Email et mot de passe requis.' });
             }
@@ -741,6 +741,7 @@ const server = http.createServer(async (req, res) => {
             const sessionToken = signAccessToken(auth);
             const refreshToken = await issueRefreshToken(pool, user.id);
 
+            const rememberCookie = remember === false ? '' : '; Max-Age=604800';
             return sendResponse(res, 200, {
                 message: 'Connexion réussie.',
                 token: sessionToken,
@@ -760,7 +761,7 @@ const server = http.createServer(async (req, res) => {
                     avatar_url: user.avatar_url,
                     is_verified: user.is_verified
                 }
-            }, { 'Set-Cookie': `travelms_refresh=${refreshToken}; HttpOnly; Path=/api; Max-Age=604800; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}` });
+            }, { 'Set-Cookie': `travelms_refresh=${refreshToken}; HttpOnly; Path=/api${rememberCookie}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}` });
         }
 
         // --- ROUTE : Vérification d'e-mail ---
