@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import type { FormEvent } from 'react'
 import { AuthModal } from '@/features/auth/components/AuthModal'
 import { useSessionStore } from '@/features/auth/store/session.store'
 import { Navbar } from '@/components/layout/Navbar'
 import { useCustomerBookings } from '@/features/dashboard/hooks/useCustomerBookings'
+import { useCatalog } from '@/features/catalog/hooks/useCatalog'
+import { mediaUrl } from '@/lib/api-client'
 
 const destinations = [
   {
@@ -59,12 +62,17 @@ export function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [authOpen, setAuthOpen] = useState(false)
+  const [destination, setDestination] = useState('')
+  const [departureDate, setDepartureDate] = useState('')
+  const [travelType, setTravelType] = useState('Circuit organisé')
   const user = useSessionStore((state) => state.user)
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
   const isAdmin = useSessionStore((state) => state.roles.includes('admin'))
   const bookings = useCustomerBookings({ enabled: authenticated && !isAdmin })
   const upcoming = (bookings.data?.bookings ?? []).find((booking) => booking.status !== 'cancelled' && new Date(`${booking.start_date}T00:00:00`) >= new Date())
+  const inspirations = useCatalog('circuits', '', authenticated && !isAdmin && !upcoming)
   const firstName = user?.name.trim().split(/\s+/)[0]
+  const searchCatalog = (event: FormEvent) => { event.preventDefault(); const params = new URLSearchParams(); if (destination.trim()) params.set('destination', destination.trim()); if (departureDate) params.set('date', departureDate); if (travelType) params.set('type', travelType); navigate(`/catalog?${params.toString()}`) }
   const requestedPath = (location.state as { from?: string; authMessage?: string } | null)?.from
   const authMessage = (location.state as { authMessage?: string } | null)?.authMessage
   const authMode = new URLSearchParams(location.search).get('auth')
@@ -96,19 +104,19 @@ export function HomePage() {
           </p>
 
           <div className="mx-auto mt-10 max-w-3xl rounded-2xl bg-white p-3 shadow-2xl">
-            <form className="grid gap-3 md:grid-cols-[1.2fr_1fr_0.8fr_0.9fr]">
+            <form onSubmit={searchCatalog} className="grid gap-3 md:grid-cols-[1.2fr_1fr_0.8fr_0.9fr]">
               <div className="rounded-xl border border-slate-200 px-3 py-2 text-left">
                 <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Destination</label>
-                <input className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" placeholder="Ville, région..." />
+                <input value={destination} onChange={(event) => setDestination(event.target.value)} className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" placeholder="Ville, région..." />
               </div>
               <div className="rounded-xl border border-slate-200 px-3 py-2 text-left">
                 <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Date</label>
-                <input type="date" className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-500 outline-none" />
+                <input value={departureDate} onChange={(event) => setDepartureDate(event.target.value)} type="date" className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-500 outline-none" />
               </div>
               <div className="rounded-xl border border-slate-200 px-3 py-2 text-left">
                 <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Type</label>
-                <select className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
-                  <option>Hôtel, Circuit...</option>
+                <select value={travelType} onChange={(event) => setTravelType(event.target.value)} className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
+                  <option value="">Hôtel, Circuit...</option>
                   <option>Circuit organisé</option>
                   <option>Hébergement</option>
                 </select>
@@ -122,6 +130,7 @@ export function HomePage() {
       </section>
 
       {authenticated && <section className="mx-auto -mt-10 relative z-10 max-w-5xl px-6"><div className="flex flex-col gap-4 rounded-3xl border border-emerald-100 bg-white p-5 shadow-xl shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[.25em] text-emerald-700">Votre prochain départ</p><p className="mt-1 font-bold text-slate-900">{upcoming ? `${upcoming.offer_title ?? 'Votre circuit'} · ${new Date(`${upcoming.start_date}T00:00:00`).toLocaleDateString('fr-FR')}` : 'Votre prochaine aventure reste à imaginer.'}</p></div><Link to={upcoming ? '/bookings' : '/dashboard'} className="shrink-0 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700">{upcoming ? 'Voir ma réservation' : 'Accéder à mon espace'}</Link></div></section>}
+      {authenticated && !upcoming && <section className="mx-auto max-w-7xl px-6 pt-20"><div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-sm font-semibold uppercase tracking-[.3em] text-emerald-600">Inspirations</p><h2 className="mt-2 text-3xl font-black text-slate-900">Inspirations pour votre prochain voyage</h2><p className="mt-2 text-slate-600">Une sélection de circuits pensés pour vous faire repartir.</p></div><Link to="/catalog" className="font-bold text-emerald-700">Voir toutes les offres</Link></div><div className="grid gap-6 md:grid-cols-3">{inspirations.data?.circuits?.slice(0, 3).map((circuit) => <Link key={circuit.id} to={`/catalog/circuits/${circuit.id}`} className="group overflow-hidden rounded-3xl bg-slate-950 shadow-lg"><div className="h-44 overflow-hidden bg-slate-800">{circuit.cover_image && <img src={mediaUrl(circuit.cover_image)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}</div><div className="p-5 text-white"><p className="text-lg font-black">{circuit.title ?? 'Circuit signature'}</p><p className="mt-2 text-sm text-slate-300">À partir de {Number(circuit.price ?? 0).toFixed(0)} €</p></div></Link>)}</div></section>}
 
       <section id="destinations" className="mx-auto max-w-7xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">

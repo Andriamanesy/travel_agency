@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
@@ -37,7 +37,7 @@ export default function App() {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/catalog/:entity" element={<CatalogPage />} />
       <Route path="/catalog/:entity/:itemId" element={<CatalogDetailPage />} />
-      <Route path="/catalog" element={<Navigate to="/catalog/circuits" replace />} />
+      <Route path="/catalog" element={<CatalogIndexRedirect />} />
       <Route path="/destinations" element={<DestinationsPage />} />
       <Route path="/destinations/:destinationId" element={<DestinationDetailsPage />} />
       <Route path="/booking.html" element={<LegacyBookingRedirect />} />
@@ -63,4 +63,9 @@ export default function App() {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
+}
+
+function CatalogIndexRedirect() {
+  const location = useLocation()
+  return <Navigate to={`/catalog/circuits${location.search}`} replace />
 }

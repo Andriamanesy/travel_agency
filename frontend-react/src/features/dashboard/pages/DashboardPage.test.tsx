@@ -18,6 +18,7 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByText('Nord sauvage')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Annuler la demande' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler la réservation' }))
     await waitFor(() => expect(mockFetch.mock.calls.some(([url]) => String(url).includes('/api/bookings/11111111-1111-4111-8111-111111111111/cancel'))).toBe(true))
   })
 })
