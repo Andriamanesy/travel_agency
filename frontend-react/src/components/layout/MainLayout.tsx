@@ -1,9 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { authService } from '@/features/auth/services/auth.service'
 import { clearSession } from '@/lib/session'
 import { useSessionStore } from '@/features/auth/store/session.store'
+import { mediaUrl } from '@/lib/api-client'
 
 const links = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -21,6 +23,9 @@ export function MainLayout() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isAdmin = useSessionStore((state) => state.roles.includes('admin'))
+  const user = useSessionStore((state) => state.user)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const initials = user?.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'TM'
 
   async function logout() {
     try { await authService.logout() } catch { /* Local logout must remain available offline. */ }
@@ -71,13 +76,7 @@ export function MainLayout() {
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Nouvelle interface</p>
               <h1 className="text-xl font-black text-slate-900">TravelMS React</h1>
             </div>
-            <button
-              type="button"
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
-              onClick={logout}
-            >
-              Déconnexion
-            </button>
+            <div className="relative"><button type="button" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300"><span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg bg-emerald-100 text-xs text-emerald-800">{user?.avatar_url ? <img src={mediaUrl(user.avatar_url)} alt="" className="h-full w-full object-cover" /> : initials}</span><span className="hidden max-w-36 truncate sm:block">{user?.name || 'Mon compte'}</span><span aria-hidden="true" className="text-slate-400">⌄</span></button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-52 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl"><NavLink onClick={() => setProfileOpen(false)} to="/dashboard" className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Tableau de bord</NavLink><NavLink onClick={() => setProfileOpen(false)} to="/profile" className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Mon profil</NavLink><button type="button" onClick={logout} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50">Déconnexion</button></div>}</div>
           </div>
         </header>
 

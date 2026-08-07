@@ -1,4 +1,11 @@
-import { Link } from 'react-router-dom'
+import { ChevronDown, LayoutDashboard, LogOut, UserRound } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { AuthModal } from '@/features/auth/components/AuthModal'
+import { authService } from '@/features/auth/services/auth.service'
+import { useSessionStore } from '@/features/auth/store/session.store'
+import { clearSession } from '@/lib/session'
+import { mediaUrl } from '@/lib/api-client'
 
 const destinations = [
   {
@@ -51,6 +58,14 @@ const experiences = [
 ]
 
 export function HomePage() {
+  const navigate = useNavigate()
+  const [authOpen, setAuthOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  const user = useSessionStore((state) => state.user)
+  const authenticated = useSessionStore((state) => state.status === 'authenticated')
+  const initials = user?.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'TM'
+  const logout = async () => { try { await authService.logout() } catch { /* La déconnexion locale doit rester possible. */ } clearSession(); setProfileOpen(false); setNotice('Vous êtes maintenant déconnecté.') }
   return (
     <main className="min-h-screen bg-white text-slate-800">
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur">
@@ -68,10 +83,8 @@ export function HomePage() {
             <a href="#contact" className="transition hover:text-emerald-700">Contact</a>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400">
-              Tableau de bord
-            </Link>
+          <div className="relative flex items-center gap-3">
+            {authenticated && user ? <><Link to="/dashboard" className="hidden rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 sm:block">Tableau de bord</Link><button type="button" onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300"><span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg bg-emerald-100 text-xs text-emerald-800">{user.avatar_url ? <img src={mediaUrl(user.avatar_url)} alt="" className="h-full w-full object-cover" /> : initials}</span><span className="hidden max-w-24 truncate sm:block">{user.name}</span><ChevronDown size={15} /></button>{profileOpen && <div className="absolute right-0 top-12 z-50 w-52 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl"><Link onClick={() => setProfileOpen(false)} to="/dashboard" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><LayoutDashboard size={16} />Tableau de bord</Link><Link onClick={() => setProfileOpen(false)} to="/profile" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><UserRound size={16} />Mon profil</Link><button type="button" onClick={logout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50"><LogOut size={16} />Déconnexion</button></div>}</> : <button type="button" onClick={() => setAuthOpen(true)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-emerald-600 hover:text-emerald-800">Se connecter</button>}
             <Link to="/destinations" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-700/20 transition hover:bg-emerald-800">
               Explorer
             </Link>
@@ -177,6 +190,8 @@ export function HomePage() {
           </div>
         </div>
       </footer>
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate('/dashboard')} onNotice={(message) => { setNotice(message); window.setTimeout(() => setNotice(null), 4500) }} />
+      {notice && <div role="status" className="fixed bottom-5 right-5 z-[110] max-w-sm rounded-2xl border border-emerald-100 bg-slate-950 px-5 py-4 text-sm font-semibold text-white shadow-2xl"><span className="mr-2 text-emerald-300">✓</span>{notice}</div>}
     </main>
   )
 }

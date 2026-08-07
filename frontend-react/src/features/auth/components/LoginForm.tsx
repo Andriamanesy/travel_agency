@@ -5,7 +5,7 @@ import { useLogin } from '../hooks/useLogin'
 import { loginSchema, type LoginValues } from '../schemas/login.schema'
 
 export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) })
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginValues>({ resolver: zodResolver(loginSchema), defaultValues: { remember: true } })
   const login = useLogin()
   const submit = (values: LoginValues) => login.mutate(values, { onSuccess })
   const message = login.error instanceof ApiError ? login.error.message : login.isError ? 'Connexion impossible.' : null
@@ -16,6 +16,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     {errors.email && <p className="-mt-2 text-sm text-red-600">{errors.email.message}</p>}
     <label className="flex flex-col gap-2 text-sm font-medium">Mot de passe<input {...register('password')} type="password" autoComplete="current-password" placeholder="••••••••" className="rounded-xl border border-slate-300 px-4 py-3" /></label>
     {errors.password && <p className="-mt-2 text-sm text-red-600">{errors.password.message}</p>}
+    <label className="flex items-center gap-2 text-sm text-slate-500"><input {...register('remember')} type="checkbox" className="accent-emerald-600" /> Se souvenir de moi</label>
     {message && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{message}</p>}
     <button disabled={login.isPending} className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white disabled:opacity-70">{login.isPending ? 'Connexion…' : 'Se connecter'}</button>
   </form>

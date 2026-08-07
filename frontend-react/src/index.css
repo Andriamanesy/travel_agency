@@ -34,6 +34,28 @@ body {
   @apply mt-6 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white transition hover:bg-emerald-800;
 }
 
+.auth-modal-backdrop {
+  animation: auth-fade-in 180ms ease-out;
+}
+
+.auth-modal-panel {
+  animation: auth-slide-up 240ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.auth-input {
+  @apply w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10;
+}
+
+@keyframes auth-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes auth-slide-up {
+  from { opacity: 0; transform: translateY(16px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 ::selection {
   background: rgba(5, 150, 105, 0.2);
   color: #064e3b;
