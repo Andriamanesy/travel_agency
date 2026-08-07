@@ -33,7 +33,7 @@ else
 fi
 
 if docker ps --format '{{.Names}}' | grep -q "^travel_frontend$"; then
-    frontend_port="${FRONTEND_PORT:-80}"
+    frontend_port="${FRONTEND_PORT:-8080}"
     check_http "http://localhost:${frontend_port}/" "Frontend (Port ${frontend_port})"
     if curl -fsSIL --max-redirs 3 "http://localhost:${frontend_port}/" | grep -qi '^location:'; then
         log "🔴 Frontend (racine) : REDIRECTION INATTENDUE"

@@ -64,3 +64,22 @@ require_docker() {
 compose() {
     docker compose -f "$PROJECT_ROOT/docker-compose.yml" "$@"
 }
+
+wait_for_container_health() {
+    local container="$1"
+    local attempts="${2:-30}"
+    local status
+
+    for ((attempt = 1; attempt <= attempts; attempt++)); do
+        status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container" 2>/dev/null || true)"
+        if [[ "$status" == "healthy" ]]; then
+            return 0
+        fi
+        if [[ "$status" == "unhealthy" || "$status" == "none" ]]; then
+            fail "Le conteneur $container est dans l'état $status."
+        fi
+        sleep 2
+    done
+
+    fail "Le conteneur $container n'est pas devenu sain après $((attempts * 2)) secondes (état : ${status:-inconnu})."
+}

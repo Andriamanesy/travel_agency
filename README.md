@@ -103,6 +103,12 @@ Le projet intègre une boîte à outils DevOps dans le dossier `devops/scripts/`
 
 Le frontend déployé est exclusivement `frontend-react/` : le service Docker `frontend` compile ce dossier puis sert son bundle via Nginx. La racine `/` est servie directement comme entrée SPA (sans redirection) ; les anciennes URL en `.html` sont uniquement conservées comme redirections de compatibilité. En production, Docker publie le frontend sur `127.0.0.1:8080` par défaut pour ne pas concurrencer le port 80 ; le Nginx hôte doit utiliser [`devops/nginx/travel-agency.conf`](devops/nginx/travel-agency.conf) pour proxyfier toute l'origine publique. Définissez `PUBLIC_APP_URL` avec cette origine (par exemple `http://192.168.88.226`) avant un déploiement afin que les liens e-mail restent sur cette même origine.
 
+Le déploiement attend désormais la sonde Docker du frontend pendant 60 secondes au maximum. Cela évite un faux échec juste après `compose up`, lorsque l'HTTP répond déjà mais que Docker affiche encore l'état transitoire `starting`.
+
+### Validation de production
+
+Sur le serveur, vérifiez que `.env` contient `PUBLIC_APP_URL=http://192.168.88.226` et `FRONTEND_PORT=8080`, puis installez le reverse proxy `devops/nginx/travel-agency.conf` dans Nginx hôte avant de lancer le déploiement. Après `./devops/scripts/deploy.sh`, exécutez `bash ./devops/scripts/production-verify.sh`. Ce contrôle non destructif vérifie le chemin complet Nginx hôte → React Docker → API, l'absence de redirection à la racine et une redirection legacy. Les scénarios avec authentification doivent ensuite être joués avec des comptes de recette.
+
 L'ancien client statique `frontend/` est décommissionné : il n'est plus référencé par Docker Compose ni par les scripts de déploiement. Il peut être retiré du dépôt dans une suppression dédiée une fois l'archive de rollback validée.
 
 ### Back-office
