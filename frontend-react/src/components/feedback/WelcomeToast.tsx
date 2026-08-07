@@ -25,3 +25,11 @@ export function WelcomeToast() {
     </div>
   </div>
 }
+
+export function AppToast() {
+  const toast = useSessionStore((state) => state.toast)
+  const dismiss = useSessionStore((state) => state.dismissToast)
+  useEffect(() => { if (!toast) return; const timeout = window.setTimeout(dismiss, 4200); return () => window.clearTimeout(timeout) }, [toast, dismiss])
+  if (!toast) return null
+  return <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-[120] w-[min(22rem,calc(100vw-2rem))] animate-[toast-in_.35s_cubic-bezier(.16,1,.3,1)] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/15"><div className="flex gap-3"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${toast.tone === 'info' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}`}><CheckCircle2 size={18} /></span><div><p className="font-bold text-slate-900">{toast.title}</p>{toast.message && <p className="mt-0.5 text-sm text-slate-500">{toast.message}</p>}</div><button onClick={dismiss} aria-label="Fermer la notification" className="ml-auto self-start text-slate-400 hover:text-slate-700">×</button></div></div>
+}

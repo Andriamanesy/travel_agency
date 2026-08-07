@@ -6,13 +6,14 @@ import './index.css'
 import App from './app/App'
 import { queryClient } from './lib/query-client'
 import { SessionBootstrap } from './features/auth/components/SessionBootstrap'
-import { WelcomeToast } from './components/feedback/WelcomeToast'
+import { AppToast, WelcomeToast } from './components/feedback/WelcomeToast'
+import { AppErrorBoundary } from './routes/AppErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <SessionBootstrap><App /><WelcomeToast /></SessionBootstrap>
+        <SessionBootstrap><AppErrorBoundary><App /></AppErrorBoundary><WelcomeToast /><AppToast /></SessionBootstrap>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,

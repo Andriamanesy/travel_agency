@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthModal } from '@/features/auth/components/AuthModal'
 import { useSessionStore } from '@/features/auth/store/session.store'
 import { Navbar } from '@/components/layout/Navbar'
@@ -57,6 +57,7 @@ const experiences = [
 
 export function HomePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [authOpen, setAuthOpen] = useState(false)
   const user = useSessionStore((state) => state.user)
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
@@ -64,10 +65,21 @@ export function HomePage() {
   const bookings = useCustomerBookings({ enabled: authenticated && !isAdmin })
   const upcoming = (bookings.data?.bookings ?? []).find((booking) => booking.status !== 'cancelled' && new Date(`${booking.start_date}T00:00:00`) >= new Date())
   const firstName = user?.name.trim().split(/\s+/)[0]
+  const requestedPath = (location.state as { from?: string; authMessage?: string } | null)?.from
+  const authMessage = (location.state as { authMessage?: string } | null)?.authMessage
+  const authMode = new URLSearchParams(location.search).get('auth')
+  useEffect(() => {
+    if (authMode === 'login' || authMode === 'register') setAuthOpen(true)
+  }, [authMode])
+  useEffect(() => {
+    if (!authMessage) return
+    useSessionStore.getState().showToast({ title: 'Accès sécurisé', message: authMessage, tone: 'info' })
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: requestedPath ? { from: requestedPath } : null })
+  }, [authMessage, location.pathname, location.search, navigate, requestedPath])
   if (authenticated && isAdmin) return <Navigate to="/admin" replace />
   return (
     <main className="min-h-screen bg-white text-slate-800">
-      <Navbar onAuthenticate={() => setAuthOpen(true)} />
+      <Navbar onAuthenticate={() => { setAuthOpen(true); navigate('/?auth=login', { replace: true, state: requestedPath ? { from: requestedPath } : null }) }} />
 
       <section
         className="relative flex min-h-[86vh] items-center justify-center bg-cover bg-center px-6 py-24 text-white"
@@ -167,7 +179,7 @@ export function HomePage() {
           </div>
         </div>
       </footer>
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate(useSessionStore.getState().roles.includes('admin') ? '/admin' : '/dashboard')} />
+      <AuthModal open={authOpen} initialMode={authMode === 'register' ? 'register' : 'login'} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate(requestedPath ?? (useSessionStore.getState().roles.includes('admin') ? '/admin' : '/dashboard'), { replace: true })} />
     </main>
   )
 }

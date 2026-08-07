@@ -7,5 +7,5 @@ export function ProtectedRoute() {
   if (status === 'restoring') return null
   return status === 'authenticated'
     ? <Outlet />
-    : <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />
+    : <Navigate to="/?auth=login" replace state={{ from: `${location.pathname}${location.search}`, authMessage: 'Veuillez vous connecter pour accéder à cette page.' }} />
 }
