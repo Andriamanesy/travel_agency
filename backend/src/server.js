@@ -533,7 +533,10 @@ const server = http.createServer(async (req, res) => {
             return sendResponse(res, 200, { status: 'API Travel Agency en ligne' });
         }
 
-        if (pathname === '/healthz' && method === 'GET') {
+        // /healthz sert les sondes internes Docker ; /api/healthz traverse le
+        // reverse-proxy public et permet de vérifier l'intégralité du chemin
+        // Nginx hôte → frontend React → backend.
+        if ((pathname === '/healthz' || pathname === '/api/healthz') && method === 'GET') {
             await pool.query('SELECT 1');
             return sendResponse(res, 200, { status: 'ok' });
         }
