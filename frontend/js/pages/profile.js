@@ -127,12 +127,21 @@ function showToast(message, type = 'success') {
     }, 3500);
 }
 
+function redirectToLoginIfNeeded() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.replace('/login.html');
+        return true;
+    }
+    return false;
+}
+
 // Charger les données étendues du profil au chargement de la page
 window.addEventListener('DOMContentLoaded', async () => {
     const currentLang = localStorage.getItem('travelms_lang') || 'fr';
-    const token = localStorage.getItem('token');
+    if (redirectToLoginIfNeeded()) return;
 
-    if (!token) return;
+    const token = localStorage.getItem('token');
 
     try {
         const response = await fetch(`${API_BASE_URL}/profile`, {
