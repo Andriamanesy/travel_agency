@@ -11,6 +11,7 @@ require_docker
 log "🚀 Début du déploiement..."
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git diff --quiet || fail "Le répertoire contient des modifications non commitées ; déploiement interrompu."
     log "📥 Récupération des dernières modifications..."
     git pull --ff-only origin main
 else
@@ -19,6 +20,7 @@ fi
 
 log "🐳 Rechargement des conteneurs Docker..."
 compose up -d --build
+"$SCRIPT_DIR/healthcheck.sh"
 
 log "🧹 Nettoyage des anciennes images..."
 docker image prune -f

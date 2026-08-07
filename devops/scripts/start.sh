@@ -10,4 +10,5 @@ require_docker
 
 log "🚀 Démarrage de l'application..."
 compose up -d --build
+"$SCRIPT_DIR/healthcheck.sh"
 log "✅ Tous les services sont démarrés !"

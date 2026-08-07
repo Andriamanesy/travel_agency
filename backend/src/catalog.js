@@ -47,6 +47,25 @@ function isDate(value) {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
 }
 
+function bookingOptions(value) {
+    const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    if (Object.values(input).some(item => typeof item !== 'boolean')) throw httpError(400, 'Les options de réservation sont invalides.');
+    return {
+        cancellation_protection: input.cancellation_protection === true,
+        airport_transfer: input.airport_transfer === true
+    };
+}
+
+function bookingContact(body, user) {
+    const name = typeof body.contact_name === 'string' ? body.contact_name.trim() : user.name;
+    const email = typeof body.contact_email === 'string' ? body.contact_email.trim().toLowerCase() : user.email;
+    const phone = typeof body.contact_phone === 'string' ? body.contact_phone.trim() : (user.phone || '');
+    if (!name || name.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || phone.length > 50) {
+        throw httpError(400, 'Les coordonnées de contact sont invalides.');
+    }
+    return { name, email, phone };
+}
+
 function canManage(auth, entity) {
     const permissions = auth?.permissions || [];
     if (permissions.includes('settings:manage')) return true;
@@ -213,6 +232,8 @@ async function createBooking({ pool, req, body, getUserByToken, sendBookingConfi
     }
     if (!isDate(body.start_date) || !isDate(body.end_date) || body.end_date <= body.start_date) throw httpError(400, 'Les dates de réservation sont invalides.');
     const participants = number(body.participants_count, 'Le nombre de participants', { min: 1, max: 50, integer: true });
+    const options = bookingOptions(body.options);
+    const contact = bookingContact(body, user);
     const client = await pool.connect();
     let booking;
     let label;
@@ -232,9 +253,10 @@ async function createBooking({ pool, req, body, getUserByToken, sendBookingConfi
         if (reserved.rows[0].count + participants > target.rows[0].capacity) {
             throw httpError(409, 'Il ne reste pas assez de places disponibles pour ces dates.');
         }
-        const total = Math.round(Number(target.rows[0].price) * participants * 100) / 100;
-        const result = await client.query(`INSERT INTO bookings (user_id,circuit_id,destination_id,start_date,end_date,participants_count,total_price)
-            VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`, [user.id, circuitId, destinationId, body.start_date, body.end_date, participants, total]);
+        const optionTotal = (options.cancellation_protection ? 35 * participants : 0) + (options.airport_transfer ? 50 : 0);
+        const total = Math.round((Number(target.rows[0].price) * participants + optionTotal) * 100) / 100;
+        const result = await client.query(`INSERT INTO bookings (user_id,circuit_id,destination_id,start_date,end_date,participants_count,total_price,contact_name,contact_email,contact_phone,booking_options)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`, [user.id, circuitId, destinationId, body.start_date, body.end_date, participants, total, contact.name, contact.email, contact.phone, JSON.stringify(options)]);
         booking = result.rows[0];
         label = target.rows[0].title;
         await client.query('COMMIT');

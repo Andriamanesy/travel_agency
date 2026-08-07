@@ -18,7 +18,7 @@ Windows
 └── VMware (Ubuntu Server)
       └── Docker Compose
             ├── Nginx (Reverse Proxy & Static Server)
-            ├── Frontend (HTML, CSS, Vanilla JS)
+            ├── Frontend React (Vite, TypeScript, Nginx)
             ├── Backend (Node.js natif)
             └── PostgreSQL (Base de données relationnelle)
 
@@ -28,7 +28,7 @@ Windows
 
 * **Infrastructure :** VMware, Ubuntu Server, Docker, Docker Compose
 * **Web Server & Reverse Proxy :** Nginx
-* **Frontend :** HTML5, CSS3, JavaScript (Vanilla, sans framework)
+* **Frontend :** React, Vite, TypeScript, TanStack Query, React Hook Form, Zod et Tailwind CSS
 * **Backend :** Node.js (Modules natifs, ex: `http`)
 * **Base de données :** PostgreSQL
 
@@ -100,6 +100,8 @@ Le projet est structuré selon les epics métiers suivants :
 ### Déploiement et Gestion
 
 Le projet intègre une boîte à outils DevOps dans le dossier `devops/scripts/` :
+
+Le frontend déployé est `frontend-react/`. L'ancien client `frontend/` est conservé temporairement pour la migration incrémentale ; la stratégie, l'arborescence cible et les redirections sont documentées dans [`frontend-react/docs/ARCHITECTURE.md`](frontend-react/docs/ARCHITECTURE.md).
 
 * **Démarrer l'application :**
 ```bash
