@@ -101,7 +101,7 @@ Le projet est structuré selon les epics métiers suivants :
 
 Le projet intègre une boîte à outils DevOps dans le dossier `devops/scripts/` :
 
-Le frontend déployé est exclusivement `frontend-react/` : le service Docker `frontend` compile ce dossier puis sert son bundle via Nginx. La racine `/` est servie directement comme entrée SPA (sans redirection) ; les anciennes URL en `.html` sont uniquement conservées comme redirections de compatibilité. Définissez `PUBLIC_APP_URL` avec l'origine réellement exposée (par exemple `http://192.168.88.226`) avant un déploiement afin que les liens e-mail restent sur cette même origine.
+Le frontend déployé est exclusivement `frontend-react/` : le service Docker `frontend` compile ce dossier puis sert son bundle via Nginx. La racine `/` est servie directement comme entrée SPA (sans redirection) ; les anciennes URL en `.html` sont uniquement conservées comme redirections de compatibilité. En production, Docker publie le frontend sur `127.0.0.1:8080` par défaut pour ne pas concurrencer le port 80 ; le Nginx hôte doit utiliser [`devops/nginx/travel-agency.conf`](devops/nginx/travel-agency.conf) pour proxyfier toute l'origine publique. Définissez `PUBLIC_APP_URL` avec cette origine (par exemple `http://192.168.88.226`) avant un déploiement afin que les liens e-mail restent sur cette même origine.
 
 L'ancien client statique `frontend/` est décommissionné : il n'est plus référencé par Docker Compose ni par les scripts de déploiement. Il peut être retiré du dépôt dans une suppression dédiée une fois l'archive de rollback validée.
 
