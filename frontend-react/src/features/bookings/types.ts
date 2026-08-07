@@ -10,6 +10,10 @@ export interface Booking {
   participants_count: number
   total_price: number
   status: BookingStatus
+  contact_name?: string | null
+  contact_email?: string | null
+  contact_phone?: string | null
+  booking_options?: { cancellation_protection?: boolean; airport_transfer?: boolean }
 }
 
 export interface CreateBookingResponse { message: string; booking: Booking }

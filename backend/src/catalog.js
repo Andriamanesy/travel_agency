@@ -301,6 +301,20 @@ async function handleCatalogRequest(context) {
         sendResponse(context.res, 200, { bookings: bookings.rows });
         return true;
     }
+    const bookingCancellation = pathname.match(/^\/api\/bookings\/([0-9a-f-]{36})\/cancel$/i);
+    if (bookingCancellation && method === 'PUT') {
+        const user = await getUserByToken(req);
+        if (!user) throw httpError(401, 'Connexion requise.');
+        // Une demande en attente peut être retirée jusqu'au départ. Toute autre
+        // situation doit être traitée par un agent pour préserver la traçabilité.
+        const result = await pool.query(`UPDATE bookings
+            SET status='cancelled', updated_at=CURRENT_TIMESTAMP
+            WHERE id=$1 AND user_id=$2 AND status='pending' AND start_date > CURRENT_DATE
+            RETURNING *`, [bookingCancellation[1], user.id]);
+        if (!result.rows[0]) throw httpError(409, 'Cette réservation ne peut plus être annulée en ligne.');
+        sendResponse(context.res, 200, { booking: result.rows[0] });
+        return true;
+    }
     const adminMatch = pathname.match(/^\/api\/admin\/(categories|circuits|hotels|guides)(?:\/([^/]+))?$/);
     if (adminMatch) {
         const [, entity, id] = adminMatch;

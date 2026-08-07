@@ -13,3 +13,11 @@ export function useCreateBooking() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bookings', 'me'] }),
   })
 }
+
+export function useCancelBooking() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: bookingsService.cancel,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bookings', 'me'] }),
+  })
+}

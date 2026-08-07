@@ -55,7 +55,7 @@ Le JWT d'accès n'est jamais persisté dans `localStorage` : il reste en mémoir
 | Destinations | `/destinations`, `/destinations/:destinationId` | lecture et réservation destination migrées | P1 : conserver les paramètres `id` des anciens liens |
 | Catalogue | `/catalog/:entity`, `/catalog/:entity/:itemId` | liste et détail migrés | P1 : branche de réservation des circuits |
 | Réservations client et administration | `/bookings`, `/bookings/new`, `/booking/:tourId`, `/admin/bookings` | destinations et circuits migrés ; contacts/options sauvegardés, total recalculé côté serveur | P1 terminé |
-| Profil et tableau de bord | `/profile`, `/dashboard` | lecture disponible, dashboard simplifié | P2 : édition complète, avatar et préférences |
+| Profil et tableau de bord | `/profile`, `/dashboard` | édition complète, avatar, préférences, historique, détail et annulation conditionnelle migrés | P2 terminé |
 | Administration : utilisateurs, destinations, catalogue | `/admin/*` | CRUD et invitations présents, désormais réservé aux admins | P2 : découper les pages admin volumineuses et tester les permissions |
 | Accueil et internationalisation | `/` | présentation React disponible | P3 : contenu API, recherche réelle et langues du legacy |
 
@@ -63,7 +63,9 @@ Le tunnel circuit réside dans `features/booking` (singulier) afin de séparer s
 
 Les options actuellement supportées sont la protection annulation (35 € par voyageur) et le transfert aéroport (50 € par dossier). `features/booking/utils/pricing.ts` ne sert qu'à l'estimation d'interface : `backend/src/catalog.js` recalcule prix, capacité, coordonnées et options dans une transaction. La migration `012_booking_contact_and_options.sql` doit donc être appliquée avec le reste des migrations avant d'exposer le tunnel.
 
-L'ordre recommandé est donc : 1) migrer l'édition du profil puis enrichir le dashboard ; 2) achever i18n, recherche et pagination ; 3) retirer `features/bookings` après recette complète des réservations destination. Chaque étape doit inclure une recette avec les liens issus d'e-mails et un rollback Nginx vérifié.
+`features/profile` synchronise toute mise à jour réussie avec le store de session et son cache TanStack Query. `features/dashboard` consomme les réservations utilisateur, distingue à venir et historique, et expose l'annulation uniquement pour une demande `pending` dont le départ est futur. Le backend applique la même règle ; les justificatifs restent volontairement indisponibles tant qu'aucun service de facturation n'est implémenté.
+
+L'ordre recommandé est donc : 1) achever i18n, recherche et pagination ; 2) ajouter une facturation/téléchargement de justificatif ; 3) retirer `features/bookings` après recette complète des réservations destination. Chaque étape doit inclure une recette avec les liens issus d'e-mails et un rollback Nginx vérifié.
 
 ## Migration incrémentale (Strangler Fig)
 

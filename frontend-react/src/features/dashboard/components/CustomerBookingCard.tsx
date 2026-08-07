@@ -1,0 +1,11 @@
+import type { Booking } from '@/features/bookings/types'
+
+const labels = { pending: 'En attente', confirmed: 'Confirmée', cancelled: 'Annulée' }
+const money = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' })
+
+export function CustomerBookingCard({ booking, onCancel, cancelling }: { booking: Booking; onCancel: (id: string) => void; cancelling: boolean }) {
+  const future = new Date(`${booking.start_date}T00:00:00`) > new Date()
+  const cancellable = booking.status === 'pending' && future
+  const options = booking.booking_options
+  return <article className="rounded-2xl bg-white p-6 shadow-sm"><div className="flex flex-wrap justify-between gap-3"><div><h2 className="text-xl font-bold">{booking.offer_title ?? 'Voyage'}</h2><p className="mt-1 text-slate-500">{booking.start_date} → {booking.end_date} · {booking.participants_count} participant(s)</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold">{labels[booking.status]}</span></div><p className="mt-4 font-bold text-emerald-700">{money.format(booking.total_price)}</p><details className="mt-5 rounded-xl bg-slate-50 p-4 text-sm"><summary className="cursor-pointer font-semibold">Détail de la réservation</summary><dl className="mt-4 grid gap-2 text-slate-600"><div><dt className="inline font-semibold text-slate-900">Contact : </dt><dd className="inline">{booking.contact_name ?? 'Compte client'} · {booking.contact_email ?? '—'}</dd></div><div><dt className="inline font-semibold text-slate-900">Options : </dt><dd className="inline">{options?.cancellation_protection ? 'Protection annulation' : ''}{options?.cancellation_protection && options?.airport_transfer ? ', ' : ''}{options?.airport_transfer ? 'Transfert aéroport' : ''}{!options?.cancellation_protection && !options?.airport_transfer ? 'Aucune' : ''}</dd></div><div><dt className="inline font-semibold text-slate-900">Justificatif : </dt><dd className="inline">Disponible après confirmation.</dd></div></dl></details>{cancellable && <button disabled={cancelling} onClick={() => onCancel(booking.id)} className="mt-5 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-60">{cancelling ? 'Annulation…' : 'Annuler la demande'}</button>}</article>
+}

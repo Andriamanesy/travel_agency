@@ -9,6 +9,7 @@ interface SessionState {
   user: User | null
   roles: string[]
   authenticate: (user: User, roles: string[]) => void
+  updateUser: (user: Partial<User>) => void
   clear: () => void
 }
 
@@ -22,6 +23,7 @@ export const useSessionStore = create<SessionState>()(persist(
     user: null,
     roles: [],
     authenticate: (user, roles) => set({ status: 'authenticated', user, roles }),
+    updateUser: (user) => set((state) => ({ user: state.user ? { ...state.user, ...user } : state.user })),
     clear: () => set({ status: 'anonymous', user: null, roles: [] }),
   }),
   {
