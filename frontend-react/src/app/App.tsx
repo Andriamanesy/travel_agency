@@ -31,6 +31,7 @@ import { AdminReviewsPage } from '@/features/admin/pages/AdminReviewsPage'
 import { AdminSettingsPage } from '@/features/admin/pages/AdminSettingsPage'
 import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage'
 import { AdminRolesPage } from '@/features/admin/pages/AdminRolesPage'
+import { AdminHomeContentPage } from '@/features/admin/pages/AdminHomeContentPage'
 
 export default function App() {
   return (
@@ -64,6 +65,7 @@ export default function App() {
               <Route path="catalog/:entity" element={<AdminCatalogPage />} />
               <Route path="catalog" element={<Navigate to="/admin/catalog/circuits" replace />} />
               <Route path="content" element={<AdminContentPage />} />
+              <Route path="content/home" element={<AdminHomeContentPage />} />
               <Route path="marketing" element={<AdminMarketingPage />} />
               <Route path="reviews" element={<AdminReviewsPage />} />
               <Route path="users" element={<AdminUsersPage />} />

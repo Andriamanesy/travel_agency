@@ -8,28 +8,30 @@ import { useCustomerBookings } from '@/features/dashboard/hooks/useCustomerBooki
 import { useCatalog } from '@/features/catalog/hooks/useCatalog'
 import { mediaUrl } from '@/lib/api-client'
 import { Skeleton } from '@/components/feedback/Skeleton'
-import { useFeaturedCircuits, useFeaturedDestinations } from '../hooks/useHomeFeatured'
+import { Compass, HeartHandshake, ShieldCheck, Sparkles } from 'lucide-react'
+import heroFallback from '@/assets/hero.png'
+import { useFeaturedCircuits, useFeaturedDestinations, useHomeSettings } from '../hooks/useHomeFeatured'
 
-const experiences = [
+const defaultFeatures = [
   {
     title: 'Plages Tropicales',
     description: 'Détente sur les lagons turquoise de Nosy Be et Sainte-Marie.',
-    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80',
+    icon: 'Compass',
   },
   {
     title: 'Aventures & Treks',
     description: "Randonnées spectaculaires dans l'Isalo et l'Andringitra.",
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
+    icon: 'ShieldCheck',
   },
   {
     title: 'Escapades Culturelles',
     description: 'Histoire des Hautes Terres, artisanat local et hospitalité malgache.',
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=600&q=80',
+    icon: 'HeartHandshake',
   },
   {
     title: 'Faune Endémique',
     description: 'Rencontre avec les lémuriens, caméléons et baobabs centenaires.',
-    image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80',
+    icon: 'Sparkles',
   },
 ]
 
@@ -48,6 +50,11 @@ export function HomePage() {
   const inspirations = useCatalog('circuits', '', authenticated && !isAdmin && !upcoming)
   const featuredDestinations = useFeaturedDestinations()
   const featuredCircuits = useFeaturedCircuits()
+  const homeSettings = useHomeSettings()
+  const hero = homeSettings.data?.hero
+  const features = Array.isArray(homeSettings.data?.features) && homeSettings.data.features.length ? homeSettings.data.features : defaultFeatures
+  const heroImage = hero?.bgImageUrl && /^(https?:\/\/|\/uploads\/)/i.test(hero.bgImageUrl) ? mediaUrl(hero.bgImageUrl) : heroFallback
+  const icons = { Compass, ShieldCheck, HeartHandshake, Sparkles }
   const firstName = user?.name.trim().split(/\s+/)[0]
   const searchCatalog = (event: FormEvent) => { event.preventDefault(); const params = new URLSearchParams(); if (destination.trim()) params.set('destination', destination.trim()); if (departureDate) params.set('date', departureDate); if (travelType) params.set('type', travelType); navigate(`/catalog?${params.toString()}`) }
   const requestedPath = (location.state as { from?: string; authMessage?: string } | null)?.from
@@ -70,14 +77,14 @@ export function HomePage() {
         className="relative flex min-h-[86vh] items-center justify-center bg-cover bg-center px-6 py-24 text-white"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)), url('https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1920&q=80')",
+            `linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)), url('${heroImage}')`,
         }}
       >
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-300">TravelMS</p>
-          <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl">{authenticated && firstName ? `Ravi de vous revoir, ${firstName} ! Où souhaitez-vous partir ?` : 'Explorez Madagascar avec des voyages pensés pour l’exception'}</h1>
+          <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl">{authenticated && firstName ? `Ravi de vous revoir, ${firstName} ! Où souhaitez-vous partir ?` : hero?.title || 'Explorez le Monde avec Nous'}</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-100 sm:text-xl">
-            Découvrez des destinations inoubliables, des circuits uniques et des hébergements de prestige au cœur de la Grande Île.
+            {hero?.subtitle || "Des circuits sur-mesure d'exception"}
           </p>
 
           <div className="mx-auto mt-10 max-w-3xl rounded-2xl bg-white p-3 shadow-2xl">
@@ -103,6 +110,7 @@ export function HomePage() {
               </button>
             </form>
           </div>
+          <Link to={hero?.ctaLink || '/catalog/circuits'} className="mt-6 inline-flex rounded-xl border border-white/70 bg-white/10 px-5 py-3 font-bold text-white backdrop-blur transition hover:bg-white hover:text-slate-900">{hero?.ctaText || 'Découvrir nos circuits'}</Link>
         </div>
       </section>
 
@@ -146,15 +154,14 @@ export function HomePage() {
         </div>
 
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {experiences.map((experience) => (
-            <div key={experience.title} className="group rounded-3xl bg-white p-3 shadow-sm transition hover:shadow-lg">
-              <div className="h-44 overflow-hidden rounded-2xl">
-                <img src={experience.image} alt={experience.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-              </div>
-              <h3 className="mt-4 text-lg font-black text-slate-900">{experience.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{experience.description}</p>
+          {features.map((feature, index) => {
+            const Icon = icons[feature.icon as keyof typeof icons] || Compass
+            return <div key={`${feature.title}-${index}`} className="rounded-3xl bg-white p-6 shadow-sm transition hover:shadow-lg">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700"><Icon size={24} /></span>
+              <h3 className="mt-5 text-lg font-black text-slate-900">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
             </div>
-          ))}
+          })}
         </div>
       </section>
 

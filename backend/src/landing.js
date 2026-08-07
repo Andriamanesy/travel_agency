@@ -2,6 +2,44 @@ const { requirePermission } = require('./auth');
 const UUID = '[0-9a-f-]{36}';
 const fail = (statusCode, message) => Object.assign(new Error(message), { statusCode });
 
+const HOME_DEFAULTS = {
+  hero: { title: 'Explorez le Monde avec Nous', subtitle: "Des circuits sur-mesure d'exception", ctaText: 'Découvrir nos circuits', ctaLink: '/circuits', bgImageUrl: null },
+  features: [
+    { icon: 'Compass', title: 'Circuits sur-mesure', description: 'Des itinéraires pensés autour de vos envies.' },
+    { icon: 'ShieldCheck', title: 'Voyagez sereinement', description: 'Une équipe locale attentive à chaque détail.' },
+    { icon: 'HeartHandshake', title: 'Expériences authentiques', description: 'Des rencontres et des adresses qui ont du sens.' },
+    { icon: 'Sparkles', title: 'Service premium', description: 'Un accompagnement personnalisé avant, pendant et après votre voyage.' },
+  ],
+};
+
+function homeSettings(rows) {
+  const values = Object.fromEntries(rows.map(row => [row.key, row.value]));
+  return { hero: { ...HOME_DEFAULTS.hero, ...(values.hero && typeof values.hero === 'object' ? values.hero : {}) }, features: Array.isArray(values.features) ? values.features : HOME_DEFAULTS.features };
+}
+
+function validateHomeSettings(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw fail(400, 'Configuration de page d’accueil invalide.');
+  const hero = body.hero;
+  const features = body.features;
+  if (!hero || typeof hero !== 'object' || Array.isArray(hero) || !Array.isArray(features) || features.length < 3 || features.length > 4) throw fail(400, 'Le hero et trois à quatre arguments sont requis.');
+  const text = (value, label, max) => { if (typeof value !== 'string' || !value.trim() || value.trim().length > max) throw fail(400, `${label} est invalide.`); return value.trim(); };
+  const bgImageUrl = hero.bgImageUrl === null || hero.bgImageUrl === '' ? null : text(hero.bgImageUrl, 'L’image du hero', 2000);
+  if (bgImageUrl && !/^(https?:\/\/|\/uploads\/)/i.test(bgImageUrl)) throw fail(400, 'L’image du hero doit être une URL HTTPS/HTTP ou un média téléversé.');
+  return {
+    hero: { title: text(hero.title, 'Le titre', 160), subtitle: text(hero.subtitle, 'Le sous-titre', 500), ctaText: text(hero.ctaText, 'Le libellé CTA', 80), ctaLink: text(hero.ctaLink, 'Le lien CTA', 500), bgImageUrl },
+    features: features.map((feature, index) => {
+      if (!feature || typeof feature !== 'object' || Array.isArray(feature)) throw fail(400, `Argument ${index + 1} invalide.`);
+      return { icon: text(feature.icon, 'L’icône', 80), title: text(feature.title, 'Le titre', 120), description: text(feature.description, 'La description', 500) };
+    }),
+  };
+}
+
+async function homeContentAccess(req, getUserByToken) {
+  if (!await getUserByToken(req)) throw fail(401, 'Authentification requise.');
+  const permissions = req.auth?.permissions || [];
+  if (!permissions.includes('content:manage') && !permissions.includes('marketing:manage')) throw fail(403, 'Permission insuffisante.');
+}
+
 function destinationPayload(body) {
   const title = typeof body.title === 'string' ? body.title.trim() : '';
   const description = typeof body.description === 'string' ? body.description.trim() : '';
@@ -19,6 +57,20 @@ async function requireCatalogWrite(req, getUserByToken) {
 }
 
 async function handleLandingApi({ pathname, method, req, res, pool, parseJSONBody, sendResponse, getUserByToken }) {
+  if (pathname === '/api/v1/public/home-settings' && method === 'GET') {
+    const { rows } = await pool.query(`SELECT key,value FROM home_settings WHERE key IN ('hero','features')`);
+    sendResponse(res, 200, homeSettings(rows)); return true;
+  }
+  if (pathname === '/api/v1/admin/content/home') {
+    await homeContentAccess(req, getUserByToken);
+    if (method === 'GET') { const { rows } = await pool.query(`SELECT key,value FROM home_settings WHERE key IN ('hero','features')`); sendResponse(res, 200, homeSettings(rows)); return true; }
+    if (method === 'PUT') {
+      const settings = validateHomeSettings(await parseJSONBody(req));
+      await pool.query(`INSERT INTO home_settings(key,value,updated_at) VALUES('hero',$1,CURRENT_TIMESTAMP),('features',$2,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=CURRENT_TIMESTAMP`, [settings.hero, settings.features]);
+      sendResponse(res, 200, settings); return true;
+    }
+    throw fail(405, 'Méthode non autorisée.');
+  }
   if (pathname === '/api/v1/public/destinations/featured' && method === 'GET') {
     const { rows } = await pool.query(`SELECT d.id,d.title,d.description,d.location,d.price,d.cover_image,d.is_featured,COUNT(c.id)::int circuit_count
       FROM destinations d LEFT JOIN circuits c ON c.destination_id=d.id AND c.is_active=TRUE
@@ -50,4 +102,4 @@ async function handleLandingApi({ pathname, method, req, res, pool, parseJSONBod
   if (method === 'DELETE' && id) { const result = await pool.query('DELETE FROM destinations WHERE id=$1 RETURNING id', [id]); if (!result.rows[0]) throw fail(404, 'Destination introuvable.'); sendResponse(res, 204, {}); return true; }
   throw fail(405, 'Méthode non autorisée.');
 }
-module.exports = { handleLandingApi };
+module.exports = { handleLandingApi, homeSettings, validateHomeSettings, HOME_DEFAULTS };

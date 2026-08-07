@@ -8,7 +8,8 @@ export function RoleRoute({ role }: { role: string | number }) {
   const user = useSessionStore((state) => state.user)
   const dynamicRole = typeof user?.role === 'string' ? user.role : user?.role?.code
   const hasRole = roles.includes(String(role)) || dynamicRole === role || (typeof role === 'number' && user?.role_id === role)
-  // super_admin est le rôle système équivalent à admin depuis la migration RBAC.
-  const isAdminRole = role === 'admin' && (roles.includes('super_admin') || dynamicRole === 'super_admin')
+  // Les collaborateurs accèdent au Back-Office ; les autorisations fines
+  // restent systématiquement contrôlées par les permissions de l’API.
+  const isAdminRole = role === 'admin' && ['super_admin', 'agent'].some((candidate) => roles.includes(candidate) || dynamicRole === candidate)
   return hasRole || isAdminRole ? <Outlet /> : <Navigate to="/dashboard" replace />
 }

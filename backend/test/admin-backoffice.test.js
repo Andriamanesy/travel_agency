@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { makePdf, validateResource, circuitPayload, handleAdminBackoffice } = require('../src/admin-backoffice');
+const { validateHomeSettings } = require('../src/landing');
 
 test('la validation refuse une remise percentage supérieure à 100', () => {
   assert.throws(
@@ -38,4 +39,10 @@ test('un handler Back-Office signale au routeur que sa réponse a été traitée
   });
   assert.equal(handled, true);
   assert.equal(responses[0].status, 200);
+});
+
+test('la configuration de la page d’accueil impose un hero et trois à quatre arguments', () => {
+  const settings = validateHomeSettings({ hero: { title: 'Voyagez', subtitle: 'Des voyages uniques', ctaText: 'Découvrir', ctaLink: '/circuits', bgImageUrl: null }, features: [{ icon: 'Compass', title: 'Un', description: 'Premier argument' }, { icon: 'ShieldCheck', title: 'Deux', description: 'Deuxième argument' }, { icon: 'Sparkles', title: 'Trois', description: 'Troisième argument' }] });
+  assert.equal(settings.features.length, 3);
+  assert.throws(() => validateHomeSettings({ hero: settings.hero, features: [] }), /trois à quatre arguments/);
 });

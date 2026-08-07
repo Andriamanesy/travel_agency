@@ -6,6 +6,7 @@ export const useAdvancedCircuits = () => useQuery({ queryKey: ['backoffice', 'ci
 export const useBackofficeBookings = (params = '') => useQuery({ queryKey: ['backoffice', 'bookings', params], queryFn: () => backofficeService.bookings(params) })
 export const useBackofficeResource = (resource: BackofficeResource) => useQuery({ queryKey: ['backoffice', resource], queryFn: () => backofficeService.list(resource) })
 export const useSettings = () => useQuery({ queryKey: ['backoffice', 'settings'], queryFn: backofficeService.settings })
+export const useHomeContent = () => useQuery({ queryKey: ['backoffice', 'home-content'], queryFn: backofficeService.homeContent })
 export function useBackofficeActions() {
   const query = useQueryClient(); const invalidate = (key: string) => query.invalidateQueries({ queryKey: ['backoffice', key] })
   return {
@@ -14,5 +15,6 @@ export function useBackofficeActions() {
     updateBooking: useMutation({ mutationFn: ({ id, values }: { id: string; values: Parameters<typeof backofficeService.updateBooking>[1] }) => backofficeService.updateBooking(id, values), onSuccess: () => { invalidate('bookings'); invalidate('analytics') } }),
     saveSetting: useMutation({ mutationFn: ({ key, value }: { key: string; value: Record<string, unknown> }) => backofficeService.saveSetting(key, value), onSuccess: () => invalidate('settings') }),
     saveCircuit: useMutation({ mutationFn: ({ id, values }: { id: string | null; values: Record<string, unknown> }) => backofficeService.saveCircuit(id, values), onSuccess: () => invalidate('circuits') }),
+    saveHomeContent: useMutation({ mutationFn: backofficeService.saveHomeContent, onSuccess: () => { invalidate('home-content'); query.invalidateQueries({ queryKey: ['public', 'home-settings'] }) } }),
   }
 }

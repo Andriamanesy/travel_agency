@@ -8,6 +8,7 @@ const navigation = [
   { to: '/admin/circuits', label: 'Circuits & catalogue', icon: ClipboardList },
   { to: '/admin/bookings', label: 'Réservations', icon: BookOpen },
   { to: '/admin/content', label: 'Contenu & blog', icon: BookOpen },
+  { to: '/admin/content/home', label: 'Page d’accueil', icon: LayoutDashboard },
   { to: '/admin/marketing', label: 'Marketing & promos', icon: Megaphone },
   { to: '/admin/reviews', label: 'Avis clients', icon: Star },
   { to: '/admin/users', label: 'Utilisateurs', icon: Users },

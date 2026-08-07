@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client'
+import type { HomeSettings } from '@/features/home/services/home.service'
 
 export type BackofficeResource = 'posts' | 'banners' | 'coupons' | 'reviews'
 export type AdminRecord = Record<string, unknown> & { id: string; created_at?: string; updated_at?: string }
@@ -18,4 +19,6 @@ export const backofficeService = {
   remove: (resource: BackofficeResource, id: string) => apiClient.delete(`${base}/${resource}/${id}`),
   settings: () => apiClient.get<{ settings: Array<{ key: string; value: Record<string, unknown>; updated_at: string }> }>(`${base}/settings`),
   saveSetting: (key: string, value: Record<string, unknown>) => apiClient.put(`${base}/settings`, { key, value }),
+  homeContent: () => apiClient.get<HomeSettings>('/v1/admin/content/home'),
+  saveHomeContent: (settings: HomeSettings) => apiClient.put<HomeSettings>('/v1/admin/content/home', settings),
 }
