@@ -179,7 +179,7 @@ export function HomePage() {
           </div>
         </div>
       </footer>
-      <AuthModal open={authOpen} initialMode={authMode === 'register' ? 'register' : 'login'} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate(requestedPath ?? (useSessionStore.getState().roles.includes('admin') ? '/admin' : '/dashboard'), { replace: true })} />
+      <AuthModal open={authOpen} initialMode={authMode === 'register' ? 'register' : 'login'} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate(requestedPath ?? (useSessionStore.getState().roles.includes('admin') ? '/admin' : '/'), { replace: true })} />
     </main>
   )
 }

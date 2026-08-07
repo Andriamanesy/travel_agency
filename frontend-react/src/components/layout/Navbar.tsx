@@ -14,6 +14,7 @@ export function Navbar({ onAuthenticate }: { onAuthenticate?: () => void }) {
   const user = useSessionStore((state) => state.user)
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
   const isAdmin = useSessionStore((state) => state.roles.includes('admin'))
+  const catalogTarget = authenticated && !isAdmin ? '/' : '/catalog/circuits'
   const initials = user?.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'TM'
   const close = () => setOpen(false)
   const openAuthentication = () => { if (onAuthenticate) onAuthenticate(); else navigate('/?auth=login') }
@@ -23,7 +24,7 @@ export function Navbar({ onAuthenticate }: { onAuthenticate?: () => void }) {
     <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-6">
       <Link to="/" className="flex items-center gap-2 text-2xl font-black tracking-tight text-slate-900"><span className="text-emerald-700">🌍</span><span>Travel<span className="text-emerald-700">MS</span></span></Link>
       <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-600 lg:flex">
-        <NavLink to="/catalog/circuits" className="transition hover:text-emerald-700">Catalogue</NavLink>
+        <NavLink to={catalogTarget} className="transition hover:text-emerald-700">Catalogue</NavLink>
         {authenticated && !isAdmin && <NavLink to="/bookings" className="transition hover:text-emerald-700">Mes réservations</NavLink>}
         {!authenticated && <><a href="#experiences" className="transition hover:text-emerald-700">Expériences</a><a href="#contact" className="transition hover:text-emerald-700">Contact</a></>}
       </nav>

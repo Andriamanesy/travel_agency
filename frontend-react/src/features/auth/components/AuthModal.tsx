@@ -25,7 +25,7 @@ interface AuthModalProps {
   onNotice?: (message: string) => void
 }
 
-export function AuthModal({ open, initialMode = 'login', redirectTo = '/dashboard', onClose, onToast, onAuthenticated, onNotice }: AuthModalProps) {
+export function AuthModal({ open, initialMode = 'login', redirectTo = '/', onClose, onToast, onAuthenticated, onNotice }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(initialMode)
   const navigate = useNavigate()
   const login = useLogin()
@@ -35,7 +35,7 @@ export function AuthModal({ open, initialMode = 'login', redirectTo = '/dashboar
   if (!open) return null
 
   const notify = (message: string) => { onToast?.(message); onNotice?.(message) }
-  const onLogin = (values: LoginValues) => login.mutate(values, { onSuccess: () => { notify('Connexion réussie. Bon voyage !'); onAuthenticated?.(); onClose(); if (!onAuthenticated) navigate(redirectTo, { replace: true }) } })
+  const onLogin = (values: LoginValues) => login.mutate(values, { onSuccess: () => { notify('Connexion réussie. Bon voyage !'); onAuthenticated?.(); onClose(); if (!onAuthenticated) navigate(useSessionStore.getState().roles.includes('admin') ? '/admin' : redirectTo, { replace: true }) } })
   const onRegister = (values: RegisterValues) => registerAccount.mutate({ name: `${values.firstName} ${values.lastName}`, email: values.email, password: values.password }, { onSuccess: () => { useSessionStore.getState().showWelcome({ title: `Bienvenue, ${values.firstName} !`, message: 'Votre compte est créé. Vérifiez votre e-mail pour l’activer.', admin: false }); notify('Compte créé. Vérifiez votre e-mail pour l’activer.'); onClose() } })
   const error = (login.error instanceof ApiError ? login.error.message : login.isError ? 'Connexion impossible.' : null) || (registerAccount.error instanceof ApiError ? registerAccount.error.message : registerAccount.isError ? 'Inscription impossible.' : null)
 
