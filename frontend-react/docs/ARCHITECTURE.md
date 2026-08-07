@@ -1,6 +1,6 @@
 # Architecture front-end React
 
-`frontend-react` est une application React 19, Vite et TypeScript, livrée comme une SPA statique par Nginx. Le backend Node et l'API restent inchangés : Nginx proxyfie `/api` et `/uploads` vers eux afin de conserver une seule origine en production.
+`frontend-react` est l'unique client web déployé : une application React 19, Vite et TypeScript, livrée comme une SPA statique par Nginx. Le backend Node et l'API restent inchangés : Nginx proxyfie `/api` et `/uploads` vers eux afin de conserver une seule origine en production.
 
 ## Structure cible
 
@@ -45,7 +45,13 @@ frontend-react/
 
 Le JWT d'accès n'est jamais persisté dans `localStorage` : il reste en mémoire dans `lib/session.ts`. Au démarrage, `SessionBootstrap` appelle `/api/refresh` avec `credentials: 'include'`; le refresh token est un cookie `HttpOnly`, puis le profil est chargé via `/api/profile`. Zustand persiste uniquement le profil et les rôles utiles à l'interface sous la clé `travelms-session-ui`; l'application reste en état `restoring` jusqu'à la fin de cette vérification.
 
-`ProtectedRoute` attend une session authentifiée. `RoleRoute` masque les écrans d'administration aux non-admins et le menu s'adapte aux rôles du JWT. Ces gardes sont une protection UX : le backend reste l'autorité de sécurité et vérifie systématiquement le JWT, les rôles et les permissions sur chaque endpoint.
+`ProtectedRoute` attend que la restauration soit terminée avant toute redirection et conserve le chemin complet demandé. `RoleRoute` masque les écrans d'administration aux non-admins et le menu s'adapte aux rôles du JWT. Ces gardes sont une protection UX : le backend reste l'autorité de sécurité et vérifie systématiquement le JWT, les rôles et les permissions sur chaque endpoint.
+
+### Entrée SPA et fin de migration
+
+Nginx sert explicitement `/` et `/index.html` comme le fichier SPA, sans règle de redirection. Cette distinction est importante : `try_files $uri $uri/ /index.html` reconnaissait `/` comme un répertoire, chargeait `index.html`, puis la redirection legacy de ce fichier renvoyait vers `/` — une boucle infinie. Le fallback des deep links est désormais `try_files $uri /index.html`; seules les anciennes URLs `.html` métier sont redirigées vers leurs routes React.
+
+Le service Compose `frontend` construit uniquement `frontend-react/`. Le dossier `frontend/` est hors chemin de production et ne doit servir que d'archive de rollback jusqu'à sa suppression planifiée. `devops/scripts/healthcheck.sh` vérifie aussi que la racine ne retourne pas d'en-tête `Location`.
 
 ## Inventaire legacy et plan de migration
 
@@ -56,7 +62,7 @@ Le JWT d'accès n'est jamais persisté dans `localStorage` : il reste en mémoir
 | Catalogue | `/catalog/:entity`, `/catalog/:entity/:itemId` | liste et détail migrés | P1 : branche de réservation des circuits |
 | Réservations client et administration | `/bookings`, `/bookings/new`, `/booking/:tourId`, `/admin/bookings` | destinations et circuits migrés ; contacts/options sauvegardés, total recalculé côté serveur | P1 terminé |
 | Profil et tableau de bord | `/profile`, `/dashboard` | édition complète, avatar, préférences, historique, détail et annulation conditionnelle migrés | P2 terminé |
-| Administration : utilisateurs, destinations, catalogue | `/admin/*` | CRUD et invitations présents, désormais réservé aux admins | P2 : découper les pages admin volumineuses et tester les permissions |
+| Administration : utilisateurs, destinations, catalogue | `/admin/*` | CRUD et invitations présents, circuits validés avec Zod et archivage ; réservations globales filtrables | P2 : tests de permissions complémentaires |
 | Accueil et internationalisation | `/` | présentation React disponible | P3 : contenu API, recherche réelle et langues du legacy |
 
 Le tunnel circuit réside dans `features/booking` (singulier) afin de séparer sa nouvelle expérience guidée du module historique `features/bookings`, conservé durant la transition pour les réservations destination et leur historique. Les anciens liens `booking.html?tour_id=…` et `booking.html?circuit_id=…` sont redirigés vers `/booking/:tourId` avec leurs paramètres conservés ; les détails catalogue et destination gardent aussi leurs identifiants.
@@ -79,4 +85,4 @@ Pièges à éviter : dupliquer l'état API dans un store, stocker un secret dans
 
 ## Déploiement
 
-Le point d'entrée réel du dépôt est `devops/scripts/` (il n'existe pas de dossier `deploy/script/`). `docker-compose.yml` démarre dans l'ordre PostgreSQL, les migrations, le backend, puis `frontend-react`. Le build React est multi-stage : Node compile `dist`, Nginx ne reçoit que les fichiers statiques. Utiliser `./devops/scripts/start.sh` pour démarrer localement et `./devops/scripts/deploy.sh` pour une machine de déploiement sur la branche `main`.
+Le point d'entrée réel du dépôt est `devops/scripts/` (il n'existe pas de dossier `deploy/script/`). `docker-compose.yml` démarre dans l'ordre PostgreSQL, les migrations, le backend, puis `frontend-react`. Le build React est multi-stage : Node compile `dist`, Nginx ne reçoit que les fichiers statiques. Le frontend est publié sur le port 80 par défaut (`FRONTEND_PORT` permet une surcharge locale) : avec `PUBLIC_APP_URL=http://192.168.88.226`, toute l'origine correspond donc au bundle React. Utiliser `./devops/scripts/start.sh` pour démarrer localement et `./devops/scripts/deploy.sh` pour une machine de déploiement sur la branche `main`.

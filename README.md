@@ -101,7 +101,13 @@ Le projet est structuré selon les epics métiers suivants :
 
 Le projet intègre une boîte à outils DevOps dans le dossier `devops/scripts/` :
 
-Le frontend déployé est `frontend-react/`. L'ancien client `frontend/` est conservé temporairement pour la migration incrémentale ; la stratégie, l'arborescence cible et les redirections sont documentées dans [`frontend-react/docs/ARCHITECTURE.md`](frontend-react/docs/ARCHITECTURE.md).
+Le frontend déployé est exclusivement `frontend-react/` : le service Docker `frontend` compile ce dossier puis sert son bundle via Nginx. La racine `/` est servie directement comme entrée SPA (sans redirection) ; les anciennes URL en `.html` sont uniquement conservées comme redirections de compatibilité. Définissez `PUBLIC_APP_URL` avec l'origine réellement exposée (par exemple `http://192.168.88.226`) avant un déploiement afin que les liens e-mail restent sur cette même origine.
+
+L'ancien client statique `frontend/` est décommissionné : il n'est plus référencé par Docker Compose ni par les scripts de déploiement. Il peut être retiré du dépôt dans une suppression dédiée une fois l'archive de rollback validée.
+
+### Back-office
+
+Les pages `/admin/catalog/circuits` et `/admin/bookings` sont réservées au rôle `admin`, côté interface et API. Elles permettent respectivement de créer, modifier ou archiver des circuits (période, prix, capacité et images) et de filtrer l'ensemble des réservations avant de modifier leur statut.
 
 * **Démarrer l'application :**
 ```bash

@@ -33,7 +33,14 @@ else
 fi
 
 if docker ps --format '{{.Names}}' | grep -q "^travel_frontend$"; then
-    check_http "http://localhost:8080/" "Frontend (Port 8080)"
+    frontend_port="${FRONTEND_PORT:-80}"
+    check_http "http://localhost:${frontend_port}/" "Frontend (Port ${frontend_port})"
+    if curl -fsSIL --max-redirs 3 "http://localhost:${frontend_port}/" | grep -qi '^location:'; then
+        log "🔴 Frontend (racine) : REDIRECTION INATTENDUE"
+        health_ok=false
+    else
+        log "🟢 Frontend (racine sans boucle) : OK"
+    fi
 else
     log "🔴 Frontend (Port 8080) : CONTENEUR INDISPONIBLE"
     health_ok=false

@@ -47,6 +47,12 @@ function isDate(value) {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
 }
 
+function optionalDate(value, label) {
+    if (value === undefined || value === null || value === '') return null;
+    if (!isDate(value)) throw httpError(400, `${label} est invalide.`);
+    return value;
+}
+
 function bookingOptions(value) {
     const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
     if (Object.values(input).some(item => typeof item !== 'boolean')) throw httpError(400, 'Les options de réservation sont invalides.');
@@ -95,10 +101,13 @@ function catalogConfig(entity) {
         },
         circuits: {
             table: 'circuits', id: 'id', order: 'created_at DESC',
-            fields: ['destination_id', 'title', 'description', 'price', 'duration_days', 'capacity', 'cover_image', 'is_active'], search: ['title', 'description'],
+            fields: ['destination_id', 'title', 'description', 'price', 'duration_days', 'capacity', 'available_from', 'available_to', 'cover_image', 'is_active'], search: ['title', 'description'],
             payload(body) {
                 if (!isUuid(body.destination_id)) throw httpError(400, 'La destination est invalide.');
-                return { destination_id: body.destination_id, title: string(body.title, 'Le titre', { max: 255 }), description: string(body.description, 'La description', { max: 10000 }), price: number(body.price, 'Le prix', { max: 10000000 }), duration_days: number(body.duration_days, 'La durée', { min: 1, max: 365, integer: true }), capacity: number(body.capacity ?? 50, 'La capacité', { min: 1, max: 10000, integer: true }), cover_image: string(body.cover_image, 'L’image de couverture', { required: false, max: 512 }), is_active: bool(body.is_active) };
+                const available_from = optionalDate(body.available_from, 'La date de début de disponibilité');
+                const available_to = optionalDate(body.available_to, 'La date de fin de disponibilité');
+                if (available_from && available_to && available_to <= available_from) throw httpError(400, 'La fin de disponibilité doit être postérieure au début.');
+                return { destination_id: body.destination_id, title: string(body.title, 'Le titre', { max: 255 }), description: string(body.description, 'La description', { max: 10000 }), price: number(body.price, 'Le prix', { max: 10000000 }), duration_days: number(body.duration_days, 'La durée', { min: 1, max: 365, integer: true }), capacity: number(body.capacity ?? 50, 'La capacité', { min: 1, max: 10000, integer: true }), available_from, available_to, cover_image: string(body.cover_image, 'L’image de couverture', { required: false, max: 512 }), is_active: bool(body.is_active) };
             }
         },
         hotels: {
@@ -240,9 +249,12 @@ async function createBooking({ pool, req, body, getUserByToken, sendBookingConfi
     try {
         await client.query('BEGIN');
         const target = circuitId
-            ? await client.query('SELECT id,title,price,destination_id,capacity FROM circuits WHERE id=$1 AND is_active=TRUE FOR UPDATE', [circuitId])
+            ? await client.query('SELECT id,title,price,destination_id,capacity,available_from,available_to FROM circuits WHERE id=$1 AND is_active=TRUE FOR UPDATE', [circuitId])
             : await client.query('SELECT id,title,price,capacity FROM destinations WHERE id=$1 AND is_active=TRUE FOR UPDATE', [destinationId]);
         if (!target.rows[0]) throw httpError(409, 'Cette offre n’est plus disponible.');
+        if (circuitId && ((target.rows[0].available_from && body.start_date < String(target.rows[0].available_from).slice(0, 10)) || (target.rows[0].available_to && body.end_date > String(target.rows[0].available_to).slice(0, 10)))) {
+            throw httpError(409, 'Les dates choisies sont hors de la période de disponibilité du circuit.');
+        }
         const reserved = await client.query(
             `SELECT COALESCE(SUM(participants_count),0)::int AS count FROM bookings
              WHERE ${circuitId ? 'circuit_id' : 'destination_id'}=$1

@@ -47,6 +47,8 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${DB_NAME:-travel_agency_db}
+      # Doit correspondre exactement à l'origine publique (IP ou domaine),
+      # afin que les liens e-mail et les cookies restent sur la même origine.
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:8080}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
@@ -75,7 +77,9 @@ services:
     build: ./frontend-react
     container_name: travel_frontend
     ports:
-      - "8080:80"
+      # Le site est exposé directement sur l'origine HTTP standard. Définir
+      # FRONTEND_PORT permet de conserver un port alternatif en développement.
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       backend:
         condition: service_healthy

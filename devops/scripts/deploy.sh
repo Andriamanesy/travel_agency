@@ -22,6 +22,10 @@ log "🐳 Rechargement des conteneurs Docker..."
 compose up -d --build
 "$SCRIPT_DIR/healthcheck.sh"
 
+log "🌐 Vérification du point d'entrée React..."
+frontend_status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' travel_frontend 2>/dev/null || true)"
+[[ "$frontend_status" == "healthy" ]] || fail "Le frontend React n'est pas sain après le déploiement."
+
 log "🧹 Nettoyage des anciennes images..."
 docker image prune -f
 
