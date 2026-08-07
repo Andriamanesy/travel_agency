@@ -74,6 +74,11 @@ export const apiClient = {
   put: <T>(path: string, body?: unknown, options?: ApiOptions) => request<T>(path, { ...options, method: 'PUT', body }),
   delete: <T>(path: string, options?: ApiOptions) => request<T>(path, { ...options, method: 'DELETE' }),
   form: <T>(path: string, method: 'POST' | 'PUT', body: FormData) => requestForm<T>(path, method, body),
+  download: async (path: string) => {
+    const response = await fetch(`${API_URL}/api${path}`, { credentials: 'include', headers: getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {} })
+    if (!response.ok) return parseResponse(response)
+    const url = URL.createObjectURL(await response.blob()); const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'reservation.pdf'; anchor.click(); URL.revokeObjectURL(url)
+  },
 }
 
 export function mediaUrl(path?: string | null) {

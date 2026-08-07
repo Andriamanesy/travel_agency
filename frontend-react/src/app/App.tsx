@@ -25,6 +25,11 @@ import { RoleRoute } from '@/routes/RoleRoute'
 import { LegacyBookingRedirect } from '@/routes/LegacyBookingRedirect'
 import { CircuitBookingPage } from '@/features/booking/pages/CircuitBookingPage'
 import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage'
+import { AdminLayout } from '@/components/layout/AdminLayout'
+import { AdminContentPage } from '@/features/admin/pages/AdminContentPage'
+import { AdminMarketingPage } from '@/features/admin/pages/AdminMarketingPage'
+import { AdminReviewsPage } from '@/features/admin/pages/AdminReviewsPage'
+import { AdminSettingsPage } from '@/features/admin/pages/AdminSettingsPage'
 
 export default function App() {
   return (
@@ -50,12 +55,20 @@ export default function App() {
           <Route path="/booking/:tourId" element={<CircuitBookingPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
           <Route element={<RoleRoute role="admin" />}>
-            <Route path="/admin/bookings" element={<AdminBookingsPage />} />
-            <Route path="/admin/destinations" element={<AdminDestinationsPage />} />
-            <Route path="/admin/catalog/:entity" element={<AdminCatalogPage />} />
-            <Route path="/admin/catalog" element={<Navigate to="/admin/catalog/circuits" replace />} />
-            <Route path="/admin/access" element={<AdminAccessPage />} />
-            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="bookings" element={<AdminBookingsPage />} />
+              <Route path="circuits" element={<Navigate to="/admin/catalog/circuits" replace />} />
+              <Route path="destinations" element={<AdminDestinationsPage />} />
+              <Route path="catalog/:entity" element={<AdminCatalogPage />} />
+              <Route path="catalog" element={<Navigate to="/admin/catalog/circuits" replace />} />
+              <Route path="content" element={<AdminContentPage />} />
+              <Route path="marketing" element={<AdminMarketingPage />} />
+              <Route path="reviews" element={<AdminReviewsPage />} />
+              <Route path="users" element={<AdminAccessPage />} />
+              <Route path="access" element={<Navigate to="/admin/users" replace />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+            </Route>
           </Route>
         </Route>
       </Route>

@@ -33,6 +33,7 @@ const { formidable } = require('formidable');
 const { Pool } = require('pg');
 const { sendVerificationEmail, sendPasswordResetEmail, sendBookingConfirmationEmail, sendStaffInvitationEmail } = require('./mailer');
 const { handleCatalogRequest } = require('./catalog');
+const { handleAdminBackoffice } = require('./admin-backoffice');
 const { writeAudit } = require('./audit');
 
 const UPLOAD_DIR = path.join(__dirname, '../public', 'uploads');
@@ -563,6 +564,18 @@ const server = http.createServer(async (req, res) => {
             getUserByToken,
             slugify,
             sendBookingConfirmationEmail
+        })) return;
+
+        if (await handleAdminBackoffice({
+            pathname,
+            method,
+            parsedUrl,
+            req,
+            res,
+            pool,
+            sendResponse,
+            parseJSONBody,
+            getUserByToken
         })) return;
 
         // --- ROUTE : Liste publique des destinations ---

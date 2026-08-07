@@ -1,0 +1,3 @@
+import { useState } from 'react'
+import { ResourceManager } from '../components/ResourceManager'
+export function AdminMarketingPage() { const [tab, setTab] = useState<'banners' | 'coupons'>('banners'); return <><div className="mb-5 flex gap-2"><button onClick={() => setTab('banners')} className={`rounded-lg px-4 py-2 text-sm font-bold ${tab === 'banners' ? 'bg-emerald-700 text-white' : 'bg-white text-slate-600'}`}>Bannières Hero</button><button onClick={() => setTab('coupons')} className={`rounded-lg px-4 py-2 text-sm font-bold ${tab === 'coupons' ? 'bg-emerald-700 text-white' : 'bg-white text-slate-600'}`}>Codes promo</button></div><ResourceManager resource={tab} /></> }
