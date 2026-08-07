@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #0f172a;
+  background-color: #f8fafc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.field {
+  @apply mt-2 w-full rounded-xl border border-slate-200 p-3 outline-none focus:border-emerald-500;
+}
+
+.action {
+  @apply mt-6 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white transition hover:bg-emerald-800;
+}
+
+::selection {
+  background: rgba(5, 150, 105, 0.2);
+  color: #064e3b;
+}
