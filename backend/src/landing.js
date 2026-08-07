@@ -29,7 +29,7 @@ function validateHomeSettings(body) {
     hero: { title: text(hero.title, 'Le titre', 160), subtitle: text(hero.subtitle, 'Le sous-titre', 500), ctaText: text(hero.ctaText, 'Le libellé CTA', 80), ctaLink: text(hero.ctaLink, 'Le lien CTA', 500), bgImageUrl },
     features: features.map((feature, index) => {
       if (!feature || typeof feature !== 'object' || Array.isArray(feature)) throw fail(400, `Argument ${index + 1} invalide.`);
-      return { icon: text(feature.icon, 'L’icône', 80), title: text(feature.title, 'Le titre', 120), description: text(feature.description, 'La description', 500) };
+      return { icon: text(feature.icon, 'L’icône', 80), title: text(feature.title, 'Le titre', 120), description: text(feature.description, 'La description', 500), isActive: feature.isActive !== false };
     }),
   };
 }

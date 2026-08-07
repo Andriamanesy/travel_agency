@@ -52,8 +52,9 @@ export function HomePage() {
   const featuredCircuits = useFeaturedCircuits()
   const homeSettings = useHomeSettings()
   const hero = homeSettings.data?.hero
-  const features = Array.isArray(homeSettings.data?.features) && homeSettings.data.features.length ? homeSettings.data.features : defaultFeatures
-  const heroImage = hero?.bgImageUrl && /^(https?:\/\/|\/uploads\/)/i.test(hero.bgImageUrl) ? mediaUrl(hero.bgImageUrl) : heroFallback
+  const configuredFeatures = Array.isArray(homeSettings.data?.features) ? homeSettings.data.features.filter((feature) => feature?.isActive !== false) : []
+  const features = configuredFeatures.length ? configuredFeatures : defaultFeatures
+  const heroImage = hero?.bgImageUrl && /^(https?:\/\/|\/uploads\/|data:image\/)/i.test(hero.bgImageUrl) ? mediaUrl(hero.bgImageUrl) : heroFallback
   const icons = { Compass, ShieldCheck, HeartHandshake, Sparkles }
   const firstName = user?.name.trim().split(/\s+/)[0]
   const searchCatalog = (event: FormEvent) => { event.preventDefault(); const params = new URLSearchParams(); if (destination.trim()) params.set('destination', destination.trim()); if (departureDate) params.set('date', departureDate); if (travelType) params.set('type', travelType); navigate(`/catalog?${params.toString()}`) }
