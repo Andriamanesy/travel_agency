@@ -783,7 +783,10 @@ const server = http.createServer(async (req, res) => {
                     address: user.address,
                     preferredLang: user.preferred_lang,
                     avatar_url: user.avatar_url,
-                    is_verified: user.is_verified
+                    is_verified: user.is_verified,
+                    roles: auth.roles,
+                    role: auth.roles[0] || null,
+                    role_id: user.role_id
                 }
             }, { 'Set-Cookie': `travelms_refresh=${refreshToken}; HttpOnly; Path=/api${rememberCookie}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}` });
         }
@@ -1500,7 +1503,10 @@ const server = http.createServer(async (req, res) => {
                     address: user.address,
                     preferredLang: user.preferred_lang,
                     avatar_url: user.avatar_url,
-                    is_verified: user.is_verified
+                    is_verified: user.is_verified,
+                    roles: req.auth.roles,
+                    role: req.auth.roles[0] || null,
+                    role_id: user.role_id
                 });
             }
 
@@ -1558,6 +1564,7 @@ async function bootstrapAdmin() {
     const userId = result.rows[0].id;
     await pool.query('DELETE FROM user_roles WHERE user_id=$1', [userId]);
     await pool.query(`INSERT INTO user_roles (user_id,role_id) SELECT $1,id FROM roles WHERE code='admin'`, [userId]);
+    await pool.query(`UPDATE users SET role_id=(SELECT id FROM roles WHERE code='admin') WHERE id=$1`, [userId]);
     await revokeAll(pool, userId);
     console.log('[RBAC] Administrateur initial configuré.');
 }

@@ -32,7 +32,7 @@ export const useSessionStore = create<SessionState>()(persist(
     welcome: null,
     toast: null,
     authenticate: (user, roles) => {
-      const admin = roles.includes('admin')
+      const admin = roles.includes('admin') || roles.includes('super_admin')
       const firstName = user.name?.trim().split(/\s+/)[0] || 'voyageur'
       set({ status: 'authenticated', user, roles, welcome: admin
         ? { title: 'Espace d’administration activé', message: 'Vos indicateurs et alertes sont prêts.', admin: true }

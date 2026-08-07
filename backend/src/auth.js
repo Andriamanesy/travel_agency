@@ -34,7 +34,9 @@ function createAuthorizationGuard({ roles = [], permissions = [] } = {}) {
         const userRoles = auth.roles || [];
         const userPermissions = auth.permissions || [];
 
-        if (roles.length > 0 && !userRoles.some(role => roles.includes(role))) {
+        const hasRequiredRole = userRoles.some(role => roles.includes(role))
+            || (roles.includes('admin') && userRoles.includes('super_admin'));
+        if (roles.length > 0 && !hasRequiredRole) {
             throw createHttpError(403, 'Rôle insuffisant.');
         }
 

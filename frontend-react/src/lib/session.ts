@@ -24,9 +24,16 @@ function rolesFromAccessToken(token: string): string[] {
   }
 }
 
+function rolesFromUser(user: User): string[] {
+  const roles = Array.isArray(user.roles) ? user.roles.filter((role): role is string => typeof role === 'string') : []
+  if (typeof user.role === 'string') roles.push(user.role)
+  if (user.role && typeof user.role === 'object' && typeof user.role.code === 'string') roles.push(user.role.code)
+  return [...new Set(roles)]
+}
+
 export function saveSession(token: string, user: User) {
   setAccessToken(token)
-  useSessionStore.getState().authenticate(user, rolesFromAccessToken(token))
+  useSessionStore.getState().authenticate(user, [...new Set([...rolesFromAccessToken(token), ...rolesFromUser(user)])])
 }
 
 export function clearSession() {

@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-Le serveur API est celui de `../backend` (port 3000 par défaut). En production, laissez `VITE_API_URL` vide lorsque le proxy expose l’API sous `/api` sur le même domaine.
+Le serveur API est celui de `../backend` (port 3000 par défaut). En production, utilisez `VITE_API_URL=/api/v1` (ou laissez-la absente : cette valeur est le défaut) lorsque le proxy expose l’API sur le même domaine. Cela conserve les cookies et le header `Authorization` sur la même origine.
 
 ## Déploiement Docker
 

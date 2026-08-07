@@ -42,7 +42,7 @@ export function HomePage() {
   const [travelType, setTravelType] = useState('Circuit organisé')
   const user = useSessionStore((state) => state.user)
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
-  const isAdmin = useSessionStore((state) => state.roles.includes('admin'))
+  const isAdmin = useSessionStore((state) => state.roles.includes('admin') || state.roles.includes('super_admin'))
   const bookings = useCustomerBookings({ enabled: authenticated && !isAdmin })
   const upcoming = (bookings.data?.bookings ?? []).find((booking) => booking.status !== 'cancelled' && new Date(`${booking.start_date}T00:00:00`) >= new Date())
   const inspirations = useCatalog('circuits', '', authenticated && !isAdmin && !upcoming)
@@ -167,7 +167,7 @@ export function HomePage() {
           </div>
         </div>
       </footer>
-      <AuthModal open={authOpen} initialMode={authMode === 'register' ? 'register' : 'login'} onClose={() => setAuthOpen(false)} onAuthenticated={() => navigate(requestedPath ?? (useSessionStore.getState().roles.includes('admin') ? '/admin' : '/'), { replace: true })} />
+      <AuthModal open={authOpen} initialMode={authMode === 'register' ? 'register' : 'login'} onClose={() => setAuthOpen(false)} onAuthenticated={() => { const roles = useSessionStore.getState().roles; navigate(requestedPath ?? (roles.includes('admin') || roles.includes('super_admin') ? '/admin' : '/'), { replace: true }) }} />
     </main>
   )
 }

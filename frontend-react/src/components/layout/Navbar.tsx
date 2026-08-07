@@ -13,7 +13,7 @@ export function Navbar({ onAuthenticate }: { onAuthenticate?: () => void }) {
   const [open, setOpen] = useState(false)
   const user = useSessionStore((state) => state.user)
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
-  const isAdmin = useSessionStore((state) => state.roles.includes('admin'))
+  const isAdmin = useSessionStore((state) => state.roles.includes('admin') || state.roles.includes('super_admin'))
   const catalogTarget = authenticated && !isAdmin ? '/' : '/catalog/circuits'
   const initials = user?.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || 'TM'
   const close = () => setOpen(false)

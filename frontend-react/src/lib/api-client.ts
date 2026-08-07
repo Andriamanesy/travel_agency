@@ -1,5 +1,5 @@
-import { API_URL } from '@/lib/env'
-import { clearSession, getAccessToken, setAccessToken } from '@/lib/session'
+import { API_ROOT_URL, API_URL } from '@/lib/env'
+import { getAccessToken, setAccessToken } from '@/lib/session'
 
 export class ApiError extends Error {
   readonly status: number
@@ -14,6 +14,13 @@ export class ApiError extends Error {
 type ApiOptions = Omit<RequestInit, 'body'> & { body?: unknown; skipRefresh?: boolean }
 let refreshRequest: Promise<string> | null = null
 
+function apiUrl(path: string) {
+  // Les endpoints versionnés utilisent /api/v1 ; les endpoints historiques
+  // d'authentification restent sous /api. Les deux chemins restent relatifs
+  // lorsqu'ils sont servis derrière Nginx.
+  return path.startsWith('/v1/') ? `${API_URL}${path.slice(3)}` : `${API_ROOT_URL}${path}`
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload: unknown = await response.json().catch(() => null)
   if (!response.ok) {
@@ -26,7 +33,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 async function refreshToken() {
-  refreshRequest ??= fetch(`${API_URL}/api/refresh`, {
+  refreshRequest ??= fetch(apiUrl('/refresh'), {
     method: 'POST', credentials: 'include',
   }).then((response) => parseResponse<{ token: string }>(response)).then(({ token }) => {
     setAccessToken(token)
@@ -37,7 +44,7 @@ async function refreshToken() {
 
 async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const { body, headers, skipRefresh = false, ...init } = options
-  const send = async (token = getAccessToken()) => fetch(`${API_URL}/api${path}`, {
+  const send = async (token = getAccessToken()) => fetch(apiUrl(path), {
     ...init,
     credentials: 'include',
     headers: {
@@ -52,18 +59,16 @@ async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
   if (response.status === 401 && !skipRefresh && path !== '/refresh' && getAccessToken()) {
     try {
       response = await send(await refreshToken())
-    } catch {
-      clearSession()
-    }
+    } catch { /* Une requête métier ne doit jamais déconnecter la session. */ }
   }
   return parseResponse<T>(response)
 }
 
 async function requestForm<T>(path: string, method: 'POST' | 'PUT', body: FormData): Promise<T> {
-  const send = async (token = getAccessToken()) => fetch(`${API_URL}/api${path}`, { method, body, credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  const send = async (token = getAccessToken()) => fetch(apiUrl(path), { method, body, credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {} })
   let response = await send()
   if (response.status === 401 && getAccessToken()) {
-    try { response = await send(await refreshToken()) } catch { clearSession() }
+    try { response = await send(await refreshToken()) } catch { /* Voir request(): conserver la session UI. */ }
   }
   return parseResponse<T>(response)
 }
@@ -76,7 +81,7 @@ export const apiClient = {
   delete: <T>(path: string, options?: ApiOptions) => request<T>(path, { ...options, method: 'DELETE' }),
   form: <T>(path: string, method: 'POST' | 'PUT', body: FormData) => requestForm<T>(path, method, body),
   download: async (path: string) => {
-    const response = await fetch(`${API_URL}/api${path}`, { credentials: 'include', headers: getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {} })
+    const response = await fetch(apiUrl(path), { credentials: 'include', headers: getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {} })
     if (!response.ok) return parseResponse(response)
     const url = URL.createObjectURL(await response.blob()); const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'reservation.pdf'; anchor.click(); URL.revokeObjectURL(url)
   },
@@ -84,5 +89,5 @@ export const apiClient = {
 
 export function mediaUrl(path?: string | null) {
   if (!path) return undefined
-  return path.startsWith('http') ? path : `${API_URL}${path}`
+  return path.startsWith('http') ? path : `${API_ROOT_URL}${path}`
 }
