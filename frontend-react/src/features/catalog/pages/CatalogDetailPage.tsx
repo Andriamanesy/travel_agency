@@ -198,30 +198,89 @@ export function CatalogDetailPage() {
             </p>
           </div>
 
+          {/* GALERIE STYLE RÉSEAUX SOCIAUX (3 EMPLACEMENTS MAX DANS LA GRILLE) */}
           <div>
             <div className="flex items-center gap-3 mb-6">
               <Camera className="text-emerald-600" size={28} />
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Galerie photos</h2>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {galleryImages.map((img, idx) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px]">
+              {/* Photo 1 (Grande - 2 colonnes) */}
+              {galleryImages.length > 0 && (
                 <div 
-                  key={idx} 
-                  onClick={() => openLightbox(idx)}
-                  className={`relative overflow-hidden rounded-3xl group shadow-sm cursor-pointer ${idx === 0 ? 'col-span-2 row-span-2 h-[400px]' : 'h-[192px]'}`}
+                  onClick={() => openLightbox(0)}
+                  className="relative overflow-hidden rounded-[2rem] group shadow-sm cursor-pointer md:col-span-2 h-full"
                 >
                   <img 
-                    src={img} 
-                    alt={`Photo ${idx + 1}`} 
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    src={galleryImages[0]} 
+                    alt="Photo 1" 
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   />
                   <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20 flex items-center justify-center">
                     <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md" size={32} />
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* Colonne de droite pour la Photo 2 et la Photo 3 (avec badge +X photos si > 3) */}
+              <div className="hidden md:flex flex-col gap-4 h-full">
+                {/* Photo 2 */}
+                {galleryImages.length > 1 && (
+                  <div 
+                    onClick={() => openLightbox(1)}
+                    className="relative overflow-hidden rounded-[2rem] group shadow-sm cursor-pointer h-[calc(50%-8rem)] flex-grow"
+                  >
+                    <img 
+                      src={galleryImages[1]} 
+                      alt="Photo 2" 
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20 flex items-center justify-center">
+                      <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md" size={24} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Photo 3 avec badge "+X photos" si l'admin a ajouté plus de 3 photos */}
+                {galleryImages.length > 2 && (
+                  <div 
+                    onClick={() => openLightbox(2)}
+                    className="relative overflow-hidden rounded-[2rem] group shadow-sm cursor-pointer h-[calc(50%-8rem)] flex-grow"
+                  >
+                    <img 
+                      src={galleryImages[2]} 
+                      alt="Photo 3" 
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    />
+                    {galleryImages.length > 3 ? (
+                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center transition-colors group-hover:bg-slate-950/70">
+                        <span className="text-white font-extrabold text-xl tracking-wide">
+                          +{galleryImages.length - 3} photos
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20 flex items-center justify-center">
+                        <Camera className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md" size={24} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Version mobile : mini barre pour afficher les photos restantes */}
+            {galleryImages.length > 3 && (
+              <div className="mt-4 md:hidden flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <span className="text-sm font-semibold text-slate-700">Et {galleryImages.length - 3} autres photos...</span>
+                <button 
+                  onClick={() => openLightbox(2)} 
+                  className="bg-emerald-50 text-emerald-700 font-bold text-xs px-4 py-2 rounded-xl"
+                >
+                  Tout afficher
+                </button>
+              </div>
+            )}
           </div>
 
           <div>
@@ -270,7 +329,7 @@ export function CatalogDetailPage() {
             </div>
           </div>
 
-          {/* NOUVELLE SECTION : GOOGLE MAPS EMBED */}
+          {/* GOOGLE MAPS EMBED */}
           <div>
             <div className="flex items-center gap-3 mb-6">
               <Navigation className="text-emerald-600" size={28} />
