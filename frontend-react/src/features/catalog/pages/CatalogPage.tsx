@@ -3,22 +3,202 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { mediaUrl } from '@/lib/api-client'
 import { useCatalog } from '../hooks/useCatalog'
 import { catalogEntities, type CatalogEntity, type CatalogItem } from '../types'
+import { Search, Compass, MapPin, Calendar, Users, ArrowRight } from 'lucide-react'
+import { Navbar } from '@/components/layout/Navbar'
+import { AuthModal } from '@/features/auth/components/AuthModal'
 
-const labels: Record<CatalogEntity, [string, string]> = { circuits: ['CIRCUITS', 'Circuits touristiques'], hotels: ['HÉBERGEMENTS', 'Hôtels sélectionnés'], guides: ['ACCOMPAGNEMENT', 'Nos guides'], categories: ['CATÉGORIES', 'Explorer par catégorie'] }
-
-export function CatalogPage() {
-  const { entity = '' } = useParams(); const [params, setParams] = useSearchParams(); const destination = params.get('destination') ?? ''; const type = params.get('type') ?? ''; const date = params.get('date') ?? ''; const [input, setInput] = useState(destination)
-  const isValidEntity = catalogEntities.includes(entity as CatalogEntity)
-  const catalogEntity: CatalogEntity = isValidEntity ? entity as CatalogEntity : 'circuits'; const { data, isPending, isError } = useCatalog(catalogEntity, destination)
-  if (!isValidEntity) return <Navigate to="/catalog/circuits" replace />
-  const submit = (event: FormEvent) => { event.preventDefault(); const next = new URLSearchParams(params); if (input.trim()) next.set('destination', input.trim()); else next.delete('destination'); setParams(next) }
-  const items = data?.[catalogEntity] ?? []
-  return <main className="mx-auto max-w-7xl px-6 py-12"><Link to="/" className="font-semibold text-emerald-700">← TravelMS</Link><p className="mt-8 text-xs font-bold tracking-widest text-emerald-700">{labels[catalogEntity][0]}</p><h1 className="mt-2 text-4xl font-black">{labels[catalogEntity][1]}</h1><form onSubmit={submit} className="mt-8 flex max-w-xl gap-3"><input value={input} onChange={(event) => setInput(event.target.value)} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3" placeholder="Destination ou expérience" /><button className="rounded-xl bg-slate-900 px-5 font-semibold text-white">Rechercher</button></form>{(destination || type || date) && <div className="mt-4 flex flex-wrap gap-2 text-sm"><span className="font-semibold text-slate-500">Filtres actifs :</span>{destination && <span className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800">{destination}</span>}{type && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">{type}</span>}{date && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">Dès le {date}</span>}</div>}{isPending && <CatalogSkeleton />}{isError && <p role="alert" className="mt-6 text-red-700">Impossible de charger le catalogue.</p>}<div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{items.map((item) => <CatalogCard key={item.id} item={item} entity={catalogEntity} />)}</div>{!isPending && items.length === 0 && <p className="mt-10">Aucun résultat pour le moment.</p>}</main>
+const labels: Record<CatalogEntity, [string, string]> = { 
+  circuits: ['CIRCUITS', 'Circuits touristiques'], 
+  hotels: ['HÉBERGEMENTS', 'Hôtels sélectionnés'], 
+  guides: ['ACCOMPAGNEMENT', 'Nos guides'], 
+  categories: ['CATÉGORIES', 'Explorer par catégorie'] 
 }
 
-function CatalogSkeleton() { return <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <div key={index} className="animate-pulse overflow-hidden rounded-3xl bg-white shadow-sm"><div className="h-48 bg-slate-200" /><div className="space-y-3 p-6"><div className="h-6 w-2/3 rounded bg-slate-200" /><div className="h-4 rounded bg-slate-100" /><div className="h-4 w-3/4 rounded bg-slate-100" /></div></div>)}</div> }
+export function CatalogPage() {
+  const { entity = '' } = useParams()
+  const [params, setParams] = useSearchParams()
+  const destination = params.get('destination') ?? ''
+  const type = params.get('type') ?? ''
+  const date = params.get('date') ?? ''
+  const [input, setInput] = useState(destination)
+  const [authOpen, setAuthOpen] = useState(false)
+  
+  const isValidEntity = catalogEntities.includes(entity as CatalogEntity)
+  const catalogEntity: CatalogEntity = isValidEntity ? entity as CatalogEntity : 'circuits'
+  const { data, isPending, isError } = useCatalog(catalogEntity, destination)
+
+  if (!isValidEntity) return <Navigate to="/catalog/circuits" replace />
+
+  const submit = (event: FormEvent) => { 
+    event.preventDefault()
+    const next = new URLSearchParams(params)
+    if (input.trim()) next.set('destination', input.trim())
+    else next.delete('destination')
+    setParams(next) 
+  }
+
+  const items = data?.[catalogEntity] ?? []
+
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-800">
+      <Navbar onAuthenticate={() => setAuthOpen(true)} />
+
+      {/* En-tête de page moderne */}
+      <section className="bg-slate-900 text-white py-20 px-6 pt-32 relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-600/20 blur-3xl"></div>
+        <div className="mx-auto max-w-7xl relative z-10">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-emerald-400 mb-3">
+            <Compass size={16} />
+            <span>{labels[catalogEntity][0]}</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">{labels[catalogEntity][1]}</h1>
+          <p className="mt-4 text-slate-400 text-lg max-w-xl">
+            Découvrez notre sélection exclusive et préparez votre prochaine escapade en toute sérénité.
+          </p>
+
+          {/* Barre de recherche intégrée */}
+          <form onSubmit={submit} className="mt-8 flex flex-col sm:flex-row gap-3 max-w-2xl bg-white/10 p-2 rounded-2xl backdrop-blur-md border border-white/10">
+            <div className="flex items-center gap-3 px-4 py-2 flex-grow">
+              <Search size={20} className="text-emerald-400 shrink-0" />
+              <input 
+                value={input} 
+                onChange={(event) => setInput(event.target.value)} 
+                className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none" 
+                placeholder="Destination ou expérience..." 
+              />
+            </div>
+            <button type="submit" className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-900/25 text-sm">
+              Rechercher
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* Contenu principal */}
+      <section className="mx-auto max-w-7xl px-6 py-16">
+        {(destination || type || date) && (
+          <div className="mb-8 flex flex-wrap gap-2 text-sm items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            <span className="font-semibold text-slate-500 mr-2">Filtres actifs :</span>
+            {destination && <span className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800">Destination : {destination}</span>}
+            {type && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">Type : {type}</span>}
+            {date && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">Dès le {date}</span>}
+          </div>
+        )}
+
+        {isPending && <CatalogSkeleton />}
+        
+        {isError && (
+          <div role="alert" className="text-center py-20 text-red-600 font-medium">
+            Impossible de charger le catalogue.
+          </div>
+        )}
+
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((item) => (
+            <CatalogCard key={item.id} item={item} entity={catalogEntity} />
+          ))}
+        </div>
+
+        {!isPending && items.length === 0 && (
+          <div className="text-center py-20 text-slate-500 font-medium">
+            Aucun résultat pour le moment.
+          </div>
+        )}
+      </section>
+
+      <AuthModal 
+        open={authOpen} 
+        initialMode="login" 
+        onClose={() => setAuthOpen(false)} 
+        onAuthenticated={() => setAuthOpen(false)} 
+      />
+    </main>
+  )
+}
+
+function CatalogSkeleton() { 
+  return (
+    <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="animate-pulse h-[520px] rounded-[2.5rem] bg-slate-200 shadow-sm" />
+      ))}
+    </div>
+  ) 
+}
 
 function CatalogCard({ item, entity }: { item: CatalogItem; entity: CatalogEntity }) {
-  const image = mediaUrl(item.cover_image || item.avatar_url); const title = item.title || item.name || 'Sans titre'; const text = item.description || item.address || item.bio || ''; const price = item.price ?? item.price_per_night
-  return <article className="overflow-hidden rounded-3xl bg-white shadow-sm">{image ? <img src={image} alt="" className="h-48 w-full object-cover" /> : <div className="h-48 bg-slate-200" />}<div className="p-6"><h2 className="text-xl font-bold">{title}</h2><p className="mt-2 line-clamp-3 text-sm text-slate-500">{text}</p>{price !== null && price !== undefined && <p className="mt-4 font-bold text-emerald-700">{Number(price).toFixed(2)} €</p>}{entity !== 'categories' && <Link className="mt-5 inline-block font-semibold text-emerald-700" to={`/catalog/${entity}/${item.id}`}>Voir le détail →</Link>}</div></article>
+  const image = mediaUrl(item.cover_image || item.avatar_url)
+  const title = item.title || item.name || 'Sans titre'
+  const text = item.description || item.address || item.bio || ''
+  const price = item.price ?? item.price_per_night
+  const destinationTitle = (item as any).destination_title || 'Madagascar'
+
+  return (
+    <article className="group relative h-[520px] overflow-hidden rounded-[2.5rem] shadow-xl transition-all duration-500 hover:-translate-y-1">
+      {/* Image de fond */}
+      {image ? (
+        <img 
+          src={image} 
+          alt={title} 
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
+        />
+      ) : (
+        <div className="absolute inset-0 bg-slate-800" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent"></div>
+
+      {/* Carte effet Verre (Glassmorphism) par-dessus */}
+      <div className="absolute inset-x-4 bottom-4 top-28 flex flex-col justify-between rounded-[2rem] bg-white/75 p-6 backdrop-blur-md border border-white/40 shadow-lg">
+        <div>
+          {entity === 'circuits' && (
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-emerald-800 mb-2">
+              <MapPin size={13} />
+              <span>{destinationTitle}</span>
+            </div>
+          )}
+
+          <h2 className="text-2xl font-black text-slate-900 leading-tight">
+            {title}
+          </h2>
+          
+          <p className="mt-2.5 text-xs leading-relaxed text-slate-600 line-clamp-3">
+            {text}
+          </p>
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-slate-900/10">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-slate-500 font-medium block">Durée :</span>
+              <span className="font-bold text-slate-900">{(item as any).duration || '7 jours'}</span>
+            </div>
+            <div>
+              <span className="text-slate-500 font-medium block">{entity === 'hotels' ? 'Par nuit :' : 'Prix :'}</span>
+              <span className="font-bold text-slate-900">{price !== null && price !== undefined ? `dès ${Number(price).toFixed(0)} €` : 'Sur devis'}</span>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-500 flex items-center justify-between">
+            <span>Prochain départ : <strong className="text-slate-800 font-semibold">Départs à venir</strong></span>
+            <div className="flex gap-1 text-slate-400">
+              <Calendar size={14} />
+              <Users size={14} />
+            </div>
+          </div>
+
+          {entity !== 'categories' ? (
+            <Link 
+              to={`/catalog/${entity}/${item.id}`} 
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-xs font-bold text-white transition hover:bg-emerald-700 shadow-md"
+            >
+              <span>Réserver mon aventure</span>
+              <ArrowRight size={14} />
+            </Link>
+          ) : (
+            <div className="h-10"></div>
+          )}
+        </div>
+      </div>
+    </article>
+  )
 }
