@@ -6,7 +6,7 @@ import { ApiError } from '@/lib/api-client'
 import { useLogin } from '../hooks/useLogin'
 import { useRegister } from '../hooks/useRegister'
 import { passwordSchema } from '../schemas/password.schema'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSessionStore } from '../store/session.store'
 
 const modalLoginSchema = z.object({ email: z.email('Saisissez une adresse e-mail valide.'), password: z.string().min(1, 'Le mot de passe est requis.'), remember: z.boolean() })
@@ -52,7 +52,38 @@ function LoginModalForm({ pending, error, onSubmit }: { pending: boolean; error:
 function RegisterModalForm({ pending, error, onSubmit }: { pending: boolean; error: string | null; onSubmit: (values: RegisterValues) => void }) {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterValues>({ resolver: zodResolver(modalRegisterSchema), mode: 'onChange' })
   const password = watch('password', '')
-  return <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><Field label="Prénom" error={errors.firstName?.message}><Input {...register('firstName')} autoComplete="given-name" placeholder="Amina" /></Field><Field label="Nom" error={errors.lastName?.message}><Input {...register('lastName')} autoComplete="family-name" placeholder="Rakoto" /></Field></div><Field label="Adresse e-mail" error={errors.email?.message}><Input {...register('email')} type="email" autoComplete="email" placeholder="vous@example.com" /></Field><PasswordField label="Mot de passe" error={errors.password?.message} registration={register('password')} autoComplete="new-password" /><PasswordStrength password={password} /><PasswordField label="Confirmation" error={errors.confirmPassword?.message} registration={register('confirmPassword')} autoComplete="new-password" /><label className="flex items-start gap-2 text-xs leading-5 text-slate-500"><input {...register('terms')} type="checkbox" className="mt-1 accent-emerald-600" /> J’accepte les conditions générales et la politique de confidentialité.</label>{errors.terms && <p className="-mt-2 text-xs font-medium text-red-600">{errors.terms.message}</p>}{error && <ErrorMessage>{error}</ErrorMessage>}<SubmitButton pending={pending}>{pending ? 'Création…' : 'Créer mon compte'}</SubmitButton></form>
+  return (
+    <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Prénom" error={errors.firstName?.message}><Input {...register('firstName')} autoComplete="given-name" placeholder="Amina" /></Field>
+        <Field label="Nom" error={errors.lastName?.message}><Input {...register('lastName')} autoComplete="family-name" placeholder="Rakoto" /></Field>
+      </div>
+      <Field label="Adresse e-mail" error={errors.email?.message}><Input {...register('email')} type="email" autoComplete="email" placeholder="vous@example.com" /></Field>
+      <PasswordField label="Mot de passe" error={errors.password?.message} registration={register('password')} autoComplete="new-password" />
+      <PasswordStrength password={password} />
+      <PasswordField label="Confirmation" error={errors.confirmPassword?.message} registration={register('confirmPassword')} autoComplete="new-password" />
+      
+      {/* Modification ici pour ajouter les liens vers les CGU et la Politique de confidentialité */}
+      <label className="flex items-start gap-2 text-xs leading-5 text-slate-500">
+        <input {...register('terms')} type="checkbox" className="mt-1 accent-emerald-600 shrink-0" />
+        <span>
+          J’accepte les{' '}
+          <Link to="/terms" target="_blank" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+            conditions générales
+          </Link>{' '}
+          et la{' '}
+          <Link to="/privacy" target="_blank" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+            politique de confidentialité
+          </Link>
+          .
+        </span>
+      </label>
+
+      {errors.terms && <p className="-mt-2 text-xs font-medium text-red-600">{errors.terms.message}</p>}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+      <SubmitButton pending={pending}>{pending ? 'Création…' : 'Créer mon compte'}</SubmitButton>
+    </form>
+  )
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) { return <label className="block text-sm font-bold text-slate-700">{label}{children}{error && <span className="mt-1 block text-xs font-medium text-red-600">{error}</span>}</label> }
