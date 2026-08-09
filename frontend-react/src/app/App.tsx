@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { Navbar } from '@/components/layout/Navbar'
+import { SiteFooter } from '@/components/layout/SiteFooter'
+import { LegalPage } from '@/features/legal/pages/LegalPage'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { RegisterPage } from '@/features/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
@@ -48,6 +51,21 @@ export default function App() {
       <Route path="/destinations" element={<DestinationsPage />} />
       <Route path="/destinations/:destinationId" element={<DestinationDetailsPage />} />
       <Route path="/booking.html" element={<LegacyBookingRedirect />} />
+      
+      {/* Route des CGU intégrée avec le même style de mise en page que la 404 */}
+      <Route 
+        path="/cgu" 
+        element={
+          <div className="flex min-h-screen flex-col bg-slate-50">
+            <Navbar />
+            <main className="flex-1">
+              <LegalPage />
+            </main>
+            <SiteFooter />
+          </div>
+        } 
+      />
+
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />

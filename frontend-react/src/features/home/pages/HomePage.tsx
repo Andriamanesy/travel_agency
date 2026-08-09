@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/feedback/Skeleton'
 import { Compass, HeartHandshake, ShieldCheck, Sparkles, ArrowRight, MapPin, CalendarDays, Users, Mail, Phone, MessageSquare, Globe, Send } from 'lucide-react'
 import heroFallback from '@/assets/hero.png'
 import { useFeaturedCircuits, useFeaturedDestinations, useHomeSettings } from '../hooks/useHomeFeatured'
+import { SiteFooter } from '@/components/layout/SiteFooter'
 
 const defaultFeatures = [
   {
