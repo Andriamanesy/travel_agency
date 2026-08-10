@@ -77,13 +77,13 @@ export function AdminHomeContentPage() {
   const customImage = Boolean(values.hero?.bgImageUrl)
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      {/* HEADER FIXE (Sticky) POUR TOUJOURS GARDER LE BOUTON SAVE SOUS LA MAIN */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md shadow-sm">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 transition-colors">
+      {/* HEADER FIXE (Sticky) */}
+      <header className="sticky top-0 z-55 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 px-6 py-4 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-slate-900">Éditeur de la page d'accueil</h1>
-            <p className="text-sm text-slate-500 hidden sm:block">Personnalisez le contenu visible par vos futurs voyageurs.</p>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white">Éditeur de la page d'accueil</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">Personnalisez le contenu visible par vos futurs voyageurs.</p>
           </div>
           <button 
             form="home-content" 
@@ -99,24 +99,24 @@ export function AdminHomeContentPage() {
       <main className="mx-auto mt-8 max-w-6xl px-6">
         {/* MESSAGES DE STATUT */}
         {content.isError && (
-          <div className="mb-6 flex items-center gap-3 rounded-2xl bg-red-50 p-4 text-red-700 border border-red-100">
+          <div className="mb-6 flex items-center gap-3 rounded-2xl bg-red-50 dark:bg-red-950/50 p-4 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-900/50">
             <span className="font-semibold">Erreur :</span> Impossible de charger la configuration actuelle. Les valeurs par défaut sont affichées.
           </div>
         )}
         {actions.saveHomeContent.isSuccess && (
-          <div className="mb-6 flex items-center gap-3 rounded-2xl bg-emerald-50 p-4 text-emerald-800 border border-emerald-100">
-            <CheckCircle2 size={20} className="text-emerald-600" />
+          <div className="mb-6 flex items-center gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 p-4 text-emerald-800 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50">
+            <CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400" />
             <span className="font-semibold">Succès !</span> Vos modifications ont été publiées sur la page d'accueil.
           </div>
         )}
 
-        {/* NAVIGATION PAR ONGLETS MODERNISÉE */}
-        <div className="mb-8 flex gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-sm border border-slate-200 scrollbar-hide">
+        {/* NAVIGATION PAR ONGLETS */}
+        <div className="mb-8 flex gap-2 overflow-x-auto rounded-2xl bg-white dark:bg-slate-900 p-2 shadow-sm border border-slate-200 dark:border-slate-800 scrollbar-hide">
           <TabButton active={tab === 'hero'} icon={LayoutTemplate} onClick={() => setTab('hero')}>En-tête (Hero)</TabButton>
           <TabButton active={tab === 'features'} icon={Compass} onClick={() => setTab('features')}>Arguments</TabButton>
           <TabButton active={tab === 'featured'} icon={Map} onClick={() => setTab('featured')}>À la une</TabButton>
           <TabButton active={tab === 'testimonials'} icon={Quote} onClick={() => setTab('testimonials')}>Témoignages</TabButton>
-          <div className="w-px bg-slate-200 mx-2 my-1"></div>
+          <div className="w-px bg-slate-200 dark:bg-slate-800 mx-2 my-1"></div>
           <TabButton active={tab === 'preview'} icon={Star} onClick={() => setTab('preview')}>Aperçu global</TabButton>
         </div>
 
@@ -126,7 +126,7 @@ export function AdminHomeContentPage() {
           {tab === 'hero' && (
             <div className="grid gap-8 xl:grid-cols-[1fr_400px]">
               {/* Formulaire Textes */}
-              <div className="space-y-6 rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
+              <div className="space-y-6 rounded-3xl bg-white dark:bg-slate-900 p-8 shadow-sm border border-slate-200 dark:border-slate-800">
                 <Header title="Textes d'accroche" subtitle="Ces éléments apparaissent en premier sur votre site." />
                 
                 <div className="mt-6 space-y-5">
@@ -143,7 +143,7 @@ export function AdminHomeContentPage() {
                     registration={form.register('hero.subtitle', { required: true, maxLength: 500 })}
                     error={form.formState.errors.hero?.subtitle?.message}
                   />
-                  <div className="grid gap-5 sm:grid-cols-2 pt-4 border-t border-slate-100">
+                  <div className="grid gap-5 sm:grid-cols-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                     <TextField 
                       label="Texte du bouton (CTA)" 
                       placeholder="Ex: Découvrir nos circuits"
@@ -160,12 +160,12 @@ export function AdminHomeContentPage() {
 
               {/* Upload Image */}
               <div className="space-y-6">
-                <div className="rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
+                <div className="rounded-3xl bg-white dark:bg-slate-900 p-8 shadow-sm border border-slate-200 dark:border-slate-800">
                   <div className="flex items-start justify-between mb-6">
                     <Header title="Image de fond" subtitle="Taille recommandée: 1920x1080 (Max 2Mo)." />
                   </div>
 
-                  <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition-colors hover:border-emerald-500 hover:bg-emerald-50">
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 transition-colors hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20">
                     {customImage && (
                       <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: `url(${background})` }}></div>
                     )}
@@ -176,27 +176,27 @@ export function AdminHomeContentPage() {
                       onClick={() => input.current?.click()}
                       className="relative z-10 flex w-full flex-col items-center justify-center p-8 text-center cursor-pointer"
                     >
-                      <div className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-emerald-700 mb-4">
+                      <div className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 mb-4">
                         <ImageUp size={24} />
                       </div>
-                      <span className="text-sm font-bold text-slate-700">Cliquez ou glissez une image ici</span>
-                      <span className="mt-1 text-xs text-slate-500">JPG, PNG, WebP acceptés</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Cliquez ou glissez une image ici</span>
+                      <span className="mt-1 text-xs text-slate-500 dark:text-slate-400">JPG, PNG, WebP acceptés</span>
                     </button>
                   </div>
                   
                   <input ref={input} className="hidden" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setImageFile(e.target.files?.[0])} />
                   
                   <div className="mt-6">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ou via une URL externe</label>
-                    <input className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" placeholder="https://..." {...form.register('hero.bgImageUrl')} />
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ou via une URL externe</label>
+                    <input className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" placeholder="https://..." {...form.register('hero.bgImageUrl')} />
                   </div>
 
                   {customImage && (
-                    <button type="button" onClick={() => form.setValue('hero.bgImageUrl', null, { shouldDirty: true })} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 cursor-pointer">
+                    <button type="button" onClick={() => form.setValue('hero.bgImageUrl', null, { shouldDirty: true })} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">
                       <RotateCcw size={16} /> Rétablir l'image par défaut
                     </button>
                   )}
-                  {form.formState.errors.hero?.bgImageUrl && <p className="mt-2 text-sm text-red-700">{form.formState.errors.hero.bgImageUrl.message}</p>}
+                  {form.formState.errors.hero?.bgImageUrl && <p className="mt-2 text-sm text-red-700 dark:text-red-400">{form.formState.errors.hero.bgImageUrl.message}</p>}
                 </div>
               </div>
             </div>
@@ -204,14 +204,14 @@ export function AdminHomeContentPage() {
 
           {/* ONGLET ARGUMENTS */}
           {tab === 'features' && (
-            <div className="rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+            <div className="rounded-3xl bg-white dark:bg-slate-900 p-8 shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
                 <Header title="Cartes d'arguments (Expériences)" subtitle="Mettez en avant jusqu'à 4 points forts de votre agence." />
                 <button
                   type="button"
                   disabled={features.fields.length >= 4}
                   onClick={() => features.append({ icon: 'Sparkles', title: '', description: '', isActive: true })}
-                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 hover:bg-slate-800 transition cursor-pointer"
+                  className="rounded-xl bg-slate-900 dark:bg-white dark:text-slate-900 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 hover:bg-slate-800 dark:hover:bg-slate-100 transition cursor-pointer"
                 >
                   + Ajouter une carte
                 </button>
@@ -241,15 +241,15 @@ export function AdminHomeContentPage() {
 
           {/* ONGLET À LA UNE */}
           {tab === 'featured' && (
-            <div className="flex flex-col items-center justify-center rounded-3xl bg-white p-16 shadow-sm border border-slate-200 text-center min-h-[400px]">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-slate-100 text-slate-400 mb-6">
+            <div className="flex flex-col items-center justify-center rounded-3xl bg-white dark:bg-slate-900 p-16 shadow-sm border border-slate-200 dark:border-slate-800 text-center min-h-[400px]">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 mb-6">
                 <Map size={40} />
               </div>
-              <h2 className="text-2xl font-black text-slate-900">Circuits & Destinations à la une</h2>
-              <p className="mt-3 max-w-md text-slate-500">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">Circuits & Destinations à la une</h2>
+              <p className="mt-3 max-w-md text-slate-500 dark:text-slate-400">
                 C'est ici que nous allons lier votre catalogue (circuits et destinations) à la page d'accueil.
               </p>
-              <span className="mt-6 inline-flex rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-bold text-emerald-800">
+              <span className="mt-6 inline-flex rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-4 py-1.5 text-sm font-bold text-emerald-800 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
                 Prochaine étape à développer
               </span>
             </div>
@@ -257,15 +257,15 @@ export function AdminHomeContentPage() {
 
           {/* ONGLET TÉMOIGNAGES */}
           {tab === 'testimonials' && (
-            <div className="flex flex-col items-center justify-center rounded-3xl bg-white p-16 shadow-sm border border-slate-200 text-center min-h-[400px]">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-slate-100 text-slate-400 mb-6">
+            <div className="flex flex-col items-center justify-center rounded-3xl bg-white dark:bg-slate-900 p-16 shadow-sm border border-slate-200 dark:border-slate-800 text-center min-h-[400px]">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 mb-6">
                 <Quote size={40} />
               </div>
-              <h2 className="text-2xl font-black text-slate-900">Gestion des Témoignages</h2>
-              <p className="mt-3 max-w-md text-slate-500">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gestion des Témoignages</h2>
+              <p className="mt-3 max-w-md text-slate-500 dark:text-slate-400">
                 Interface prévue pour ajouter, modifier ou masquer les avis de vos voyageurs satisfaits.
               </p>
-              <span className="mt-6 inline-flex rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-bold text-emerald-800">
+              <span className="mt-6 inline-flex rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-4 py-1.5 text-sm font-bold text-emerald-800 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
                 Prochaine étape à développer
               </span>
             </div>
@@ -275,7 +275,7 @@ export function AdminHomeContentPage() {
           {tab === 'preview' && (
             <div className="space-y-8">
               <HeroPreview hero={values.hero} image={background} large />
-              <div className="rounded-3xl bg-white p-8 shadow-sm border border-slate-200">
+              <div className="rounded-3xl bg-white dark:bg-slate-900 p-8 shadow-sm border border-slate-200 dark:border-slate-800">
                 <Header title="Aperçu des arguments" subtitle="Ce que verront vos visiteurs." />
                 <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                   {(values.features || [])
@@ -283,12 +283,12 @@ export function AdminHomeContentPage() {
                     .map((feature, index) => {
                       const Icon = iconOptions[feature.icon as keyof typeof iconOptions] || Compass
                       return (
-                        <article key={`${feature.title}-${index}`} className="rounded-3xl bg-slate-50 p-6 border border-slate-100 text-center">
-                          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
+                        <article key={`${feature.title}-${index}`} className="rounded-3xl bg-slate-50 dark:bg-slate-800/50 p-6 border border-slate-100 dark:border-slate-800 text-center">
+                          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
                             <Icon size={28} />
                           </span>
-                          <h3 className="mt-5 text-lg font-black text-slate-900">{feature.title || 'Titre manquant'}</h3>
-                          <p className="mt-2 text-sm text-slate-500 leading-relaxed">{feature.description || 'Description manquante.'}</p>
+                          <h3 className="mt-5 text-lg font-black text-slate-900 dark:text-white">{feature.title || 'Titre manquant'}</h3>
+                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{feature.description || 'Description manquante.'}</p>
                         </article>
                       )
                     })}
@@ -311,10 +311,12 @@ function TabButton({ active, icon: Icon, onClick, children }: { active: boolean;
       type="button"
       onClick={onClick}
       className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all cursor-pointer ${
-        active ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+        active 
+          ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md' 
+          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
       }`}
     >
-      <Icon size={18} className={active ? 'text-emerald-400' : 'text-slate-400'} />
+      <Icon size={18} className={active ? 'text-emerald-400 dark:text-emerald-600' : 'text-slate-400'} />
       {children}
     </button>
   )
@@ -323,8 +325,8 @@ function TabButton({ active, icon: Icon, onClick, children }: { active: boolean;
 function Header({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div>
-      <h2 className="text-xl font-black text-slate-900">{title}</h2>
-      <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+      <h2 className="text-xl font-black text-slate-900 dark:text-white">{title}</h2>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
     </div>
   )
 }
@@ -332,21 +334,21 @@ function Header({ title, subtitle }: { title: string; subtitle: string }) {
 function TextField({ label, placeholder, registration, error, textarea = false }: { label: string; placeholder?: string; registration: UseFormRegisterReturn; error?: string; textarea?: boolean }) {
   return (
     <div className="w-full">
-      <label className="mb-1.5 block text-sm font-bold text-slate-700">{label}</label>
+      <label className="mb-1.5 block text-sm font-bold text-slate-700 dark:text-slate-300">{label}</label>
       {textarea ? (
         <textarea 
-          className="w-full min-h-[120px] rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" 
+          className="w-full min-h-[120px] rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" 
           placeholder={placeholder}
           {...registration} 
         />
       ) : (
         <input 
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" 
+          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" 
           placeholder={placeholder}
           {...registration} 
         />
       )}
-      {error && <span className="mt-1.5 block text-xs font-medium text-red-600">{error}</span>}
+      {error && <span className="mt-1.5 block text-xs font-medium text-red-600 dark:text-red-400">{error}</span>}
     </div>
   )
 }
@@ -356,40 +358,48 @@ function FeatureCard({ index, feature, register, setValue, active, onToggle, onU
   const Icon = iconOptions[selected] || Compass
 
   return (
-    <article className={`relative flex flex-col rounded-2xl border-2 p-6 transition-all ${active ? 'border-emerald-200 bg-white shadow-sm' : 'border-slate-200 bg-slate-50 opacity-60'}`}>
+    <article className={`relative flex flex-col rounded-2xl border-2 p-6 transition-all ${
+      active 
+        ? 'border-emerald-200 dark:border-emerald-900/60 bg-white dark:bg-slate-900 shadow-sm' 
+        : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-60'
+    }`}>
       
       {/* Contrôles Haut/Bas intégrés au design */}
       <div className="absolute -left-3 top-1/2 flex -translate-y-1/2 flex-col gap-1">
-        <button type="button" onClick={onUp} disabled={!canUp} className="rounded-full bg-white border border-slate-200 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 disabled:opacity-0 shadow-sm transition-all cursor-pointer"><ArrowUp size={14} /></button>
-        <button type="button" onClick={onDown} disabled={!canDown} className="rounded-full bg-white border border-slate-200 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 disabled:opacity-0 shadow-sm transition-all cursor-pointer"><ArrowDown size={14} /></button>
+        <button type="button" onClick={onUp} disabled={!canUp} className="rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 dark:hover:border-emerald-600 disabled:opacity-0 shadow-sm transition-all cursor-pointer"><ArrowUp size={14} /></button>
+        <button type="button" onClick={onDown} disabled={!canDown} className="rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 dark:hover:border-emerald-600 disabled:opacity-0 shadow-sm transition-all cursor-pointer"><ArrowDown size={14} /></button>
       </div>
 
       <div className="flex items-center justify-between pl-4">
         <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
             <Icon size={24} />
           </span>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={active} onChange={onToggle} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer" />
-            <span className="text-sm font-bold text-slate-700">{active ? 'Carte visible' : 'Carte masquée'}</span>
+            <input type="checkbox" checked={active} onChange={onToggle} className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-emerald-600 focus:ring-emerald-600 cursor-pointer" />
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{active ? 'Carte visible' : 'Carte masquée'}</span>
           </label>
         </div>
-        <button type="button" disabled={!canRemove} onClick={onRemove} className="text-sm font-bold text-red-500 hover:text-red-700 disabled:opacity-30 cursor-pointer">
+        <button type="button" disabled={!canRemove} onClick={onRemove} className="text-sm font-bold text-red-500 hover:text-red-700 dark:hover:text-red-400 disabled:opacity-30 cursor-pointer">
           Supprimer
         </button>
       </div>
 
       <div className="mt-6 pl-4 space-y-4">
-        {/* Sélecteur d'icône plus discret */}
+        {/* Sélecteur d'icône */}
         <div>
-          <label className="text-xs font-bold text-slate-500 mb-2 block">Icône</label>
+          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 block">Icône</label>
           <div className="flex flex-wrap gap-2">
             {Object.entries(iconOptions).map(([name, PickerIcon]) => (
               <button
                 type="button"
                 key={name}
                 onClick={() => setValue(`features.${index}.icon`, name as HomeFeature['icon'], { shouldDirty: true })}
-                className={`grid h-10 w-10 place-items-center rounded-lg border transition cursor-pointer ${feature.icon === name ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}
+                className={`grid h-10 w-10 place-items-center rounded-lg border transition cursor-pointer ${
+                  feature.icon === name 
+                    ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-400' 
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750'
+                }`}
               >
                 <PickerIcon size={18} />
               </button>
