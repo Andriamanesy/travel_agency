@@ -16,9 +16,10 @@ import {
   Home,
   Shield,
   LogOut,
+  UserCheck,
   type LucideIcon 
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useSessionStore } from '@/features/auth/store/session.store'
 
@@ -62,6 +63,7 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { to: '/admin/users', label: 'Utilisateurs', icon: Users },
       { to: '/admin/users/roles', label: 'Rôles & permissions', icon: Shield },
+      { to: '/admin/profile', label: 'Mon profil & sécurité', icon: UserCheck },
       { to: '/admin/settings', label: 'Paramètres', icon: Settings },
     ],
   },
@@ -71,6 +73,9 @@ export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dark, setDark] = useState(true) 
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const user = useSessionStore((state) => state.user)
   const clearSession = useSessionStore((state) => state.clear)
   const navigate = useNavigate()
@@ -79,6 +84,17 @@ export function AdminLayout() {
     clearSession()
     navigate('/login')
   }
+
+  // Fermer le menu déroulant si on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   
   const sidebarWidth = collapsed ? 'w-20' : 'w-72'
   
@@ -187,7 +203,7 @@ export function AdminLayout() {
             {!collapsed && <span>Voir le site public</span>}
           </Link>
 
-          {/* Bouton de déconnexion */}
+          {/* Bouton de déconnexion rapide */}
           <button 
             onClick={handleLogout}
             className={`w-full group flex items-center ${collapsed ? 'justify-center' : 'gap-3 px-3'} h-10 rounded-lg text-sm font-medium transition-colors text-red-500 hover:bg-red-500/10`}
@@ -252,21 +268,62 @@ export function AdminLayout() {
             
             <div className={`h-6 w-px ${dark ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
 
-            {/* User Profile */}
-            <div className="flex items-center gap-3">
-              <div className="flex-col items-end hidden sm:flex">
-                <span className="text-sm font-semibold leading-none">{user?.name || 'Admin Principal'}</span>
-                <span className="text-xs text-slate-500 mt-1">Gérant</span>
-              </div>
-              <div 
-                onClick={handleLogout}
-                title="Se déconnecter"
-                className={`grid h-9 w-9 place-items-center rounded-full border text-sm font-bold shadow-sm cursor-pointer transition-all hover:border-red-500 hover:text-red-500 ${
-                  dark ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-slate-100 border-slate-200 text-slate-700'
-                }`}
+            {/* User Profile Dropdown Menu (Pro UX) */}
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className="flex items-center gap-3 group focus:outline-none"
               >
-                {user?.name?.[0]?.toUpperCase() || 'A'}
-              </div>
+                <div className="flex-col items-end hidden sm:flex">
+                  <span className="text-sm font-semibold leading-none group-hover:text-emerald-400 transition-colors">
+                    {user?.name || 'Admin Principal'}
+                  </span>
+                  <span className="text-xs text-slate-500 mt-1">{user?.email || 'Gérant'}</span>
+                </div>
+                <div className={`grid h-9 w-9 place-items-center rounded-full border text-sm font-bold shadow-sm transition-all ${
+                  dark ? 'bg-slate-800 border-slate-700 text-slate-200 group-hover:border-emerald-500' : 'bg-slate-100 border-slate-200 text-slate-700 group-hover:border-emerald-500'
+                }`}>
+                  {user?.name?.[0]?.toUpperCase() || 'A'}
+                </div>
+              </button>
+
+              {/* Dropdown Popover */}
+              {profileDropdownOpen && (
+                <div className={`absolute right-0 mt-2 w-56 rounded-xl border shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                  dark ? 'bg-[#121214] border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                }`}>
+                  <div className="px-4 py-2.5 border-b border-inherit/40 sm:hidden">
+                    <p className="text-sm font-semibold truncate">{user?.name || 'Admin'}</p>
+                    <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                  </div>
+
+                  <Link 
+                    to="/admin/profile"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className={`flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${
+                      dark ? 'hover:bg-slate-800/60 hover:text-emerald-400' : 'hover:bg-slate-100 hover:text-emerald-600'
+                    }`}
+                  >
+                    <UserCheck size={16} />
+                    <span>Mon profil & sécurité</span>
+                  </Link>
+
+                  <div className={`my-1 h-px ${dark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+
+                  <button 
+                    onClick={() => {
+                      setProfileDropdownOpen(false)
+                      handleLogout()
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 transition-colors ${
+                      dark ? 'hover:bg-red-500/10' : 'hover:bg-red-500/10'
+                    }`}
+                  >
+                    <LogOut size={16} />
+                    <span>Déconnexion</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
