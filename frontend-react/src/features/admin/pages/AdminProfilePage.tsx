@@ -1,235 +1,277 @@
 import { useState } from 'react'
 import { useSessionStore } from '@/features/auth/store/session.store'
-import { User, Lock, Save, CheckCircle2, ShieldAlert } from 'lucide-react'
+import { 
+  User, Lock, CheckCircle2, ShieldAlert, Loader2, Eye, EyeOff, ShieldCheck 
+} from 'lucide-react'
+
+// --- Composant utilitaire pour la mise en page (Split Layout) ---
+function SettingsSection({ title, description, children }: { title: string, description: string, children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12 py-8 border-b border-slate-200 dark:border-slate-800/60 last:border-0">
+      <div className="md:col-span-1 space-y-2">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{description}</p>
+      </div>
+      <div className="md:col-span-2">
+        <div className="bg-white dark:bg-[#121214] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function AdminProfilePage() {
   const user = useSessionStore((state) => state.user)
   const updateUser = useSessionStore((state) => state.updateUser)
 
-  // États pour le formulaire de profil
+  // États Profil
   const [name, setName] = useState(user?.name || '')
   const [email, setEmail] = useState(user?.email || '')
   const [profilePassword, setProfilePassword] = useState('')
-  const [profileError, setProfileError] = useState('')
-  const [profileSuccess, setProfileSuccess] = useState(false)
+  const [profileStatus, setProfileStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [profileErrorMsg, setProfileErrorMsg] = useState('')
 
-  // États pour le formulaire de mot de passe
+  // États Mot de passe
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordError, setPasswordError] = useState('')
-  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [showPasswords, setShowPasswords] = useState(false)
+  const [passwordStatus, setPasswordStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [passwordErrorMsg, setPasswordErrorMsg] = useState('')
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  // UX: Vérification de la force du mot de passe en temps réel
+  const isPasswordLongEnough = newPassword.length >= 8
+  const doPasswordsMatch = newPassword === confirmPassword && newPassword.length > 0
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    setProfileError('')
-    setProfileSuccess(false)
-
     if (!profilePassword) {
-      setProfileError('Veuillez saisir votre mot de passe actuel pour confirmer ces modifications.')
+      setProfileErrorMsg('Votre mot de passe actuel est requis.')
+      setProfileStatus('error')
       return
     }
 
+    setProfileStatus('loading')
+    // Simulation d'appel réseau
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
     updateUser({ name, email })
-    setProfileSuccess(true)
+    setProfileStatus('success')
     setProfilePassword('')
-    setTimeout(() => setProfileSuccess(false), 3000)
+    setTimeout(() => setProfileStatus('idle'), 3000)
   }
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    setPasswordError('')
-    setPasswordSuccess(false)
-
+    
     if (!currentPassword) {
-      setPasswordError('Veuillez saisir votre mot de passe actuel.')
+      setPasswordErrorMsg('Veuillez saisir votre mot de passe actuel.')
+      setPasswordStatus('error')
+      return
+    }
+    if (!isPasswordLongEnough) {
+      setPasswordErrorMsg('Le nouveau mot de passe est trop court.')
+      setPasswordStatus('error')
+      return
+    }
+    if (!doPasswordsMatch) {
+      setPasswordErrorMsg('Les mots de passe ne correspondent pas.')
+      setPasswordStatus('error')
       return
     }
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Les nouveaux mots de passe ne correspondent pas.')
-      return
-    }
+    setPasswordStatus('loading')
+    // Simulation d'appel réseau
+    await new Promise(resolve => setTimeout(resolve, 1200))
 
-    if (newPassword.length < 8) {
-      setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères.')
-      return
-    }
-
-    setPasswordSuccess(true)
+    setPasswordStatus('success')
     setCurrentPassword('')
     setNewPassword('')
     setConfirmPassword('')
-    setTimeout(() => setPasswordSuccess(false), 3000)
+    setTimeout(() => setPasswordStatus('idle'), 3000)
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Mon profil & sécurité</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Gérez vos informations personnelles et renforcez la sécurité de votre compte administrateur.</p>
+    <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-10">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Paramètres du compte</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Gérez vos préférences, votre sécurité et vos sessions actives.</p>
       </div>
 
-      <div className="grid gap-8">
-        {/* Section 1 : Informations personnelles */}
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#121214] p-6 sm:p-8 shadow-sm dark:shadow-xl space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20">
-              <User size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Informations du compte</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Mettez à jour vos coordonnées visibles dans l'administration.</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleUpdateProfile} className="space-y-4" autoComplete="off">
-            {profileError && (
-              <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3 text-red-700 dark:text-red-400 text-sm">
-                <ShieldAlert size={18} className="shrink-0" />
-                <span>{profileError}</span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Nom complet</label>
-                <input 
-                  type="text" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  autoComplete="off"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                  placeholder="Votre nom"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Adresse e-mail</label>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="off"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                  placeholder="votre@email.com"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Mot de passe actuel (requis pour enregistrer)</label>
-              <input 
-                type="password" 
-                value={profilePassword}
-                onChange={(e) => setProfilePassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="w-full sm:w-1/2 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                placeholder="••••••••••••"
-              />
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              {profileSuccess ? (
-                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm animate-in fade-in">
-                  <CheckCircle2 size={16} />
-                  <span>Modifications enregistrées avec succès !</span>
+      <div className="space-y-2">
+        
+        {/* --- SECTION PROFIL --- */}
+        <SettingsSection 
+          title="Informations personnelles" 
+          description="Utilisez une adresse e-mail professionnelle. Ces informations seront visibles dans l'historique d'audit par les autres administrateurs."
+        >
+          <form onSubmit={handleUpdateProfile}>
+            <div className="p-6 space-y-6">
+              {profileStatus === 'error' && (
+                <div className="flex items-start gap-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-4 text-sm text-red-800 dark:text-red-300">
+                  <ShieldAlert size={18} className="shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
+                  <p>{profileErrorMsg}</p>
                 </div>
-              ) : <div />}
+              )}
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">Nom complet</label>
+                  <input 
+                    id="name"
+                    type="text" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">Adresse e-mail</label>
+                  <input 
+                    id="email"
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <label htmlFor="profilePassword" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  Mot de passe actuel
+                  <span className="text-xs text-slate-500 font-normal">Requis pour authentifier l'action</span>
+                </label>
+                <input 
+                  id="profilePassword"
+                  type="password" 
+                  value={profilePassword}
+                  onChange={(e) => setProfilePassword(e.target.value)}
+                  required
+                  placeholder="••••••••••••"
+                  className="w-full sm:max-w-md rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 px-6 py-4 border-t border-slate-200 dark:border-slate-800">
+              <p className="text-sm text-slate-500">
+                {profileStatus === 'success' && (
+                  <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium animate-in fade-in">
+                    <CheckCircle2 size={16} /> Profil mis à jour
+                  </span>
+                )}
+              </p>
               <button 
                 type="submit"
-                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/20 ml-auto cursor-pointer"
+                disabled={profileStatus === 'loading'}
+                className="flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-emerald-500 focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-emerald-600 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
               >
-                <Save size={16} />
-                <span>Enregistrer</span>
+                {profileStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Enregistrer'}
               </button>
             </div>
           </form>
-        </div>
+        </SettingsSection>
 
-        {/* Section 2 : Sécurité et mot de passe */}
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#121214] p-6 sm:p-8 shadow-sm dark:shadow-xl space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20">
-              <Lock size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Sécurité & Mot de passe</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Modifiez votre mot de passe en renseignant votre mot de passe actuel.</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleUpdatePassword} className="space-y-4" autoComplete="off">
-            {passwordError && (
-              <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3 text-red-700 dark:text-red-400 text-sm">
-                <ShieldAlert size={18} className="shrink-0" />
-                <span>{passwordError}</span>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Mot de passe actuel</label>
-              <input 
-                type="password" 
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="w-full sm:w-1/2 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                placeholder="••••••••••••"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Nouveau mot de passe</label>
-                <input 
-                  type="password" 
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                  placeholder="••••••••••••"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Confirmer le nouveau mot de passe</label>
-                <input 
-                  type="password" 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                  placeholder="••••••••••••"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              {passwordSuccess ? (
-                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm animate-in fade-in">
-                  <CheckCircle2 size={16} />
-                  <span>Mot de passe modifié avec succès !</span>
+        {/* --- SECTION SÉCURITÉ --- */}
+        <SettingsSection 
+          title="Sécurité du compte" 
+          description="Mettez à jour votre mot de passe. Nous vous recommandons d'utiliser un mot de passe long et unique, généré par un gestionnaire de mots de passe."
+        >
+          <form onSubmit={handleUpdatePassword}>
+            <div className="p-6 space-y-6">
+              {passwordStatus === 'error' && (
+                <div className="flex items-start gap-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-4 text-sm text-red-800 dark:text-red-300">
+                  <ShieldAlert size={18} className="shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
+                  <p>{passwordErrorMsg}</p>
                 </div>
-              ) : <div />}
+              )}
 
+              <div className="space-y-1.5">
+                <label htmlFor="currentPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">Mot de passe actuel</label>
+                <div className="relative w-full sm:max-w-md">
+                  <input 
+                    id="currentPassword"
+                    type={showPasswords ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-2.5 pr-10 text-sm text-slate-900 dark:text-slate-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPasswords(!showPasswords)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5">
+                  <label htmlFor="newPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">Nouveau mot de passe</label>
+                  <input 
+                    id="newPassword"
+                    type={showPasswords ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">Confirmer le mot de passe</label>
+                  <input 
+                    id="confirmPassword"
+                    type={showPasswords ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* UX: Feedback en temps réel sur le mot de passe */}
+              {(newPassword.length > 0 || confirmPassword.length > 0) && (
+                <div className="flex flex-col gap-2 text-xs">
+                  <div className={`flex items-center gap-2 ${isPasswordLongEnough ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+                    <ShieldCheck size={14} />
+                    <span>Au moins 8 caractères</span>
+                  </div>
+                  <div className={`flex items-center gap-2 ${doPasswordsMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+                    <ShieldCheck size={14} />
+                    <span>Les mots de passe correspondent</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 px-6 py-4 border-t border-slate-200 dark:border-slate-800">
+              <p className="text-sm text-slate-500">
+                {passwordStatus === 'success' && (
+                  <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium animate-in fade-in">
+                    <CheckCircle2 size={16} /> Mot de passe modifié
+                  </span>
+                )}
+              </p>
               <button 
                 type="submit"
-                className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors ml-auto cursor-pointer"
+                disabled={passwordStatus === 'loading' || !isPasswordLongEnough || !doPasswordsMatch}
+                className="flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-sm font-medium text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 dark:focus:ring-slate-100 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
               >
-                <Lock size={16} />
-                <span>Mettre à jour le mot de passe</span>
+                {passwordStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Mettre à jour'}
               </button>
             </div>
           </form>
-        </div>
+        </SettingsSection>
+
       </div>
     </div>
   )
