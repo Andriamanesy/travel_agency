@@ -40,11 +40,11 @@ export function AdminDashboardPage() {
     <section className="space-y-7">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[.22em] text-emerald-600 dark:text-emerald-500">Pilotage</p>
+          <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-600 dark:text-emerald-400">Pilotage</p>
           <h1 className="mt-2 text-3xl font-black text-slate-900 dark:text-white">Vue d’ensemble</h1>
-          <p className="mt-2 text-slate-500 dark:text-slate-400">Suivez l’activité commerciale et les actions à traiter.</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Suivez l’activité commerciale et les actions à traiter.</p>
         </div>
-        <Link to="/admin/bookings" className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors">
+        <Link to="/admin/bookings" className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors">
           Traiter les réservations
         </Link>
       </div>
@@ -73,8 +73,8 @@ export function AdminDashboardPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         {/* Circuits populaires */}
         <section className="rounded-2xl bg-white dark:bg-[#121214] p-6 shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors">
-          <h2 className="font-black text-slate-900 dark:text-white">Circuits populaires</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Réservations cumulées par circuit.</p>
+          <h2 className="text-base font-black text-slate-900 dark:text-white">Circuits populaires</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Réservations cumulées par circuit.</p>
           <div className="mt-6 space-y-4">
             {analytics.isPending ? (
               <>
@@ -87,54 +87,56 @@ export function AdminDashboardPage() {
                 const count = asFiniteNumber(item.bookings)
                 return (
                   <div key={`${item.title || 'offre'}-${index}`}>
-                    <div className="mb-1 flex justify-between text-sm font-bold text-slate-800 dark:text-slate-200">
+                    <div className="mb-1 flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
                       <span>{item.title || 'Offre supprimée'}</span>
                       <span>{count}</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded bg-slate-100 dark:bg-slate-800">
-                      <div className="h-full rounded bg-emerald-500" style={{ width: `${Math.min(100, (count / maxBookings) * 100)}%` }} />
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, (count / maxBookings) * 100)}%` }} />
                     </div>
                   </div>
                 )
               })
             ) : (
-              <p className="text-sm text-slate-500 dark:text-slate-400">Pas encore de données.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Pas encore de données.</p>
             )}
           </div>
         </section>
 
         {/* Alertes opérationnelles */}
-        <section className="overflow-hidden rounded-2xl bg-white dark:bg-[#121214] shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors">
+        <section className="overflow-hidden rounded-2xl bg-white dark:bg-[#121214] shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors flex flex-col">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 p-6">
             <div>
-              <h2 className="font-black text-slate-900 dark:text-white">Alertes opérationnelles</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Demandes en attente de validation.</p>
+              <h2 className="text-base font-black text-slate-900 dark:text-white">Alertes opérationnelles</h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Demandes en attente de validation.</p>
             </div>
-            <Link className="text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:underline" to="/admin/bookings">
+            <Link className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline" to="/admin/bookings">
               Tout voir
             </Link>
           </div>
-          {bookings.isPending ? (
-            <div className="space-y-3 p-6">
-              <Skeleton className="h-12" />
-              <Skeleton className="h-12" />
-            </div>
-          ) : bookings.isError ? (
-            <p role="alert" className="p-6 text-sm text-red-700 dark:text-red-400">
-              Réservations indisponibles : {queryErrorMessage(bookings.error)}
-            </p>
-          ) : pendingBookings.length ? (
-            pendingBookings.map((booking) => (
-              <div className="border-b border-slate-100 dark:border-slate-800/80 p-5 last:border-0" key={booking.id}>
-                <b className="text-slate-900 dark:text-slate-200">{booking.customer_name || booking.customer_email || 'Client'}</b>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  {booking.offer_title || 'Offre non renseignée'} · départ le {booking.start_date || 'date non renseignée'}
-                </p>
+          <div className="flex-1">
+            {bookings.isPending ? (
+              <div className="space-y-3 p-6">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
               </div>
-            ))
-          ) : (
-            <p className="p-6 text-sm text-slate-500 dark:text-slate-400">Aucune demande en attente.</p>
-          )}
+            ) : bookings.isError ? (
+              <p role="alert" className="p-6 text-xs text-red-700 dark:text-red-400">
+                Réservations indisponibles : {queryErrorMessage(bookings.error)}
+              </p>
+            ) : pendingBookings.length ? (
+              pendingBookings.map((booking) => (
+                <div className="border-b border-slate-100 dark:border-slate-800/80 p-5 last:border-0" key={booking.id}>
+                  <b className="text-xs font-bold text-slate-900 dark:text-slate-200">{booking.customer_name || booking.customer_email || 'Client'}</b>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {booking.offer_title || 'Offre non renseignée'} · départ le {booking.start_date || 'date non renseignée'}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="p-6 text-xs text-slate-500 dark:text-slate-400">Aucune demande en attente.</p>
+            )}
+          </div>
         </section>
       </div>
     </section>
