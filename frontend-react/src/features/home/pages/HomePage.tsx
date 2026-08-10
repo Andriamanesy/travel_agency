@@ -8,7 +8,7 @@ import { useCustomerBookings } from '@/features/dashboard/hooks/useCustomerBooki
 import { useCatalog } from '@/features/catalog/hooks/useCatalog'
 import { mediaUrl } from '@/lib/api-client'
 import { Skeleton } from '@/components/feedback/Skeleton'
-import { Compass, HeartHandshake, ShieldCheck, Sparkles, ArrowRight, MapPin, CalendarDays, Users, Star, Quote } from 'lucide-react'
+import { Compass, HeartHandshake, ShieldCheck, Sparkles, ArrowRight, MapPin, CalendarDays, Users, Star, Quote, Tag, Percent } from 'lucide-react'
 import heroFallback from '@/assets/hero.png'
 import { useFeaturedCircuits, useFeaturedDestinations, useHomeSettings } from '../hooks/useHomeFeatured'
 import { SiteFooter } from '@/components/layout/SiteFooter'
@@ -108,6 +108,32 @@ export function HomePage() {
   return (
     <main className="min-h-screen bg-white text-slate-800">
       <Navbar onAuthenticate={() => { setAuthOpen(true); navigate('/?auth=login', { replace: true, state: requestedPath ? { from: requestedPath } : null }) }} />
+
+      {/* BANNIÈRE DE PROMOTION (Sous la Navbar) */}
+      <div className="relative z-20 bg-gradient-to-r from-emerald-900 via-emerald-800 to-slate-900 text-white shadow-md">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-2.5 text-xs sm:text-sm font-medium">
+          <div className="flex items-center gap-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-slate-950 font-black shadow-sm">
+              <Tag size={15} />
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-red-500/90 px-2 py-0.5 text-[11px] font-black uppercase text-white animate-pulse">
+                -20% IMMÉDIAT
+              </span>
+              <span className="font-semibold text-slate-100">
+                🎉 Offre Spéciale : Profitez de 20% de réduction sur nos circuits phares ce mois-ci !
+              </span>
+            </div>
+          </div>
+          <Link 
+            to="/catalog/circuits" 
+            className="group inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-1 text-xs font-bold text-slate-950 transition hover:bg-amber-300"
+          >
+            <span>En profiter</span>
+            <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+      </div>
 
       {/* HERO SECTION */}
       <section
@@ -213,64 +239,101 @@ export function HomePage() {
           {featuredCircuits.isPending ? (
             Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-[36rem] rounded-[2.5rem]" />)
           ) : featuredCircuits.data?.circuits.length ? (
-            featuredCircuits.data.circuits.map((circuit) => (
-              <Link 
-                key={circuit.id} 
-                to={`/catalog/circuits/${circuit.id}`} 
-                className="group relative flex min-h-[36rem] flex-col justify-end overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="absolute inset-0">
-                  {circuit.cover_image && (
-                    <img 
-                      src={mediaUrl(circuit.cover_image)} 
-                      alt={circuit.title} 
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    />
+            featuredCircuits.data.circuits.map((circuit) => {
+              const currentPrice = Number(circuit.price)
+              const originalPrice = circuit.original_price ? Number(circuit.original_price) : null
+              
+              // Le circuit est en promo SI originalPrice existe ET qu'il est supérieur au prix actuel
+              const isPromo = Boolean(originalPrice && originalPrice > currentPrice)
+              
+              // Calcul du pourcentage réel de réduction s'il y en a une
+              const discountPercent = isPromo 
+                ? Math.round((((originalPrice as number) - currentPrice) / (originalPrice as number)) * 100) 
+                : 0
+
+              return (
+                <Link 
+                  key={circuit.id} 
+                  to={`/catalog/circuits/${circuit.id}`} 
+                  className="group relative flex min-h-[36rem] flex-col justify-end overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="absolute inset-0">
+                    {circuit.cover_image && (
+                      <img 
+                        src={mediaUrl(circuit.cover_image)} 
+                        alt={circuit.title} 
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                      />
+                    )}
+                  </div>
+
+                  {/* BADGE PROMOTION : S'affiche UNIQUEMENT si le circuit est vraiment en promo */}
+                  {isPromo && (
+                    <div className="absolute top-5 right-5 z-20 flex items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-black text-white shadow-xl ring-4 ring-white/20">
+                      <Percent size={13} strokeWidth={3} />
+                      <span>-{discountPercent}% OFF</span>
+                    </div>
                   )}
-                </div>
 
-                <div className="relative z-10 m-3 flex flex-col rounded-[2rem] border border-white/60 bg-white/55 p-6 text-slate-950 shadow-2xl backdrop-blur-md transition-all duration-300 group-hover:bg-white/65">
-                  <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-900">
-                    <MapPin size={14} />
-                    <span>{circuit.destination_title || 'Madagascar'}</span>
-                  </div>
-                  
-                  <h3 className="mt-2 text-2xl font-black leading-tight text-slate-950">
-                    {circuit.title}
-                  </h3>
-                  
-                  <p className="mt-3 text-sm font-medium leading-relaxed text-slate-900 line-clamp-3">
-                    Découvrez des paysages époustouflants et plongez au cœur de la culture locale avec ce circuit d'exception.
-                  </p>
-
-                  <div className="mt-5 grid grid-cols-[1fr_1fr_auto] items-center gap-4 border-t border-slate-950/15 pt-4">
-                    <div>
-                      <p className="text-[11px] font-semibold text-slate-700">Durée :</p>
-                      <p className="font-bold text-slate-950">{circuit.duration_days} jours</p>
+                  <div className="relative z-10 m-3 flex flex-col rounded-[2rem] border border-white/60 bg-white/55 p-6 text-slate-950 shadow-2xl backdrop-blur-md transition-all duration-300 group-hover:bg-white/65">
+                    <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-900">
+                      <MapPin size={14} />
+                      <span>{circuit.destination_title || 'Madagascar'}</span>
                     </div>
-                    <div>
-                      <p className="text-[11px] font-semibold text-slate-700">Prix :</p>
-                      <p className="font-bold text-slate-950">dès {Number(circuit.price).toFixed(0)} €</p>
-                    </div>
-                    <div className="flex gap-1.5 text-slate-600">
-                      <CalendarDays size={18} />
-                      <Users size={18} />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 border-t border-slate-950/15 pt-4">
-                    <p className="text-[11px] font-semibold text-slate-700">Prochain départ :</p>
-                    <p className="font-bold text-slate-950">
-                      {circuit.next_departure ? new Date(`${circuit.next_departure}T00:00:00`).toLocaleDateString('fr-FR') : 'Départs à venir'}
+                    
+                    <h3 className="mt-2 text-2xl font-black leading-tight text-slate-950">
+                      {circuit.title}
+                    </h3>
+                    
+                    <p className="mt-3 text-sm font-medium leading-relaxed text-slate-900 line-clamp-3">
+                      Découvrez des paysages époustouflants et plongez au cœur de la culture locale avec ce circuit d'exception.
                     </p>
-                  </div>
 
-                  <div className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 text-sm font-bold text-emerald-800 shadow-sm transition-all hover:bg-emerald-50">
-                    Réserver mon aventure <ArrowRight size={16} />
+                    <div className="mt-5 grid grid-cols-[1fr_1.2fr_auto] items-center gap-3 border-t border-slate-950/15 pt-4">
+                      <div>
+                        <p className="text-[11px] font-semibold text-slate-700">Durée :</p>
+                        <p className="font-bold text-slate-950">{circuit.duration_days} jours</p>
+                      </div>
+                      
+                      {/* GESTION DU PRIX DYNAMIQUE */}
+                      <div>
+                        <p className="text-[11px] font-semibold text-slate-700">
+                          {isPromo ? 'Prix promo :' : 'Prix :'}
+                        </p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-black text-emerald-800 text-base">
+                            {currentPrice.toFixed(0)} €
+                          </span>
+                          
+                          {/* L'ancien prix barré s'affiche UNIQUEMENT s'il y a une promotion */}
+                          {isPromo && originalPrice && (
+                            <span className="text-xs text-slate-500 line-through decoration-red-500 decoration-2 font-semibold">
+                              {originalPrice.toFixed(0)} €
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1.5 text-slate-600">
+                        <CalendarDays size={18} />
+                        <Users size={18} />
+                      </div>
+                    </div>
+
+                    <div className="mt-4 border-t border-slate-950/15 pt-4">
+                      <p className="text-[11px] font-semibold text-slate-700">Prochain départ :</p>
+                      <p className="font-bold text-slate-950">
+                        {circuit.next_departure ? new Date(`${circuit.next_departure}T00:00:00`).toLocaleDateString('fr-FR') : 'Départs à venir'}
+                      </p>
+                    </div>
+
+                    <div className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 text-sm font-bold text-emerald-800 shadow-sm transition-all hover:bg-emerald-50">
+                      Réserver mon aventure <ArrowRight size={16} />
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))
+                </Link>
+              )
+            })
           ) : (
             <div className="col-span-full rounded-3xl border border-dashed border-slate-300 p-10 text-center text-slate-500">
               Aucun circuit publié pour le moment. Revenez bientôt découvrir nos prochaines aventures.
@@ -339,7 +402,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* NOUVELLE SECTION : TÉMOIGNAGES CLIENTS (PREUVE SOCIALE) */}
+      {/* TÉMOIGNAGES CLIENTS (PREUVE SOCIALE) */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-600">Témoignages</p>
@@ -374,7 +437,7 @@ export function HomePage() {
           <div className="relative z-10 max-w-2xl mx-auto space-y-6">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight">Prêt à vivre l'aventure de votre vie ?</h2>
             <p className="text-slate-300 text-base leading-relaxed">
-              Nos experts locaux concevent le voyage qui vous ressemble. Contactez-nous dès aujourd'hui pour un devis personnalisé.
+              Nos experts locaux conçoivent le voyage qui vous ressemble. Contactez-nous dès aujourd'hui pour un devis personnalisé.
             </p>
             <div className="pt-2">
               <Link to="/catalog/circuits" className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-8 py-4 font-bold text-white transition hover:bg-emerald-600 shadow-lg shadow-emerald-900/30">

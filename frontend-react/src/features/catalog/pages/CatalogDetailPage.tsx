@@ -3,10 +3,10 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { mediaUrl } from '@/lib/api-client'
 import { useCatalogItem } from '../hooks/useCatalog'
 import { type CatalogEntity } from '../types'
-import { MapPin, CalendarDays, Users, ArrowLeft, Info, Compass, ShieldCheck, Camera, X, ChevronLeft, ChevronRight, Navigation } from 'lucide-react'
+import { MapPin, CalendarDays, Users, ArrowLeft, Info, Compass, ShieldCheck, Camera, X, ChevronLeft, ChevronRight, Navigation, Tag } from 'lucide-react'
 import { Skeleton } from '@/components/feedback/Skeleton'
 import { Navbar } from '@/components/layout/Navbar'
-import { SiteFooter } from '@/components/layout/SiteFooter' // <--- Import du Footer
+import { SiteFooter } from '@/components/layout/SiteFooter'
 import { AuthModal } from '@/features/auth/components/AuthModal'
 
 const available = ['circuits', 'hotels', 'guides'] as const
@@ -78,16 +78,22 @@ export function CatalogDetailPage() {
 
   const item = data[type.slice(0, -1)]
   const coverImage = item.cover_image || item.avatar_url ? mediaUrl(item.cover_image || item.avatar_url) : fallbackGallery[0]
-  const price = item.price ?? item.price_per_night
+  
+  // Calculs des Prix & Promotions
+  const currentPrice = Number(item.price ?? item.price_per_night ?? 0)
+  const originalPrice = (item as any).original_price ? Number((item as any).original_price) : null
+  const hasDiscount = originalPrice !== null && originalPrice > currentPrice
+  const discountPercent = hasDiscount ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0
+  const savings = hasDiscount ? originalPrice - currentPrice : 0
+
   const destinationTitle = (item as any).destination_title || 'Madagascar'
   
-  // Récupération de la galerie d'images du backend, sinon utilisation du fallback
+  // Galerie d'images
   const itemImages = (item as any).images
   const galleryImages: string[] = itemImages?.length > 0 
     ? itemImages.map((img: string) => mediaUrl(img)) 
     : fallbackGallery
 
-  // Fonctions de navigation de la Lightbox
   const openLightbox = (index: number) => {
     setLightboxIndex(index)
     setLightboxOpen(true)
@@ -127,7 +133,19 @@ export function CatalogDetailPage() {
                 <section className="mt-8 rounded-[2.5rem] bg-white p-10 shadow-sm border border-slate-100">
                     <h1 className="text-4xl font-extrabold text-slate-900">{item.title || item.name}</h1>
                     <p className="mt-6 whitespace-pre-line leading-relaxed text-slate-600">{item.description || item.bio || item.address}</p>
-                    {price !== null && price !== undefined && <p className="mt-8 text-3xl font-black text-emerald-700">{Number(price).toFixed(2)} €{type === 'hotels' ? ' / nuit' : ''}</p>}
+                    
+                    {currentPrice > 0 && (
+                      <div className="mt-8 flex items-baseline gap-3">
+                        <span className="text-3xl font-black text-emerald-700">
+                          {currentPrice.toFixed(2)} €{type === 'hotels' ? ' / nuit' : ''}
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-xl font-bold text-slate-400 line-through">
+                            {originalPrice.toFixed(2)} €
+                          </span>
+                        )}
+                      </div>
+                    )}
                 </section>
               </div>
             </div>
@@ -162,6 +180,7 @@ export function CatalogDetailPage() {
       <div>
         <Navbar onAuthenticate={() => setAuthOpen(true)} />
 
+        {/* HERO BANNER */}
         <section 
           className="relative flex min-h-[70vh] items-end justify-center bg-cover bg-center px-6 pb-20 pt-32 text-white"
           style={{
@@ -176,20 +195,47 @@ export function CatalogDetailPage() {
             
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div className="max-w-3xl">
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-emerald-300">
-                  <MapPin size={16} />
-                  <span>{destinationTitle}</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                    <MapPin size={16} />
+                    <span>{destinationTitle}</span>
+                  </div>
+
+                  {/* BADGE PROMO HERO */}
+                  {hasDiscount && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500 px-3 py-1 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-rose-500/30">
+                      <Tag size={12} />
+                      Offre Promo -{discountPercent}%
+                    </span>
+                  )}
                 </div>
+
                 <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl text-white">
                   {item.title}
                 </h1>
               </div>
               
+              {/* CARTOUCH DE PRIX HERO (GRAND ÉCRAN) */}
               <div className="hidden lg:flex flex-col items-end shrink-0 bg-slate-950/40 p-5 rounded-3xl backdrop-blur-sm border border-white/10">
-                 <span className="text-xs font-bold uppercase tracking-widest text-slate-300">À partir de</span>
-                 <span className="text-4xl font-black text-emerald-400 mt-1">
-                  {Number(price).toFixed(0)} €
-                 </span>
+                 <div className="flex items-center gap-2">
+                   {hasDiscount && (
+                     <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                       -{discountPercent}%
+                     </span>
+                   )}
+                   <span className="text-xs font-bold uppercase tracking-widest text-slate-300">À partir de</span>
+                 </div>
+
+                 <div className="flex items-baseline gap-2 mt-1">
+                   {hasDiscount && (
+                     <span className="text-xl font-bold text-slate-400 line-through">
+                       {originalPrice.toFixed(0)} €
+                     </span>
+                   )}
+                   <span className="text-4xl font-black text-emerald-400">
+                     {currentPrice.toFixed(0)} €
+                   </span>
+                 </div>
                  <span className="text-sm font-medium text-slate-200 mt-1">par personne</span>
               </div>
             </div>
@@ -208,7 +254,7 @@ export function CatalogDetailPage() {
               </p>
             </div>
 
-            {/* GALERIE STYLE RÉSEAUX SOCIAUX */}
+            {/* GALERIE PHOTOS */}
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <Camera className="text-emerald-600" size={28} />
@@ -288,6 +334,7 @@ export function CatalogDetailPage() {
               )}
             </div>
 
+            {/* POINTS FORTS */}
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-600">Les incontournables</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 mb-6">Points forts du circuit</h2>
@@ -307,6 +354,7 @@ export function CatalogDetailPage() {
               </div>
             </div>
 
+            {/* ITINÉRAIRE */}
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-600">Itinéraire</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 mb-8">Votre programme jour par jour</h2>
@@ -334,6 +382,7 @@ export function CatalogDetailPage() {
               </div>
             </div>
 
+            {/* CARTE */}
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <Navigation className="text-emerald-600" size={28} />
@@ -355,17 +404,43 @@ export function CatalogDetailPage() {
 
           </div>
 
+          {/* SIDEBAR - CARD DE RÉSERVATION AVEC PROMOTION */}
           <aside className="sticky top-28">
             <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-2xl">
               <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-600/20 blur-3xl"></div>
               
               <div className="relative z-10 p-8 text-white space-y-8">
+                
+                {/* BLOC PRIX & PROMO DE LA CARD */}
                 <div className="border-b border-white/10 pb-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400 mb-2">Réserver ce circuit</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black">{Number(price).toFixed(0)} €</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">Réserver ce circuit</p>
+                    
+                    {hasDiscount && (
+                      <span className="rounded-full bg-rose-500/20 px-2.5 py-0.5 text-xs font-black text-rose-400 border border-rose-500/30">
+                        -{discountPercent}% PROMO
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-4xl font-black text-white">{currentPrice.toFixed(0)} €</span>
+                    
+                    {hasDiscount && (
+                      <span className="text-xl font-bold text-slate-400 line-through">
+                        {originalPrice.toFixed(0)} €
+                      </span>
+                    )}
+                    
                     <span className="text-sm font-medium text-slate-400">/ pers.</span>
                   </div>
+
+                  {/* ÉCONOMIES RÉALISÉES */}
+                  {hasDiscount && (
+                    <p className="mt-2 text-xs font-semibold text-emerald-400 bg-emerald-950/60 py-1 px-2.5 rounded-lg border border-emerald-500/20 inline-block">
+                      🔥 Vous économisez {savings.toFixed(0)} € par personne !
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -417,7 +492,6 @@ export function CatalogDetailPage() {
         </section>
       </div>
 
-      {/* Intégration du Footer ici */}
       <SiteFooter />
 
       <AuthModal 

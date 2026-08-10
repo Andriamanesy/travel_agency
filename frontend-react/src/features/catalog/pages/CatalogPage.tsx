@@ -1,12 +1,25 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { mediaUrl } from '@/lib/api-client'
 import { useCatalog } from '../hooks/useCatalog'
 import { catalogEntities, type CatalogEntity, type CatalogItem } from '../types'
-import { Search, Compass, MapPin, Calendar, Users, ArrowRight, X } from 'lucide-react'
+import { 
+  Search, 
+  Compass, 
+  MapPin, 
+  Calendar, 
+  Users, 
+  ArrowRight, 
+  X, 
+  ArrowUpDown, 
+  ChevronLeft, 
+  ChevronRight 
+} from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { AuthModal } from '@/features/auth/components/AuthModal'
+
+const ITEMS_PER_PAGE = 6
 
 const labels: Record<CatalogEntity, [string, string]> = { 
   circuits: ['CIRCUITS', 'Circuits touristiques'], 
@@ -15,17 +28,34 @@ const labels: Record<CatalogEntity, [string, string]> = {
   categories: ['CATÉGORIES', 'Explorer par catégorie'] 
 }
 
+type CatalogCardItem = CatalogItem & {
+  destination_title?: string
+  duration?: string
+}
+
+type SortOption = 'default' | 'price-asc' | 'price-desc' | 'title-asc'
+
 export function CatalogPage() {
   const { entity = '' } = useParams()
   const [params, setParams] = useSearchParams()
+  
+  // Lecture des paramètres de l'URL
   const destination = params.get('destination') ?? ''
   const type = params.get('type') ?? ''
   const date = params.get('date') ?? ''
+  const sortBy = (params.get('sort') as SortOption) || 'default'
+  const currentPage = Math.max(1, Number(params.get('page') ?? '1'))
+
   const [input, setInput] = useState(destination)
   const [authOpen, setAuthOpen] = useState(false)
-  
+
+  // Synchronise le champ texte si l'URL change externes (ex: retour navigateur)
+  useEffect(() => {
+    setInput(destination)
+  }, [destination])
+
   const isValidEntity = catalogEntities.includes(entity as CatalogEntity)
-  const catalogEntity: CatalogEntity = isValidEntity ? entity as CatalogEntity : 'circuits'
+  const catalogEntity: CatalogEntity = isValidEntity ? (entity as CatalogEntity) : 'circuits'
   const { data, isPending, isError } = useCatalog(catalogEntity, destination)
 
   if (!isValidEntity) return <Navigate to="/catalog/circuits" replace />
@@ -35,7 +65,23 @@ export function CatalogPage() {
     const next = new URLSearchParams(params)
     if (input.trim()) next.set('destination', input.trim())
     else next.delete('destination')
+    next.set('page', '1') // Réinitialise la page lors d'une recherche
     setParams(next) 
+  }
+
+  const handleSortChange = (newSort: SortOption) => {
+    const next = new URLSearchParams(params)
+    if (newSort !== 'default') next.set('sort', newSort)
+    else next.delete('sort')
+    next.set('page', '1')
+    setParams(next)
+  }
+
+  const handlePageChange = (newPage: number) => {
+    const next = new URLSearchParams(params)
+    next.set('page', newPage.toString())
+    setParams(next)
+    window.scrollTo({ top: 400, behavior: 'smooth' })
   }
 
   const resetFilters = () => {
@@ -43,16 +89,37 @@ export function CatalogPage() {
     setParams(new URLSearchParams())
   }
 
-  const items = data?.[catalogEntity] ?? []
+  const rawItems = (data?.[catalogEntity] ?? []) as CatalogCardItem[]
+
+  // 1. Tri des éléments
+  const sortedItems = [...rawItems].sort((a, b) => {
+    const priceA = Number(a.price ?? (a as any).price_per_night ?? 0)
+    const priceB = Number(b.price ?? (b as any).price_per_night ?? 0)
+    const titleA = (a.title || a.name || '').toLowerCase()
+    const titleB = (b.title || b.name || '').toLowerCase()
+
+    if (sortBy === 'price-asc') return priceA - priceB
+    if (sortBy === 'price-desc') return priceB - priceA
+    if (sortBy === 'title-asc') return titleA.localeCompare(titleB)
+    return 0
+  })
+
+  // 2. Pagination
+  const totalPages = Math.ceil(sortedItems.length / ITEMS_PER_PAGE)
+  const safePage = Math.min(currentPage, totalPages || 1)
+  const paginatedItems = sortedItems.slice(
+    (safePage - 1) * ITEMS_PER_PAGE,
+    safePage * ITEMS_PER_PAGE
+  )
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between">
       <div>
         <Navbar onAuthenticate={() => setAuthOpen(true)} />
 
-        {/* En-tête de page moderne */}
+        {/* En-tête de page */}
         <section className="bg-slate-900 text-white py-20 px-6 pt-32 relative overflow-hidden">
-          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-600/25 blur-3xl"></div>
+          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-600/25 blur-3xl pointer-events-none" />
           <div className="mx-auto max-w-7xl relative z-10">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-emerald-400 mb-3">
               <Compass size={16} />
@@ -63,7 +130,7 @@ export function CatalogPage() {
               Découvrez notre sélection exclusive et préparez votre prochaine escapade en toute sérénité.
             </p>
 
-            {/* Barre de recherche intégrée */}
+            {/* Barre de recherche */}
             <form onSubmit={submit} className="mt-8 flex flex-col sm:flex-row gap-3 max-w-2xl bg-white/10 p-2 rounded-2xl backdrop-blur-md border border-white/10">
               <div className="flex items-center gap-3 px-4 py-2 flex-grow">
                 <Search size={20} className="text-emerald-400 shrink-0" />
@@ -72,16 +139,20 @@ export function CatalogPage() {
                   onChange={(event) => setInput(event.target.value)} 
                   className="w-full bg-transparent text-white placeholder-slate-400 text-sm outline-none" 
                   placeholder="Destination ou mot-clé..." 
+                  aria-label="Destination ou mot-clé"
                 />
               </div>
-              <button type="submit" className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-900/25 text-sm cursor-pointer">
+              <button 
+                type="submit" 
+                className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-900/25 text-sm cursor-pointer"
+              >
                 Rechercher
               </button>
             </form>
           </div>
         </section>
 
-        {/* Barre de sélection rapide des onglets catalogue */}
+        {/* Onglets Catalogue */}
         <div className="border-b border-slate-200 bg-white sticky top-20 z-40 shadow-xs">
           <div className="mx-auto max-w-7xl px-6 flex gap-2 overflow-x-auto py-3 no-scrollbar">
             {catalogEntities.map((ent) => {
@@ -103,24 +174,49 @@ export function CatalogPage() {
           </div>
         </div>
 
-        {/* Contenu principal */}
-        <section className="mx-auto max-w-7xl px-6 py-12">
-          {(destination || type || date) && (
-            <div className="mb-8 flex flex-wrap gap-2 text-sm items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="font-semibold text-slate-500 mr-2">Filtres actifs :</span>
-                {destination && <span className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800">Destination : {destination}</span>}
-                {type && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">Type : {type}</span>}
-                {date && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">Dès le {date}</span>}
-              </div>
-              <button 
-                onClick={resetFilters}
-                className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <X size={14} /> Réinitialiser
-              </button>
+        {/* Section Contenu */}
+        <section className="mx-auto max-w-7xl px-6 py-10">
+          
+          {/* Filtres actifs & Contrôle du Tri */}
+          <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            
+            {/* Badges de filtres actifs */}
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-semibold text-slate-500 mr-1">
+                {rawItems.length} résultat{rawItems.length > 1 ? 's' : ''}
+              </span>
+              
+              {destination && <span className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800">Destination : {destination}</span>}
+              {type && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">Type : {type}</span>}
+              {date && <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">Dès le {date}</span>}
+
+              {(destination || type || date) && (
+                <button 
+                  onClick={resetFilters}
+                  className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer ml-2"
+                >
+                  <X size={14} /> Réinitialiser
+                </button>
+              )}
             </div>
-          )}
+
+            {/* Menu Déroulant de Tri */}
+            <div className="flex items-center gap-2 self-end md:self-auto">
+              <ArrowUpDown size={16} className="text-slate-400 shrink-0" />
+              <label htmlFor="sort-select" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trier par :</label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value as SortOption)}
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:border-emerald-600 cursor-pointer"
+              >
+                <option value="default">Par défaut</option>
+                <option value="price-asc">Prix : croissant</option>
+                <option value="price-desc">Prix : décroissant</option>
+                <option value="title-asc">Nom : A-Z</option>
+              </select>
+            </div>
+          </div>
 
           {isPending && <CatalogSkeleton />}
           
@@ -130,17 +226,56 @@ export function CatalogPage() {
             </div>
           )}
 
+          {/* Grille de cartes paginées */}
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
+            {paginatedItems.map((item) => (
               <CatalogCard key={item.id} item={item} entity={catalogEntity} />
             ))}
           </div>
 
-          {!isPending && items.length === 0 && (
+          {!isPending && rawItems.length === 0 && (
             <div className="text-center py-20 text-slate-500 font-medium bg-white rounded-3xl border border-slate-100 shadow-sm">
               Aucun résultat trouvé pour votre recherche. Essayez d'autres critères.
             </div>
           )}
+
+          {/* Contrôles de Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-12 flex items-center justify-center gap-2">
+              <button
+                onClick={() => handlePageChange(safePage - 1)}
+                disabled={safePage === 1}
+                className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                aria-label="Page précédente"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`h-10 w-10 rounded-xl text-sm font-bold transition cursor-pointer ${
+                    safePage === pageNum
+                      ? 'bg-emerald-700 text-white shadow-md shadow-emerald-700/20'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handlePageChange(safePage + 1)}
+                disabled={safePage === totalPages}
+                className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                aria-label="Page suivante"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+
         </section>
       </div>
 
@@ -159,19 +294,19 @@ export function CatalogPage() {
 function CatalogSkeleton() { 
   return (
     <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 3 }, (_, index) => (
+      {Array.from({ length: 6 }, (_, index) => (
         <div key={index} className="animate-pulse h-[520px] rounded-[2.5rem] bg-slate-200 shadow-sm" />
       ))}
     </div>
   ) 
 }
 
-function CatalogCard({ item, entity }: { item: CatalogItem; entity: CatalogEntity }) {
+function CatalogCard({ item, entity }: { item: CatalogCardItem; entity: CatalogEntity }) {
   const image = mediaUrl(item.cover_image || item.avatar_url)
   const title = item.title || item.name || 'Sans titre'
   const text = item.description || item.address || item.bio || ''
   const price = item.price ?? item.price_per_night
-  const destinationTitle = (item as any).destination_title || 'Madagascar'
+  const destinationTitle = item.destination_title || 'Madagascar'
 
   return (
     <article className="group relative h-[520px] overflow-hidden rounded-[2.5rem] shadow-xl transition-all duration-500 hover:-translate-y-1 bg-slate-900">
@@ -184,9 +319,9 @@ function CatalogCard({ item, entity }: { item: CatalogItem; entity: CatalogEntit
       ) : (
         <div className="absolute inset-0 bg-slate-800" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent" />
 
-      {/* Carte effet Verre (Glassmorphism) */}
+      {/* Carte Glassmorphism */}
       <div className="absolute inset-x-4 bottom-4 top-28 flex flex-col justify-between rounded-[2rem] bg-white/80 p-6 backdrop-blur-md border border-white/50 shadow-lg">
         <div>
           {entity === 'circuits' && (
@@ -212,7 +347,7 @@ function CatalogCard({ item, entity }: { item: CatalogItem; entity: CatalogEntit
                 {entity === 'hotels' ? 'Type :' : entity === 'guides' ? 'Expérience :' : 'Durée :'}
               </span>
               <span className="font-bold text-slate-900">
-                {entity === 'hotels' ? 'Hébergement' : entity === 'guides' ? 'Guide Expert' : ((item as any).duration || '7 jours')}
+                {entity === 'hotels' ? 'Hébergement' : entity === 'guides' ? 'Guide Expert' : (item.duration || '7 jours')}
               </span>
             </div>
             <div>
@@ -242,7 +377,7 @@ function CatalogCard({ item, entity }: { item: CatalogItem; entity: CatalogEntit
               <ArrowRight size={14} />
             </Link>
           ) : (
-            <div className="h-10"></div>
+            <div className="h-10" />
           )}
         </div>
       </div>
