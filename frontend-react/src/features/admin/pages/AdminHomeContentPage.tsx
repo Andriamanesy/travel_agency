@@ -174,7 +174,7 @@ export function AdminHomeContentPage() {
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={drop}
                       onClick={() => input.current?.click()}
-                      className="relative z-10 flex w-full flex-col items-center justify-center p-8 text-center"
+                      className="relative z-10 flex w-full flex-col items-center justify-center p-8 text-center cursor-pointer"
                     >
                       <div className="grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-emerald-700 mb-4">
                         <ImageUp size={24} />
@@ -192,7 +192,7 @@ export function AdminHomeContentPage() {
                   </div>
 
                   {customImage && (
-                    <button type="button" onClick={() => form.setValue('hero.bgImageUrl', null, { shouldDirty: true })} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200">
+                    <button type="button" onClick={() => form.setValue('hero.bgImageUrl', null, { shouldDirty: true })} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 cursor-pointer">
                       <RotateCcw size={16} /> Rétablir l'image par défaut
                     </button>
                   )}
@@ -211,7 +211,7 @@ export function AdminHomeContentPage() {
                   type="button"
                   disabled={features.fields.length >= 4}
                   onClick={() => features.append({ icon: 'Sparkles', title: '', description: '', isActive: true })}
-                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 hover:bg-slate-800 transition"
+                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 hover:bg-slate-800 transition cursor-pointer"
                 >
                   + Ajouter une carte
                 </button>
@@ -310,7 +310,7 @@ function TabButton({ active, icon: Icon, onClick, children }: { active: boolean;
     <button
       type="button"
       onClick={onClick}
-      className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all ${
+      className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all cursor-pointer ${
         active ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
       }`}
     >
@@ -360,8 +360,8 @@ function FeatureCard({ index, feature, register, setValue, active, onToggle, onU
       
       {/* Contrôles Haut/Bas intégrés au design */}
       <div className="absolute -left-3 top-1/2 flex -translate-y-1/2 flex-col gap-1">
-        <button type="button" onClick={onUp} disabled={!canUp} className="rounded-full bg-white border border-slate-200 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 disabled:opacity-0 shadow-sm transition-all"><ArrowUp size={14} /></button>
-        <button type="button" onClick={onDown} disabled={!canDown} className="rounded-full bg-white border border-slate-200 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 disabled:opacity-0 shadow-sm transition-all"><ArrowDown size={14} /></button>
+        <button type="button" onClick={onUp} disabled={!canUp} className="rounded-full bg-white border border-slate-200 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 disabled:opacity-0 shadow-sm transition-all cursor-pointer"><ArrowUp size={14} /></button>
+        <button type="button" onClick={onDown} disabled={!canDown} className="rounded-full bg-white border border-slate-200 p-1 text-slate-400 hover:text-emerald-600 hover:border-emerald-300 disabled:opacity-0 shadow-sm transition-all cursor-pointer"><ArrowDown size={14} /></button>
       </div>
 
       <div className="flex items-center justify-between pl-4">
@@ -370,11 +370,11 @@ function FeatureCard({ index, feature, register, setValue, active, onToggle, onU
             <Icon size={24} />
           </span>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={active} onChange={onToggle} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600" />
+            <input type="checkbox" checked={active} onChange={onToggle} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer" />
             <span className="text-sm font-bold text-slate-700">{active ? 'Carte visible' : 'Carte masquée'}</span>
           </label>
         </div>
-        <button type="button" disabled={!canRemove} onClick={onRemove} className="text-sm font-bold text-red-500 hover:text-red-700 disabled:opacity-30">
+        <button type="button" disabled={!canRemove} onClick={onRemove} className="text-sm font-bold text-red-500 hover:text-red-700 disabled:opacity-30 cursor-pointer">
           Supprimer
         </button>
       </div>
@@ -389,7 +389,7 @@ function FeatureCard({ index, feature, register, setValue, active, onToggle, onU
                 type="button"
                 key={name}
                 onClick={() => setValue(`features.${index}.icon`, name as HomeFeature['icon'], { shouldDirty: true })}
-                className={`grid h-10 w-10 place-items-center rounded-lg border transition ${feature.icon === name ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}
+                className={`grid h-10 w-10 place-items-center rounded-lg border transition cursor-pointer ${feature.icon === name ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}
               >
                 <PickerIcon size={18} />
               </button>
