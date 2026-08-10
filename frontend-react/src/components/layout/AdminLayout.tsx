@@ -169,6 +169,8 @@ export function AdminLayout() {
         <div className={`shrink-0 space-y-2 p-4 border-t ${dark ? 'border-slate-800/60' : 'border-slate-200'}`}>
           <Link 
             to="/" 
+            target="_blank"
+            rel="noopener noreferrer"
             className={`group flex items-center ${collapsed ? 'justify-center' : 'gap-3 px-3'} h-10 rounded-lg text-sm font-medium transition-colors ${
               dark ? 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
