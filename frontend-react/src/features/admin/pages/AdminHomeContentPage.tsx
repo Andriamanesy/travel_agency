@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
-import { useFieldArray, useForm, type UseFormRegister, type UseFormRegisterReturn } from 'react-hook-form'
+import { useFieldArray, useForm, type UseFormRegisterReturn } from 'react-hook-form'
 import { 
   ArrowDown, ArrowUp, Compass, HeartHandshake, ImageUp, 
   Map, Save, ShieldCheck, Sparkles, Star, RotateCcw, 
-  LayoutTemplate, Quote, GripVertical, CheckCircle2 
+  LayoutTemplate, Quote, CheckCircle2 
 } from 'lucide-react'
 import heroFallback from '@/assets/hero.png'
 import type { HomeFeature, HomeSettings } from '@/features/home/services/home.service'
@@ -239,7 +239,7 @@ export function AdminHomeContentPage() {
             </div>
           )}
 
-          {/* NOUVEAU : ONGLET À LA UNE (En construction) */}
+          {/* ONGLET À LA UNE */}
           {tab === 'featured' && (
             <div className="flex flex-col items-center justify-center rounded-3xl bg-white p-16 shadow-sm border border-slate-200 text-center min-h-[400px]">
               <div className="grid h-20 w-20 place-items-center rounded-full bg-slate-100 text-slate-400 mb-6">
@@ -255,7 +255,7 @@ export function AdminHomeContentPage() {
             </div>
           )}
 
-          {/* NOUVEAU : ONGLET TÉMOIGNAGES (En construction) */}
+          {/* ONGLET TÉMOIGNAGES */}
           {tab === 'testimonials' && (
             <div className="flex flex-col items-center justify-center rounded-3xl bg-white p-16 shadow-sm border border-slate-200 text-center min-h-[400px]">
               <div className="grid h-20 w-20 place-items-center rounded-full bg-slate-100 text-slate-400 mb-6">
