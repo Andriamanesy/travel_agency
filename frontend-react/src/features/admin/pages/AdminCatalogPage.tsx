@@ -16,8 +16,21 @@ import {
   Ban,
   Upload,
   User,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Tag,
+  Percent,
+  Sparkles,
+  TrendingDown,
+  Calendar,
+  Filter,
+  Compass
 } from 'lucide-react'
+
+// Extension de type pour supporter les promotions et statuts sur les circuits
+type ExtendedCircuitRecord = CircuitRecord & {
+  original_price?: number
+  is_active?: boolean
+}
 
 type Field = { 
   key: string 
@@ -30,37 +43,37 @@ const configs: Record<CatalogEntity, { title: string; fields: Field[] }> = {
   categories: { 
     title: 'Catégories', 
     fields: [
-      { key: 'name', label: 'Nom', required: true }, 
-      { key: 'slug', label: 'Slug' }, 
+      { key: 'name', label: 'Nom de la catégorie', required: true }, 
+      { key: 'slug', label: 'Slug (URL)' }, 
       { key: 'description', label: 'Description', type: 'textarea' }
     ] 
   },
   circuits: { 
-    title: 'Circuits', 
-    fields: [] // Géré par AdminCircuitsPage et CircuitForm
+    title: 'Circuits & Séjours', 
+    fields: [] // Géré spécifiquement dans AdminCircuitsPage
   },
   hotels: { 
-    title: 'Hôtels', 
+    title: 'Hôtels & Hébergements', 
     fields: [
-      { key: 'destination_id', label: 'ID destination', required: true }, 
-      { key: 'name', label: 'Nom', required: true }, 
-      { key: 'address', label: 'Adresse', required: true }, 
-      { key: 'price_per_night', label: 'Prix / nuit (€)', type: 'number', required: true }, 
-      { key: 'original_price', label: 'Prix avant promo / nuit (€)', type: 'number' },
+      { key: 'destination_id', label: 'ID Destination', required: true }, 
+      { key: 'name', label: 'Nom de l’établissement', required: true }, 
+      { key: 'address', label: 'Adresse physique', required: true }, 
+      { key: 'price_per_night', label: 'Prix par nuit (€)', type: 'number', required: true }, 
+      { key: 'original_price', label: 'Prix avant promotion (€)', type: 'number' },
       { key: 'rating', label: 'Note / 5', type: 'number' }, 
-      { key: 'cover_image', label: 'Photo de l’hôtel' }, 
-      { key: 'is_active', label: 'Actif dans le catalogue', type: 'checkbox' }
+      { key: 'cover_image', label: 'Photo de couverture' }, 
+      { key: 'is_active', label: 'Visible dans le catalogue public', type: 'checkbox' }
     ] 
   },
   guides: { 
-    title: 'Guides', 
+    title: 'Guides Accompagnateurs', 
     fields: [
-      { key: 'name', label: 'Nom', required: true }, 
-      { key: 'email', label: 'E-mail', type: 'email', required: true }, 
-      { key: 'phone', label: 'Téléphone' }, 
-      { key: 'bio', label: 'Biographie', type: 'textarea' }, 
+      { key: 'name', label: 'Nom complet', required: true }, 
+      { key: 'email', label: 'E-mail professionnel', type: 'email', required: true }, 
+      { key: 'phone', label: 'Numéro de téléphone' }, 
+      { key: 'bio', label: 'Biographie / Présentation', type: 'textarea' }, 
       { key: 'avatar_url', label: 'Photo de profil (Avatar)' }, 
-      { key: 'is_active', label: 'Actif', type: 'checkbox' }
+      { key: 'is_active', label: 'Guide disponible', type: 'checkbox' }
     ] 
   },
 }
@@ -69,8 +82,14 @@ function blank(fields: Field[]) {
   return Object.fromEntries(fields.map((field) => [field.key, field.type === 'checkbox' ? true : ''])) 
 }
 
+function getDiscountPercent(currentPrice: number, originalPrice?: number) {
+  if (!originalPrice || originalPrice <= currentPrice) return null
+  const discount = ((originalPrice - currentPrice) / originalPrice) * 100
+  return Math.round(discount)
+}
+
 /**
- * 1. Composant Routeur d'Entités (Exposé à la route)
+ * 1. Routeur Principal d'Entités Catalogues
  */
 export function AdminCatalogPage() {
   const { entity = '' } = useParams()
@@ -84,7 +103,284 @@ export function AdminCatalogPage() {
 }
 
 /**
- * 2. Composant de gestion générique (Catégories, Hôtels, Guides)
+ * 2. Composant de gestion des Circuits avec module Promotion & Filtres
+ */
+function AdminCircuitsPage() {
+  const { data, isPending, error } = useAdvancedCircuits()
+  const [editing, setEditing] = useState<ExtendedCircuitRecord | null>(null)
+  const [search, setSearch] = useState('')
+  const [filterMode, setFilterMode] = useState<'all' | 'promo' | 'active'>('all')
+
+  const items = (data?.circuits ?? []) as ExtendedCircuitRecord[]
+  const message = error instanceof ApiError ? error.message : null
+
+  // Métriques KPI
+  const totalCircuits = items.length
+  const promoCount = items.filter((c) => c.original_price && c.original_price > c.price).length
+  const activeCount = items.filter((c) => c.is_active !== false).length
+
+  // Filtrage combiné
+  const filteredItems = items.filter((item) => {
+    const matchesSearch = (item.title || '').toLowerCase().includes(search.toLowerCase())
+    const isPromo = Boolean(item.original_price && item.original_price > item.price)
+    const isActive = item.is_active !== false
+
+    if (!matchesSearch) return false
+    if (filterMode === 'promo') return isPromo
+    if (filterMode === 'active') return isActive
+    return true
+  })
+
+  return (
+    <section className="space-y-8 animate-in fade-in duration-300">
+      {/* Header & Titre */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[.25em] text-emerald-600 dark:text-emerald-400">
+            Catalogue Offres
+          </p>
+          <h1 className="mt-1 text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+            <Compass className="text-emerald-600 dark:text-emerald-400" size={28} />
+            Circuits & Séjours
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Gérez les étapes, tarifications, départs et offres en promotion.
+          </p>
+        </div>
+
+        {editing && (
+          <button
+            onClick={() => setEditing(null)}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>Créer un nouveau circuit</span>
+          </button>
+        )}
+      </div>
+
+      {/* Cartes KPI */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <Tag size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Circuits</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{totalCircuits}</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-gradient-to-br from-rose-500/10 to-amber-500/10 bg-white dark:bg-slate-900 p-4 border border-rose-200/60 dark:border-rose-900/40 shadow-2xs flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-rose-500 text-white shadow-md shadow-rose-500/30">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">En Promotion</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{promoCount} offre(s)</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white dark:bg-slate-900 p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <Check size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Actifs en Ligne</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{activeCount}</p>
+          </div>
+        </div>
+      </div>
+
+      {message && (
+        <div role="alert" className="flex items-center gap-3 rounded-xl bg-red-50 dark:bg-red-950/50 p-4 text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900">
+          <AlertCircle size={18} className="shrink-0" />
+          <span>{message}</span>
+        </div>
+      )}
+
+      {/* Layout Formulaire / Liste */}
+      <div className="grid gap-8 xl:grid-cols-[1fr_1.2fr] items-start">
+        {/* Éditeur de Circuit */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <CircuitForm editing={editing} onDone={() => setEditing(null)} />
+        </div>
+
+        {/* Liste avec recherche & filtres */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filtrer par nom de circuit..."
+                className="w-full pl-10 pr-4 py-2 text-xs font-medium bg-transparent text-slate-900 dark:text-white placeholder-slate-400 outline-none"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => setFilterMode('all')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  filterMode === 'all'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                }`}
+              >
+                Tous ({totalCircuits})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('promo')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                  filterMode === 'promo'
+                    ? 'bg-rose-500 text-white shadow-2xs'
+                    : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                }`}
+              >
+                <Percent size={12} />
+                Promos ({promoCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('active')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  filterMode === 'active'
+                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                }`}
+              >
+                Actifs
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {isPending && (
+              <div className="p-8 text-center text-xs font-medium text-slate-500 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+                Chargement des circuits…
+              </div>
+            )}
+
+            {!isPending && filteredItems.length === 0 && (
+              <div className="p-10 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-2">
+                <Filter size={24} className="mx-auto text-slate-300" />
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Aucun circuit ne correspond</p>
+                <p className="text-xs text-slate-400">Essayez de réinitialiser vos critères de recherche ou de filtre.</p>
+              </div>
+            )}
+
+            {filteredItems.map((item) => {
+              const discount = getDiscountPercent(item.price, item.original_price)
+              const isSelected = editing?.id === item.id
+
+              return (
+                <article
+                  key={item.id}
+                  className={`group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 p-4 border transition-all duration-200 ${
+                    isSelected 
+                      ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' 
+                      : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="relative shrink-0">
+                        {item.cover_image ? (
+                          <img
+                            src={item.cover_image}
+                            alt=""
+                            className="h-16 w-20 object-cover rounded-xl border border-slate-200 dark:border-slate-800"
+                            onError={(e) => {
+                              ;(e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                        ) : (
+                          <div className="h-16 w-20 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                            <Compass size={20} />
+                          </div>
+                        )}
+
+                        {discount && (
+                          <span className="absolute -top-2 -left-2 bg-gradient-to-r from-rose-600 to-amber-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-0.5">
+                            <TrendingDown size={10} />
+                            -{discount}%
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                            {item.title}
+                          </h2>
+
+                          {discount && (
+                            <span className="bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                              PROMO
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap">
+                          <span>{item.duration_days} jours</span>
+                          <span>•</span>
+                          <span>{item.capacity} places</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium">
+                            <Calendar size={11} /> {item.departures?.length ?? 0} départ(s)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex sm:flex-col items-end justify-between w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800 gap-2">
+                      <div className="text-left sm:text-right">
+                        {item.original_price && item.original_price > item.price ? (
+                          <div className="flex items-center sm:justify-end gap-2">
+                            <span className="text-xs text-slate-400 line-through font-medium">
+                              {item.original_price} €
+                            </span>
+                            <span className="text-base font-black text-rose-600 dark:text-rose-400">
+                              {item.price} €
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                            {item.price} €
+                          </span>
+                        )}
+                      </div>
+
+                      <button 
+                        onClick={() => setEditing(item)} 
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                      >
+                        <Pencil size={12} />
+                        <span>{isSelected ? 'En cours…' : 'Éditer'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/**
+ * 3. Composant Générique (Catégories, Hôtels, Guides)
  */
 function GenericCatalogPage({ type }: { type: CatalogEntity }) {
   const config = configs[type]
@@ -143,12 +439,12 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
   })
 
   return (
-    <section className="space-y-7">
+    <section className="space-y-7 animate-in fade-in duration-300">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-600 dark:text-emerald-400">
-          Administration
+        <p className="text-xs font-bold uppercase tracking-[.25em] text-emerald-600 dark:text-emerald-400">
+          Gestion Catalogue
         </p>
-        <h1 className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
+        <h1 className="mt-1 text-3xl font-black text-slate-900 dark:text-white">
           {config.title}
         </h1>
       </div>
@@ -161,15 +457,14 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
       )}
 
       <div className="grid gap-8 xl:grid-cols-[.9fr_1.4fr] items-start">
-        {/* Formulaire de saisie / modification */}
-        <form onSubmit={submit} className="space-y-4 rounded-2xl bg-white dark:bg-[#121214] p-6 shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors sticky top-6">
+        <form onSubmit={submit} className="space-y-4 rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-2xs border border-slate-200 dark:border-slate-800 transition-colors sticky top-6">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-              {editing ? 'Modifier l’élément' : 'Nouvel enregistrement'}
+            <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              {editing ? 'Modifier la fiche' : 'Nouveau dossier'}
             </h2>
             {editing && (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                Mode Édition
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                Édition
               </span>
             )}
           </div>
@@ -186,7 +481,7 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
           <div className="flex gap-3 pt-4">
             <button 
               disabled={actions.saveCatalog.isPending} 
-              className="flex-1 rounded-xl bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 px-5 py-3 text-xs font-bold text-white shadow-md transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-3 text-xs font-bold text-white shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50 cursor-pointer"
             >
               {actions.saveCatalog.isPending ? 'Enregistrement…' : editing ? 'Mettre à jour' : 'Enregistrer'}
             </button>
@@ -195,7 +490,7 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
               <button 
                 type="button" 
                 onClick={reset} 
-                className="rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                className="rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
               >
                 Annuler
               </button>
@@ -203,9 +498,8 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
           </div>
         </form>
 
-        {/* Liste des éléments */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 rounded-xl bg-white dark:bg-[#121214] px-4 py-2.5 border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+          <div className="flex items-center gap-2 rounded-2xl bg-white dark:bg-slate-900 px-4 py-2.5 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <Search size={16} className="text-slate-400 shrink-0" />
             <input 
               type="text" 
@@ -221,12 +515,12 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
             )}
           </div>
 
-          <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#121214] shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors divide-y divide-slate-100 dark:divide-slate-800/80">
-            {isPending && <p className="p-6 text-sm text-slate-600 dark:text-slate-300">Chargement…</p>}
+          <div className="overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xs border border-slate-200 dark:border-slate-800 transition-colors divide-y divide-slate-100 dark:divide-slate-800/80">
+            {isPending && <p className="p-6 text-xs text-slate-500">Chargement des données…</p>}
             
             {!isPending && filteredItems.length === 0 && (
-              <p className="p-6 text-sm text-slate-600 dark:text-slate-300">
-                {searchTerm ? 'Aucun résultat ne correspond à votre recherche.' : 'Aucun élément trouvé.'}
+              <p className="p-6 text-xs text-slate-500">
+                {searchTerm ? 'Aucun résultat correspondant.' : 'Aucun enregistrement.'}
               </p>
             )}
 
@@ -236,13 +530,13 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
                                (item as unknown as { cover_image?: string; avatar_url?: string }).avatar_url
 
               return (
-                <article key={item.id} className="flex items-center justify-between gap-4 p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
+                <article key={item.id} className="flex items-center justify-between gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                  <div className="flex items-center gap-3.5 min-w-0">
                     {imageUrl && (
                       <img
                         src={imageUrl}
                         alt=""
-                        className="h-10 w-10 object-cover rounded-lg border border-slate-200 dark:border-slate-800 shrink-0"
+                        className="h-11 w-11 object-cover rounded-xl border border-slate-200 dark:border-slate-800 shrink-0"
                         onError={(e) => {
                           ;(e.target as HTMLImageElement).style.display = 'none'
                         }}
@@ -257,7 +551,7 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
                         {'is_active' in item && (
                           <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
                             isActive 
-                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60' 
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
                               : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
                           }`}>
                             {isActive ? <Check size={10} /> : <Ban size={10} />}
@@ -271,10 +565,10 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button 
                       onClick={() => edit(item)} 
-                      className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline px-2 py-1 cursor-pointer"
                     >
                       <Pencil size={13} />
                       <span>Modifier</span>
@@ -282,11 +576,11 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
                     
                     <button 
                       onClick={() => { 
-                        if (confirm('Supprimer cet élément ?')) {
+                        if (confirm('Confirmer la suppression ?')) {
                           actions.deleteCatalog.mutate({ entity: type, id: item.id })
                         }
                       }} 
-                      className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 dark:text-rose-400 hover:underline cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1 cursor-pointer"
                     >
                       <Trash2 size={13} />
                       <span>Supprimer</span>
@@ -303,96 +597,7 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
 }
 
 /**
- * 3. Composant spécifique Circuits
- */
-function AdminCircuitsPage() {
-  const { data, isPending, error } = useAdvancedCircuits()
-  const [editing, setEditing] = useState<CircuitRecord | null>(null)
-  
-  const items = (data?.circuits ?? []) as CircuitRecord[]
-  const message = error instanceof ApiError ? error.message : null
-  
-  return (
-    <section className="space-y-7">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-600 dark:text-emerald-400">
-            Administration
-          </p>
-          <h1 className="mt-2 text-3xl font-black text-slate-900 dark:text-white">
-            Circuits
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Créez, modifiez et planifiez les circuits proposés.
-          </p>
-        </div>
-
-        {editing && (
-          <button
-            onClick={() => setEditing(null)}
-            className="self-start sm:self-auto inline-flex items-center gap-2 rounded-xl bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold hover:bg-emerald-600 transition shadow-sm cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Nouveau circuit</span>
-          </button>
-        )}
-      </div>
-
-      {message && (
-        <div role="alert" className="flex items-center gap-3 rounded-xl bg-red-50 dark:bg-red-950/50 p-4 text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900">
-          <AlertCircle size={18} className="shrink-0" />
-          <span>{message}</span>
-        </div>
-      )}
-
-      <div className="mt-8 grid gap-8 xl:grid-cols-[1fr_1.1fr] items-start">
-        <CircuitForm editing={editing} onDone={() => setEditing(null)} />
-
-        <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#121214] shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors divide-y divide-slate-100 dark:divide-slate-800/80">
-          {isPending && <p className="p-6 text-sm text-slate-600 dark:text-slate-300">Chargement…</p>}
-          {!isPending && items.length === 0 && <p className="p-6 text-sm text-slate-600 dark:text-slate-300">Aucun circuit trouvé.</p>}
-          
-          {items.map((item) => (
-            <article key={item.id} className="flex flex-wrap items-center justify-between gap-4 p-5 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-              <div className="flex items-center gap-3">
-                {item.cover_image && (
-                  <img
-                    src={item.cover_image}
-                    alt=""
-                    className="h-12 w-12 object-cover rounded-xl border border-slate-200 dark:border-slate-800 shrink-0"
-                    onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                )}
-                <div>
-                  <h2 className="font-bold text-slate-900 dark:text-white">{item.title}</h2>
-                  <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
-                    {item.duration_days} jours · {item.capacity} places · <strong className="text-emerald-600 dark:text-emerald-400">{item.price} €</strong>
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                    {item.itineraries?.length ?? 0} étape(s) · {item.departures?.length ?? 0} départ(s)
-                  </p>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => setEditing(item)} 
-                className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
-              >
-                <Pencil size={13} />
-                <span>Modifier</span>
-              </button>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/**
- * 4. Composants auxiliaires de formulaire
+ * 4. Composants Auxiliaires
  */
 function AdminField({ 
   field, 
@@ -417,7 +622,7 @@ function AdminField({
 
   if (field.type === 'checkbox') {
     return (
-      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer py-1">
+      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer py-1.5">
         <input 
           type="checkbox" 
           checked={Boolean(value)} 
@@ -439,7 +644,7 @@ function AdminField({
           value={String(value ?? '')} 
           onChange={(event) => onChange(event.target.value)} 
           required={field.required} 
-          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 min-h-24 transition-colors" 
+          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 min-h-24 transition-colors" 
         />
       ) : (
         <input 
@@ -447,7 +652,7 @@ function AdminField({
           value={String(value ?? '')} 
           onChange={(event) => onChange(event.target.value)} 
           required={field.required} 
-          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-colors" 
+          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-colors" 
         />
       )}
     </label>
@@ -484,38 +689,38 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
         {label} {required && <span className="text-rose-500">*</span>}
       </label>
 
       {value ? (
-        <div className="relative group rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 flex items-center gap-3">
+        <div className="relative group rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-2.5 flex items-center gap-3">
           <img
             src={value}
             alt="Aperçu"
-            className={`object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 ${
-              isAvatar ? 'h-14 w-14 rounded-full' : 'h-16 w-24 rounded-xl'
+            className={`object-cover border border-slate-200 dark:border-slate-700 shrink-0 ${
+              isAvatar ? 'h-12 w-12 rounded-full' : 'h-14 w-20 rounded-xl'
             }`}
             onError={(e) => {
-              ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Erreur+Image'
+              ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Erreur'
             }}
           />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-              {value.startsWith('data:') ? '📷 Image téléversée (Base64)' : '🌐 Image externe (Lien)'}
+              {value.startsWith('data:') ? '📷 Image téléversée (Base64)' : '🌐 Image Web (Lien)'}
             </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+            <p className="text-[10px] text-slate-400 truncate mt-0.5">
               {value}
             </p>
           </div>
           <button
             type="button"
             onClick={() => onChange('')}
-            className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900 transition cursor-pointer shrink-0"
-            title="Supprimer l'image"
+            className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition cursor-pointer shrink-0"
+            title="Supprimer"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
       ) : (
@@ -528,17 +733,17 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
           onDrop={handleDrop}
           className={`relative rounded-2xl border-2 border-dashed p-4 text-center transition-all ${
             isDragging
-              ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 scale-[0.99]'
+              ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30'
               : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30'
           }`}
         >
-          <div className="flex flex-col items-center gap-2">
-            <div className="p-2.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400">
-              {isAvatar ? <User size={18} /> : <Upload size={18} />}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+              {isAvatar ? <User size={16} /> : <Upload size={16} />}
             </div>
             <div className="text-xs text-slate-600 dark:text-slate-400">
-              <label className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer">
-                <span>Choisir un fichier</span>
+              <label className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
+                <span>Sélectionner un fichier</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -550,17 +755,16 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
               </label>
               {' '}ou glisser-déposer
             </div>
-            <span className="text-[10px] text-slate-400">PNG, JPG, WEBP jusqu'à 5Mo</span>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center gap-2 px-1">
-            <LinkIcon size={13} className="text-slate-400 shrink-0" />
+          <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-800 flex items-center gap-2">
+            <LinkIcon size={12} className="text-slate-400 shrink-0" />
             <input
               type="url"
               value={value.startsWith('data:') ? '' : value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder="Ou collez l'URL d'une image web (https://...)"
-              className="w-full bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none"
+              placeholder="Ou coller une URL d'image (https://...)"
+              className="w-full bg-transparent text-[11px] text-slate-900 dark:text-white placeholder-slate-400 outline-none"
             />
           </div>
         </div>
