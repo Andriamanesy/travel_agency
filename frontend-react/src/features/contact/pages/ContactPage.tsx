@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { SiteFooter } from '@/components/layout/SiteFooter'
-import { Mail, MapPin, Phone, Send, CheckCircle2, Globe, AlertCircle } from 'lucide-react'
+import { Mail, MapPin, Phone, Send, CheckCircle2, Globe, AlertCircle, Check } from 'lucide-react'
 
 export function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
@@ -17,11 +17,61 @@ export function ContactPage() {
     message: ''
   })
 
-  // Gestion des changements de valeur avec limitation/nettoyage optionnel
+  // Gestion des changements de valeur avec filtrage en direct pour le téléphone
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    if (errorMsg) setErrorMsg('') // Effacer l'erreur lors de la saisie
+
+    if (name === 'phone') {
+      // Bloque et filtre les caractères non désirés en temps réel
+      const sanitizedPhone = value.replace(/[^+\d\s\-().]/g, '')
+      setFormData((prev) => ({ ...prev, [name]: sanitizedPhone }))
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+
+    if (errorMsg) setErrorMsg('')
+  }
+
+  // --- FONCTIONS DE VALIDATION EN DIRECT POUR CHAQUE CHAMP ---
+
+  // 1. Nom : Valide si au moins 2 caractères
+  const getNameStatus = () => {
+    const val = formData.name.trim()
+    if (val.length === 0) return null
+    if (val.length < 2) return { valid: false, text: "Nom trop court (minimum 2 caractères)." }
+    return { valid: true, text: "Nom valide." }
+  }
+
+  // 2. Email : Valide avec la regex standard
+  const getEmailStatus = () => {
+    const val = formData.email.trim()
+    if (val.length === 0) return null
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!emailRegex.test(val)) return { valid: false, text: "Format d'email invalide (ex: exemple@domaine.com)." }
+    return { valid: true, text: "Adresse email valide." }
+  }
+
+  // 3. Téléphone : Optionnel, mais si rempli, vérifie la longueur/format
+  const getPhoneStatus = () => {
+    const val = formData.phone.trim()
+    if (val.length === 0) return null // Optionnel
+    const phoneRegex = /^[+]?[\d\s\-().]{8,20}$/
+    if (!phoneRegex.test(val)) return { valid: false, text: "Numéro de téléphone invalide (8 à 20 caractères requis)." }
+    return { valid: true, text: "Numéro de téléphone valide." }
+  }
+
+  // 4. Sujet : Doit être sélectionné
+  const getSubjectStatus = () => {
+    if (!formData.subject) return null
+    return { valid: true, text: "Sujet sélectionné." }
+  }
+
+  // 5. Message : Minimum 10 caractères
+  const getMessageStatus = () => {
+    const val = formData.message.trim()
+    if (val.length === 0) return null
+    if (val.length < 10) return { valid: false, text: `Encore ${10 - val.length} caractère(s) minimum...` }
+    return { valid: true, text: "Message valide." }
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,7 +79,6 @@ export function ContactPage() {
     setLoading(true)
     setErrorMsg('')
 
-    // 1. Validation de sécurité basique (Nettoyage des espaces superflus)
     const cleanedData = {
       name: formData.name.trim(),
       email: formData.email.trim().toLowerCase(),
@@ -38,17 +87,15 @@ export function ContactPage() {
       message: formData.message.trim()
     }
 
-    // 2. Validation rigoureuse de l'Email (Regex standard)
+    // Vérification finale globale avant envoi
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    if (!emailRegex.test(cleanedData.email)) {
-      setErrorMsg("Veuillez saisir une adresse email valide (ex: exemple@domaine.com).")
+    if (cleanedData.name.length < 2 || !emailRegex.test(cleanedData.email) || cleanedData.message.length < 10 || !cleanedData.subject) {
+      setErrorMsg("Veuillez corriger les erreurs signalées dans le formulaire avant d'envoyer.")
       setLoading(false)
       return
     }
 
-    // 3. Validation optionnelle mais sécurisée du Téléphone (si renseigné)
     if (cleanedData.phone) {
-      // Accepte les chiffres, espaces, tirets, parenthèses et le signe + (longueur min 8, max 20)
       const phoneRegex = /^[+]?[\d\s\-().]{8,20}$/
       if (!phoneRegex.test(cleanedData.phone)) {
         setErrorMsg("Veuillez saisir un numéro de téléphone valide.")
@@ -57,19 +104,18 @@ export function ContactPage() {
       }
     }
 
-    // 4. Protection contre les messages trop courts ou suspects (ex: spam basique)
-    if (cleanedData.message.length < 10) {
-      setErrorMsg("Votre message est trop court. Veuillez détailler votre demande (minimum 10 caractères).")
-      setLoading(false)
-      return
-    }
-
     // Simulation d'envoi sécurisé du message au backend
     setTimeout(() => {
       setLoading(false)
       setSubmitted(true)
     }, 1000)
   }
+
+  const nameStatus = getNameStatus()
+  const emailStatus = getEmailStatus()
+  const phoneStatus = getPhoneStatus()
+  const subjectStatus = getSubjectStatus()
+  const messageStatus = getMessageStatus()
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -178,7 +224,7 @@ export function ContactPage() {
                     </p>
                   </div>
 
-                  {/* Message d'erreur dynamique si validation échoue */}
+                  {/* Message global si tentative d'envoi avec erreurs */}
                   {errorMsg && (
                     <div className="rounded-xl bg-red-50 p-4 border border-red-200 flex items-center gap-3 text-red-700 text-sm">
                       <AlertCircle size={20} className="shrink-0" />
@@ -187,6 +233,7 @@ export function ContactPage() {
                   )}
 
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {/* Nom complet */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Nom complet *
@@ -199,9 +246,23 @@ export function ContactPage() {
                         value={formData.name}
                         onChange={handleChange}
                         placeholder="Ex: Jean Dupont"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                        className={`w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-2 ${
+                          nameStatus
+                            ? nameStatus.valid
+                              ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-600/10'
+                              : 'border-red-500 focus:border-red-600 focus:ring-red-600/10'
+                            : 'border-slate-300 focus:border-emerald-600 focus:ring-emerald-600/10'
+                        }`}
                       />
+                      {nameStatus && (
+                        <p className={`mt-1.5 text-xs flex items-center gap-1 font-medium ${nameStatus.valid ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {nameStatus.valid ? <Check size={14} /> : <AlertCircle size={14} />}
+                          {nameStatus.text}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Adresse Email */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Adresse Email *
@@ -214,12 +275,25 @@ export function ContactPage() {
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="Ex: jean.dupont@example.com"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                        className={`w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-2 ${
+                          emailStatus
+                            ? emailStatus.valid
+                              ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-600/10'
+                              : 'border-red-500 focus:border-red-600 focus:ring-red-600/10'
+                            : 'border-slate-300 focus:border-emerald-600 focus:ring-emerald-600/10'
+                        }`}
                       />
+                      {emailStatus && (
+                        <p className={`mt-1.5 text-xs flex items-center gap-1 font-medium ${emailStatus.valid ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {emailStatus.valid ? <Check size={14} /> : <AlertCircle size={14} />}
+                          {emailStatus.text}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {/* Téléphone */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Téléphone
@@ -231,9 +305,23 @@ export function ContactPage() {
                         value={formData.phone}
                         onChange={handleChange}
                         placeholder="Ex: +261 34 00 000 00"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                        className={`w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-2 ${
+                          phoneStatus
+                            ? phoneStatus.valid
+                              ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-600/10'
+                              : 'border-red-500 focus:border-red-600 focus:ring-red-600/10'
+                            : 'border-slate-300 focus:border-emerald-600 focus:ring-emerald-600/10'
+                        }`}
                       />
+                      {phoneStatus && (
+                        <p className={`mt-1.5 text-xs flex items-center gap-1 font-medium ${phoneStatus.valid ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {phoneStatus.valid ? <Check size={14} /> : <AlertCircle size={14} />}
+                          {phoneStatus.text}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Sujet de la demande */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Sujet de la demande *
@@ -243,7 +331,11 @@ export function ContactPage() {
                         required
                         value={formData.subject}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                        className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:ring-2 ${
+                          subjectStatus
+                            ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-600/10'
+                            : 'border-slate-300 focus:border-emerald-600 focus:ring-emerald-600/10'
+                        }`}
                       >
                         <option value="">Sélectionnez un sujet</option>
                         <option value="circuit">Réservation ou info sur un circuit</option>
@@ -251,9 +343,15 @@ export function ContactPage() {
                         <option value="suivi">Suivi de réservation existant</option>
                         <option value="autre">Autre demande</option>
                       </select>
+                      {subjectStatus && (
+                        <p className="mt-1.5 text-xs flex items-center gap-1 font-medium text-emerald-600">
+                          <Check size={14} /> {subjectStatus.text}
+                        </p>
+                      )}
                     </div>
                   </div>
 
+                  {/* Votre Message */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                       Votre Message *
@@ -266,8 +364,20 @@ export function ContactPage() {
                       value={formData.message}
                       onChange={handleChange}
                       placeholder="Précisez vos dates souhaitées, le nombre de voyageurs ou vos attentes particulières... (Min. 10 caractères)"
-                      className="w-full rounded-xl border border-slate-300 p-4 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/10"
+                      className={`w-full rounded-xl border p-4 text-sm text-slate-900 outline-none transition focus:ring-2 ${
+                        messageStatus
+                          ? messageStatus.valid
+                            ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-600/10'
+                            : 'border-red-500 focus:border-red-600 focus:ring-red-600/10'
+                          : 'border-slate-300 focus:border-emerald-600 focus:ring-emerald-600/10'
+                      }`}
                     />
+                    {messageStatus && (
+                      <p className={`mt-1.5 text-xs flex items-center gap-1 font-medium ${messageStatus.valid ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {messageStatus.valid ? <Check size={14} /> : <AlertCircle size={14} />}
+                        {messageStatus.text}
+                      </p>
+                    )}
                   </div>
 
                   <button
