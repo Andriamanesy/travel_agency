@@ -8,7 +8,7 @@ import { useCustomerBookings } from '@/features/dashboard/hooks/useCustomerBooki
 import { useCatalog } from '@/features/catalog/hooks/useCatalog'
 import { mediaUrl } from '@/lib/api-client'
 import { Skeleton } from '@/components/feedback/Skeleton'
-import { Compass, HeartHandshake, ShieldCheck, Sparkles, ArrowRight, MapPin, CalendarDays, Users, Mail, Phone, MessageSquare, Globe, Send } from 'lucide-react'
+import { Compass, HeartHandshake, ShieldCheck, Sparkles, ArrowRight, MapPin, CalendarDays, Users, Star, Quote } from 'lucide-react'
 import heroFallback from '@/assets/hero.png'
 import { useFeaturedCircuits, useFeaturedDestinations, useHomeSettings } from '../hooks/useHomeFeatured'
 import { SiteFooter } from '@/components/layout/SiteFooter'
@@ -36,13 +36,35 @@ const defaultFeatures = [
   },
 ]
 
+// Témoignages clients (Preuve sociale)
+const testimonials = [
+  {
+    name: 'Thomas & Julie M.',
+    location: 'Paris, France',
+    comment: "Un voyage sur-mesure magique à Madagascar. L'organisation était irréprochable du début à la fin !",
+    rating: 5,
+  },
+  {
+    name: 'Sarah L.',
+    location: 'Lyon, France',
+    comment: "La rencontre avec les lémuriens à Andasibe restera gravée à jamais. Merci à TravelMS pour leur écoute.",
+    rating: 5,
+  },
+  {
+    name: 'Marc D.',
+    location: 'Genève, Suisse',
+    comment: "Des paysages grandioses dans le sud et un accompagnement local d'une gentillesse incroyable.",
+    rating: 5,
+  },
+]
+
 export function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [authOpen, setAuthOpen] = useState(false)
   const [destination, setDestination] = useState('')
   const [departureDate, setDepartureDate] = useState('')
-  const [travelType, setTravelType] = useState('Circuit organisé')
+  const [travelType, setTravelType] = useState('circuits')
   const user = useSessionStore((state) => state.user)
   const authenticated = useSessionStore((state) => state.status === 'authenticated')
   const isAdmin = useSessionStore((state) => state.roles.includes('admin') || state.roles.includes('super_admin'))
@@ -58,7 +80,15 @@ export function HomePage() {
   const heroImage = hero?.bgImageUrl && /^(https?:\/\/|\/uploads\/|data:image\/)/i.test(hero.bgImageUrl) ? mediaUrl(hero.bgImageUrl) : heroFallback
   const icons = { Compass, ShieldCheck, HeartHandshake, Sparkles }
   const firstName = user?.name.trim().split(/\s+/)[0]
-  const searchCatalog = (event: FormEvent) => { event.preventDefault(); const params = new URLSearchParams(); if (destination.trim()) params.set('destination', destination.trim()); if (departureDate) params.set('date', departureDate); if (travelType) params.set('type', travelType); navigate(`/catalog?${params.toString()}`) }
+
+  const searchCatalog = (event: FormEvent) => { 
+    event.preventDefault()
+    const params = new URLSearchParams() 
+    if (destination.trim()) params.set('destination', destination.trim()) 
+    if (departureDate) params.set('date', departureDate) 
+    navigate(`/catalog/${travelType}?${params.toString()}`) 
+  }
+
   const requestedPath = (location.state as { from?: string; authMessage?: string } | null)?.from
   const authMessage = (location.state as { authMessage?: string } | null)?.authMessage
   const authMode = new URLSearchParams(location.search).get('auth')
@@ -79,18 +109,20 @@ export function HomePage() {
     <main className="min-h-screen bg-white text-slate-800">
       <Navbar onAuthenticate={() => { setAuthOpen(true); navigate('/?auth=login', { replace: true, state: requestedPath ? { from: requestedPath } : null }) }} />
 
+      {/* HERO SECTION */}
       <section
         className="relative flex min-h-[86vh] items-center justify-center bg-cover bg-center px-6 py-24 text-white"
         style={{
-          backgroundImage:
-            `linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)), url('${heroImage}')`,
+          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)), url('${heroImage}')`,
         }}
       >
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-300">TravelMS</p>
-          <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl">{authenticated && firstName ? `Ravi de vous revoir, ${firstName} ! Où souhaitez-vous partir ?` : hero?.title || 'Explorez le Monde avec Nous'}</h1>
+          <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-6xl">
+            {authenticated && firstName ? `Ravi de vous revoir, ${firstName} ! Où souhaitez-vous partir ?` : hero?.title || 'Explorez le Monde avec Nous'}
+          </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-100 sm:text-xl">
-            {hero?.subtitle || "Des circuits sur-mesure d'exception"}
+            {hero?.subtitle || "Des circuits sur-mesure d'exception à Madagascar"}
           </p>
 
           <div className="mx-auto mt-10 max-w-3xl rounded-2xl bg-white p-3 shadow-2xl">
@@ -105,33 +137,76 @@ export function HomePage() {
               </div>
               <div className="rounded-xl border border-slate-200 px-3 py-2 text-left">
                 <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Type</label>
-                <select value={travelType} onChange={(event) => setTravelType(event.target.value)} className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
-                  <option value="">Hôtel, Circuit...</option>
-                  <option>Circuit organisé</option>
-                  <option>Hébergement</option>
+                <select value={travelType} onChange={(event) => setTravelType(event.target.value)} className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer">
+                  <option value="circuits">Circuits</option>
+                  <option value="hotels">Hébergements</option>
+                  <option value="guides">Guides</option>
                 </select>
               </div>
-              <button className="rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white transition hover:bg-emerald-800">
+              <button type="submit" className="rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white transition hover:bg-emerald-800 shadow-md">
                 Rechercher
               </button>
             </form>
           </div>
-          <Link to={hero?.ctaLink || '/catalog/circuits'} className="mt-6 inline-flex rounded-xl border border-white/70 bg-white/10 px-5 py-3 font-bold text-white backdrop-blur transition hover:bg-white hover:text-slate-900">{hero?.ctaText || 'Découvrir nos circuits'}</Link>
+          <Link 
+            to={hero?.ctaLink?.startsWith('/catalog') ? hero.ctaLink : '/catalog/circuits'} 
+            className="mt-6 inline-flex rounded-xl border border-white/70 bg-white/10 px-5 py-3 font-bold text-white backdrop-blur transition hover:bg-white hover:text-slate-900 cursor-pointer"
+          >
+            {hero?.ctaText || 'Découvrir nos circuits'}
+          </Link>
         </div>
       </section>
 
-      {authenticated && <section className="mx-auto -mt-10 relative z-10 max-w-5xl px-6"><div className="flex flex-col gap-4 rounded-3xl border border-emerald-100 bg-white p-5 shadow-xl shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[.25em] text-emerald-700">Votre prochain départ</p><p className="mt-1 font-bold text-slate-900">{upcoming ? `${upcoming.offer_title ?? 'Votre circuit'} · ${new Date(`${upcoming.start_date}T00:00:00`).toLocaleDateString('fr-FR')}` : 'Votre prochaine aventure reste à imaginer.'}</p></div><Link to={upcoming ? '/bookings' : '/dashboard'} className="shrink-0 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700">{upcoming ? 'Voir ma réservation' : 'Accéder à mon espace'}</Link></div></section>}
-      
-      {authenticated && !upcoming && <section className="mx-auto max-w-7xl px-6 pt-20"><div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-sm font-semibold uppercase tracking-[.3em] text-emerald-600">Inspirations</p><h2 className="mt-2 text-3xl font-black text-slate-900">Inspirations pour votre prochain voyage</h2><p className="mt-2 text-slate-600">Une sélection de circuits pensés pour vous faire repartir.</p></div><Link to="/catalog" className="font-bold text-emerald-700">Voir toutes les offres</Link></div><div className="grid gap-6 md:grid-cols-3">{inspirations.data?.circuits?.slice(0, 3).map((circuit) => <Link key={circuit.id} to={`/catalog/circuits/${circuit.id}`} className="group overflow-hidden rounded-3xl bg-slate-950 shadow-lg"><div className="h-44 overflow-hidden bg-slate-800">{circuit.cover_image && <img src={mediaUrl(circuit.cover_image)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}</div><div className="p-5 text-white"><p className="text-lg font-black">{circuit.title ?? 'Circuit signature'}</p><p className="mt-2 text-sm text-slate-300">À partir de {Number(circuit.price ?? 0).toFixed(0)} €</p></div></Link>)}</div></section>}
+      {/* PROCHAIN DÉPART (SI CONNECTÉ) */}
+      {authenticated && (
+        <section className="mx-auto -mt-10 relative z-10 max-w-5xl px-6">
+          <div className="flex flex-col gap-4 rounded-3xl border border-emerald-100 bg-white p-5 shadow-xl shadow-emerald-950/10 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.25em] text-emerald-700">Votre prochain départ</p>
+              <p className="mt-1 font-bold text-slate-900">{upcoming ? `${upcoming.offer_title ?? 'Votre circuit'} · ${new Date(`${upcoming.start_date}T00:00:00`).toLocaleDateString('fr-FR')}` : 'Votre prochaine aventure reste à imaginer.'}</p>
+            </div>
+            <Link to={upcoming ? '/bookings' : '/dashboard'} className="shrink-0 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700">
+              {upcoming ? 'Voir ma réservation' : 'Accéder à mon espace'}
+            </Link>
+          </div>
+        </section>
+      )}
 
-      {/* --- DESIGN GLASSMORPHISM : CIRCUITS À LA UNE --- */}
+      {/* INSPIRATIONS (SI AUTHENTIFIÉ SANS RÉSERVATION) */}
+      {authenticated && !upcoming && (
+        <section className="mx-auto max-w-7xl px-6 pt-20">
+          <div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[.3em] text-emerald-600">Inspirations</p>
+              <h2 className="mt-2 text-3xl font-black text-slate-900">Inspirations pour votre prochain voyage</h2>
+              <p className="mt-2 text-slate-600">Une sélection de circuits pensés pour vous faire repartir.</p>
+            </div>
+            <Link to="/catalog/circuits" className="font-bold text-emerald-700 hover:underline">Voir toutes les offres</Link>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {inspirations.data?.circuits?.slice(0, 3).map((circuit) => (
+              <Link key={circuit.id} to={`/catalog/circuits/${circuit.id}`} className="group overflow-hidden rounded-3xl bg-slate-950 shadow-lg">
+                <div className="h-44 overflow-hidden bg-slate-800">
+                  {circuit.cover_image && <img src={mediaUrl(circuit.cover_image)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
+                </div>
+                <div className="p-5 text-white">
+                  <p className="text-lg font-black">{circuit.title ?? 'Circuit signature'}</p>
+                  <p className="mt-2 text-sm text-slate-300">À partir de {Number(circuit.price ?? 0).toFixed(0)} €</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* CIRCUITS À LA UNE */}
       <section className="mx-auto max-w-7xl px-6 pt-20">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[.35em] text-emerald-600">Circuits à la une</p>
             <h2 className="mt-3 text-3xl font-extrabold text-slate-900">Des départs conçus pour l’aventure</h2>
           </div>
-          <Link to="/catalog/circuits" className="font-bold text-emerald-700">Voir les circuits</Link>
+          <Link to="/catalog/circuits" className="font-bold text-emerald-700 hover:underline">Voir tous les circuits</Link>
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -142,7 +217,7 @@ export function HomePage() {
               <Link 
                 key={circuit.id} 
                 to={`/catalog/circuits/${circuit.id}`} 
-                className="group relative flex min-h-[36rem] flex-col justify-end overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-xl"
+                className="group relative flex min-h-[36rem] flex-col justify-end overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="absolute inset-0">
                   {circuit.cover_image && (
@@ -165,7 +240,7 @@ export function HomePage() {
                   </h3>
                   
                   <p className="mt-3 text-sm font-medium leading-relaxed text-slate-900 line-clamp-3">
-                    Détendez-vous sur les plages de sable blanc, plongez dans des eaux cristallines et explorez les récifs coralliens lors d'un séjour idyllique.
+                    Découvrez des paysages époustouflants et plongez au cœur de la culture locale avec ce circuit d'exception.
                   </p>
 
                   <div className="mt-5 grid grid-cols-[1fr_1fr_auto] items-center gap-4 border-t border-slate-950/15 pt-4">
@@ -204,6 +279,7 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* DESTINATIONS POPULAIRES */}
       <section id="destinations" className="mx-auto max-w-7xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-600">Destinations populaires</p>
@@ -211,27 +287,36 @@ export function HomePage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {featuredDestinations.isPending ? Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-96" />) : featuredDestinations.data?.destinations.length ? featuredDestinations.data.destinations.map((destination) => (
-            <article key={destination.id} className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-              <div className="h-48 overflow-hidden">
-                {destination.cover_image && <img src={mediaUrl(destination.cover_image)} alt={destination.title} className="h-full w-full object-cover transition duration-500 hover:scale-105" />}
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-lg font-black text-slate-900">{destination.title}</h3>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">dès {Number(destination.price).toFixed(0)} €</span>
+          {featuredDestinations.isPending ? (
+            Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-96 rounded-3xl" />)
+          ) : featuredDestinations.data?.destinations.length ? (
+            featuredDestinations.data.destinations.map((destination) => (
+              <article key={destination.id} className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <div className="h-48 overflow-hidden">
+                  {destination.cover_image && <img src={mediaUrl(destination.cover_image)} alt={destination.title} className="h-full w-full object-cover transition duration-500 hover:scale-105" />}
                 </div>
-                <p className="mt-3 text-sm leading-6 text-slate-500">{destination.description}</p>
-                <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">{destination.circuit_count} circuit(s)</span>
-                  <Link to={`/destinations/${destination.id}`} className="text-sm font-bold text-emerald-700">Voir l’offre</Link>
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-lg font-black text-slate-900">{destination.title}</h3>
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">dès {Number(destination.price).toFixed(0)} €</span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-500 line-clamp-3">{destination.description}</p>
+                  <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
+                    <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">{destination.circuit_count} circuit(s)</span>
+                    <Link to={`/destinations/${destination.id}`} className="text-sm font-bold text-emerald-700 hover:underline">Voir l’offre</Link>
+                  </div>
                 </div>
-              </div>
-            </article>
-          )) : <div className="col-span-full rounded-3xl border border-dashed border-slate-300 p-10 text-center text-slate-500">Aucune destination mise en avant pour le moment.</div>}
+              </article>
+            ))
+          ) : (
+            <div className="col-span-full rounded-3xl border border-dashed border-slate-300 p-10 text-center text-slate-500">
+              Aucune destination mise en avant pour le moment.
+            </div>
+          )}
         </div>
       </section>
 
+      {/* EXPÉRIENCES UNIQUES */}
       <section id="experiences" className="border-t border-slate-100 bg-slate-50/70 px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-600">Expériences uniques</p>
@@ -241,72 +326,76 @@ export function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-2 xl:grid-cols-4">
           {features.map((feature, index) => {
             const Icon = icons[feature.icon as keyof typeof icons] || Compass
-            return <div key={`${feature.title}-${index}`} className="rounded-3xl bg-white p-6 shadow-sm transition hover:shadow-lg">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700"><Icon size={24} /></span>
-              <h3 className="mt-5 text-lg font-black text-slate-900">{feature.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
-            </div>
+            return (
+              <div key={`${feature.title}-${index}`} className="rounded-3xl bg-white p-6 shadow-sm transition hover:shadow-lg border border-slate-100">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+                  <Icon size={24} />
+                </span>
+                <h3 className="mt-5 text-lg font-black text-slate-900">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
+              </div>
+            )
           })}
         </div>
       </section>
 
-      {/* --- SECTION CONTACT & INFOS COMPLÈTES --- */}
-      <section id="contact" className="border-t border-slate-200 bg-slate-900 px-6 py-16 text-white">
-        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-3">
-          {/* Colonne 1 : À propos */}
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">TravelMS</p>
-            <h3 className="mt-2 text-2xl font-black">Votre agence de voyages à Madagascar</h3>
-            <p className="mt-4 text-sm text-slate-400 leading-relaxed">
-              Spécialistes du sur-mesure, nous concevons des voyages d'exception pour vous faire vivre l'authentique beauté de la Grande Île en toute sérénité.
-            </p>
-          </div>
-
-          {/* Colonne 2 : Coordonnées Directes */}
-          <div className="space-y-4">
-            <h4 className="text-base font-bold uppercase tracking-wider text-emerald-300">Contactez-nous</h4>
-            <div className="flex items-center gap-3 text-sm text-slate-300">
-              <Mail size={18} className="text-emerald-400 shrink-0" />
-              <span>contact@travelms.mg</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-slate-300">
-              <Phone size={18} className="text-emerald-400 shrink-0" />
-              <span>+261 20 22 000 00 / +261 34 00 000 00</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-slate-300">
-              <MessageSquare size={18} className="text-emerald-400 shrink-0" />
-              <span>WhatsApp : +261 34 00 000 00</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-slate-300">
-              <MapPin size={18} className="text-emerald-400 shrink-0" />
-              <span>Antananarivo, Madagascar</span>
-            </div>
-          </div>
-
-          {/* Colonne 3 : Liens & Réseaux Sociaux */}
-          <div className="space-y-4">
-            <h4 className="text-base font-bold uppercase tracking-wider text-emerald-300">Suivez nos aventures</h4>
-            <div className="flex gap-4">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl bg-slate-800 text-slate-300 transition hover:bg-emerald-600 hover:text-white">
-                <Globe size={18} />
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl bg-slate-800 text-slate-300 transition hover:bg-emerald-600 hover:text-white">
-                <Send size={18} />
-              </a>
-            </div>
-            <div className="pt-2 flex flex-col gap-2 text-sm">
-              <a href="#destinations" className="text-slate-400 hover:text-emerald-400">Explorer les Destinations</a>
-              <a href="#experiences" className="text-slate-400 hover:text-emerald-400">Nos Expériences Uniques</a>
-            </div>
-          </div>
+      {/* NOUVELLE SECTION : TÉMOIGNAGES CLIENTS (PREUVE SOCIALE) */}
+      <section className="mx-auto max-w-7xl px-6 py-20">
+        <div className="mx-auto mb-12 max-w-2xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-600">Témoignages</p>
+          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900">Ce que nos voyageurs disent de nous</h2>
         </div>
 
-        <div className="mx-auto mt-12 max-w-7xl border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} TravelMS. Tous droits réservés.
+        <div className="grid gap-6 md:grid-cols-3">
+          {testimonials.map((t, i) => (
+            <div key={i} className="flex flex-col justify-between rounded-3xl bg-slate-50 p-8 border border-slate-100 shadow-sm relative">
+              <Quote className="absolute top-6 right-6 text-emerald-200" size={32} />
+              <div>
+                <div className="flex gap-1 text-amber-400 mb-4">
+                  {Array.from({ length: t.rating }).map((_, idx) => (
+                    <Star key={idx} size={16} fill="currentColor" />
+                  ))}
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed italic">"{t.comment}"</p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center justify-between">
+                <span className="font-bold text-slate-900 text-sm">{t.name}</span>
+                <span className="text-xs text-slate-400">{t.location}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <AuthModal open={authOpen} initialMode={authMode === 'register' ? 'register' : 'login'} onClose={() => setAuthOpen(false)} onAuthenticated={() => { const roles = useSessionStore.getState().roles; navigate(requestedPath ?? (roles.includes('admin') || roles.includes('super_admin') ? '/admin' : '/'), { replace: true }) }} />
+      {/* BANNIÈRE APPEL À L'ACTION (CTA) */}
+      <section className="mx-auto max-w-7xl px-6 pb-20">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 px-8 py-16 text-center text-white md:px-16 shadow-2xl">
+          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-emerald-600/20 blur-3xl"></div>
+          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight">Prêt à vivre l'aventure de votre vie ?</h2>
+            <p className="text-slate-300 text-base leading-relaxed">
+              Nos experts locaux concevent le voyage qui vous ressemble. Contactez-nous dès aujourd'hui pour un devis personnalisé.
+            </p>
+            <div className="pt-2">
+              <Link to="/catalog/circuits" className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-8 py-4 font-bold text-white transition hover:bg-emerald-600 shadow-lg shadow-emerald-900/30">
+                Explorer le catalogue <ArrowRight size={18} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter />
+
+      <AuthModal 
+        open={authOpen} 
+        initialMode={authMode === 'register' ? 'register' : 'login'} 
+        onClose={() => setAuthOpen(false)} 
+        onAuthenticated={() => { 
+          const roles = useSessionStore.getState().roles
+          navigate(requestedPath ?? (roles.includes('admin') || roles.includes('super_admin') ? '/admin' : '/'), { replace: true }) 
+        }} 
+      />
     </main>
   )
 }

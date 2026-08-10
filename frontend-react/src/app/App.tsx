@@ -3,7 +3,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Navbar } from '@/components/layout/Navbar'
 import { SiteFooter } from '@/components/layout/SiteFooter'
-import { LegalPage } from '@/features/legal/pages/LegalPage'
+import { TermsPage, PrivacyPage } from '@/features/legal/pages/LegalPage'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { RegisterPage } from '@/features/auth/pages/RegisterPage'
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
@@ -35,6 +35,8 @@ import { AdminSettingsPage } from '@/features/admin/pages/AdminSettingsPage'
 import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage'
 import { AdminRolesPage } from '@/features/admin/pages/AdminRolesPage'
 import { AdminHomeContentPage } from '@/features/admin/pages/AdminHomeContentPage'
+// Importez votre page de contact (ajustez le chemin selon l'emplacement de votre fichier)
+import { ContactPage } from '@/features/contact/pages/ContactPage'
 
 export default function App() {
   return (
@@ -52,19 +54,39 @@ export default function App() {
       <Route path="/destinations/:destinationId" element={<DestinationDetailsPage />} />
       <Route path="/booking.html" element={<LegacyBookingRedirect />} />
       
-      {/* Route des CGU intégrée avec le même style de mise en page que la 404 */}
+      {/* Route Contact corrigée avec le composant Route */}
+      <Route path="/contact" element={<ContactPage />} />
+      
+      {/* Route des CGU */}
       <Route 
         path="/cgu" 
         element={
           <div className="flex min-h-screen flex-col bg-slate-50">
             <Navbar />
             <main className="flex-1">
-              <LegalPage />
+              <TermsPage />
             </main>
             <SiteFooter />
           </div>
         } 
       />
+
+      {/* Route de la Politique de Confidentialité */}
+      <Route 
+        path="/privacy" 
+        element={
+          <div className="flex min-h-screen flex-col bg-slate-50">
+            <Navbar />
+            <main className="flex-1">
+              <PrivacyPage />
+            </main>
+            <SiteFooter />
+          </div>
+        } 
+      />
+
+      {/* Redirection de sécurité si un lien pointe vers /terms */}
+      <Route path="/terms" element={<Navigate to="/cgu" replace />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
