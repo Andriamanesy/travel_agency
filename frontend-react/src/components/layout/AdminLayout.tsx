@@ -15,10 +15,11 @@ import {
   FileText,
   Home,
   Shield,
+  LogOut,
   type LucideIcon 
 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useSessionStore } from '@/features/auth/store/session.store'
 
 type NavigationItem = {
@@ -71,6 +72,13 @@ export function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dark, setDark] = useState(true) 
   const user = useSessionStore((state) => state.user)
+  const logout = useSessionStore((state) => state.clear)
+  const navigate = useNavigate()
+  
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
   
   const sidebarWidth = collapsed ? 'w-20' : 'w-72'
   
@@ -179,6 +187,16 @@ export function AdminLayout() {
             <ExternalLink size={18} className="group-hover:text-emerald-500 transition-colors" />
             {!collapsed && <span>Voir le site public</span>}
           </Link>
+
+          {/* Bouton de déconnexion */}
+          <button 
+            onClick={handleLogout}
+            className={`w-full group flex items-center ${collapsed ? 'justify-center' : 'gap-3 px-3'} h-10 rounded-lg text-sm font-medium transition-colors text-red-500 hover:bg-red-500/10`}
+            title={collapsed ? 'Déconnexion' : undefined}
+          >
+            <LogOut size={18} className="shrink-0 transition-transform group-hover:scale-110" />
+            {!collapsed && <span>Déconnexion</span>}
+          </button>
           
           <button 
             onClick={() => setCollapsed(!collapsed)} 
@@ -236,14 +254,18 @@ export function AdminLayout() {
             <div className={`h-6 w-px ${dark ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
 
             {/* User Profile */}
-            <div className="flex items-center gap-3 cursor-pointer group">
+            <div className="flex items-center gap-3">
               <div className="flex-col items-end hidden sm:flex">
                 <span className="text-sm font-semibold leading-none">{user?.name || 'Admin Principal'}</span>
                 <span className="text-xs text-slate-500 mt-1">Gérant</span>
               </div>
-              <div className={`grid h-9 w-9 place-items-center rounded-full border text-sm font-bold shadow-sm transition-all group-hover:border-emerald-500 group-hover:text-emerald-500 ${
-                dark ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-slate-100 border-slate-200 text-slate-700'
-              }`}>
+              <div 
+                onClick={handleLogout}
+                title="Se déconnecter"
+                className={`grid h-9 w-9 place-items-center rounded-full border text-sm font-bold shadow-sm cursor-pointer transition-all hover:border-red-500 hover:text-red-500 ${
+                  dark ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-slate-100 border-slate-200 text-slate-700'
+                }`}
+              >
                 {user?.name?.[0]?.toUpperCase() || 'A'}
               </div>
             </div>
