@@ -5,7 +5,7 @@ import {
   Search, X, AlertCircle, LayoutGrid, Table as TableIcon, Upload, Sparkles, RefreshCw
 } from 'lucide-react'
 import { useEffect, useState, useMemo, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { ConfirmDialog } from '@/components/feedback/ConfirmDialog'
 import { Skeleton } from '@/components/feedback/Skeleton'
@@ -32,7 +32,15 @@ const configs: Record<BackofficeResource, { title: string; intro: string; fields
       { key: 'status', label: 'Statut de publication', type: 'select', options: ['draft', 'published', 'scheduled'] }, 
       { key: 'published_at', label: 'Date de publication', type: 'date' }
     ], 
-    schema: z.object({ title: z.string().min(2, 'Le titre est requis'), slug: z.string().min(2, 'Le slug est requis'), excerpt: z.string().optional(), content: z.string().optional(), cover_image: z.string().optional(), status: z.enum(['draft', 'published', 'scheduled']), published_at: z.string().optional() }) 
+    schema: z.object({ 
+      title: z.string().min(2, 'Le titre est requis'), 
+      slug: z.string().min(2, 'Le slug est requis'), 
+      excerpt: z.string().optional(), 
+      content: z.string().optional(), 
+      cover_image: z.string().optional(), 
+      status: z.enum(['draft', 'published', 'scheduled']), 
+      published_at: z.string().optional() 
+    }) 
   },
   banners: { 
     title: 'Bannières d’accueil', 
@@ -46,7 +54,15 @@ const configs: Record<BackofficeResource, { title: string; intro: string; fields
       { key: 'display_order', label: 'Ordre d’affichage', type: 'number' }, 
       { key: 'is_active', label: 'Afficher la bannière', type: 'checkbox' }
     ], 
-    schema: z.object({ title: z.string().min(2, 'Le titre est requis'), subtitle: z.string().optional(), image_url: z.string().optional(), cta_label: z.string().optional(), cta_url: z.string().optional(), display_order: z.coerce.number().int().min(0), is_active: z.boolean() }) 
+    schema: z.object({ 
+      title: z.string().min(2, 'Le titre est requis'), 
+      subtitle: z.string().optional(), 
+      image_url: z.string().optional(), 
+      cta_label: z.string().optional(), 
+      cta_url: z.string().optional(), 
+      display_order: z.coerce.number().int().min(0), 
+      is_active: z.boolean() 
+    }) 
   },
   coupons: { 
     title: 'Codes promotionnels', 
@@ -60,7 +76,15 @@ const configs: Record<BackofficeResource, { title: string; intro: string; fields
       { key: 'max_uses', label: 'Limite d’utilisations', type: 'number' }, 
       { key: 'is_active', label: 'Activer immédiatement', type: 'checkbox' }
     ], 
-    schema: z.object({ code: z.string().min(2, 'Le code est requis'), discount_type: z.enum(['percent', 'fixed']), discount_value: z.coerce.number().positive('La valeur doit être positive'), valid_from: z.string().optional(), valid_until: z.string().optional(), max_uses: z.coerce.number().int().positive().optional(), is_active: z.boolean() }) 
+    schema: z.object({ 
+      code: z.string().min(2, 'Le code est requis'), 
+      discount_type: z.enum(['percent', 'fixed']), 
+      discount_value: z.coerce.number().positive('La valeur doit être positive'), 
+      valid_from: z.string().optional(), 
+      valid_until: z.string().optional(), 
+      max_uses: z.coerce.number().int().positive().optional(), 
+      is_active: z.boolean() 
+    }) 
   },
   reviews: { 
     title: 'Modération des avis', 
@@ -71,7 +95,12 @@ const configs: Record<BackofficeResource, { title: string; intro: string; fields
       { key: 'status', label: 'Décision de modération', type: 'select', options: ['pending', 'approved', 'rejected'] }, 
       { key: 'admin_response', label: 'Réponse officielle de l’équipe', type: 'textarea' }
     ], 
-    schema: z.object({ rating: z.coerce.number().int().min(1).max(5), comment: z.string().min(2), status: z.enum(['pending', 'approved', 'rejected']), admin_response: z.string().optional() }) 
+    schema: z.object({ 
+      rating: z.coerce.number().int().min(1).max(5), 
+      comment: z.string().min(2), 
+      status: z.enum(['pending', 'approved', 'rejected']), 
+      admin_response: z.string().optional() 
+    }) 
   },
 }
 
@@ -155,7 +184,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
           <div className="flex items-center gap-3">
             <button 
               onClick={() => refetch()} 
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white cursor-pointer"
               title="Rafraîchir les données"
             >
               <RefreshCw size={14} className={isPending ? 'animate-spin' : ''} />
@@ -165,7 +194,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
             {editing && (
               <button 
                 onClick={() => { setEditing(null); form.reset(defaults(resource)) }}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-4 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-sm transition hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-4 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 shadow-sm transition hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer"
               >
                 <X size={14} /> Quitter le mode édition
               </button>
@@ -204,7 +233,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
               <button 
                 type="button" 
                 onClick={() => { setEditing(null); form.reset(defaults(resource)); }}
-                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Annuler
               </button>
@@ -229,20 +258,20 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filtre :</span>
               <button 
                 onClick={() => setStatusFilter('all')}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${statusFilter === 'all' ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${statusFilter === 'all' ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
               >
                 Tous ({rows.length})
               </button>
               {resource === 'posts' && (
                 <>
-                  <button onClick={() => setStatusFilter('published')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${statusFilter === 'published' ? 'bg-emerald-700 dark:bg-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Publiés</button>
-                  <button onClick={() => setStatusFilter('draft')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${statusFilter === 'draft' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Brouillons</button>
+                  <button onClick={() => setStatusFilter('published')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${statusFilter === 'published' ? 'bg-emerald-700 dark:bg-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Publiés</button>
+                  <button onClick={() => setStatusFilter('draft')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${statusFilter === 'draft' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Brouillons</button>
                 </>
               )}
               {resource === 'reviews' && (
                 <>
-                  <button onClick={() => setStatusFilter('approved')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${statusFilter === 'approved' ? 'bg-emerald-700 dark:bg-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Approuvés</button>
-                  <button onClick={() => setStatusFilter('pending')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${statusFilter === 'pending' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>En attente</button>
+                  <button onClick={() => setStatusFilter('approved')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${statusFilter === 'approved' ? 'bg-emerald-700 dark:bg-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Approuvés</button>
+                  <button onClick={() => setStatusFilter('pending')} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${statusFilter === 'pending' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>En attente</button>
                 </>
               )}
             </div>
@@ -268,14 +297,14 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
               <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1">
                 <button 
                   onClick={() => setViewMode('cards')} 
-                  className={`rounded-lg p-1.5 transition ${viewMode === 'cards' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                  className={`rounded-lg p-1.5 transition cursor-pointer ${viewMode === 'cards' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
                   title="Vue cartes"
                 >
                   <LayoutGrid size={16} />
                 </button>
                 <button 
                   onClick={() => setViewMode('table')} 
-                  className={`rounded-lg p-1.5 transition ${viewMode === 'table' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                  className={`rounded-lg p-1.5 transition cursor-pointer ${viewMode === 'table' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
                   title="Vue tableau"
                 >
                   <TableIcon size={16} />
@@ -295,7 +324,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
                     setSelectedIds([])
                   }
                 }} 
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-red-700 transition"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-red-700 transition cursor-pointer"
               >
                 <Trash2 size={13} /> Supprimer la sélection
               </button>
@@ -329,7 +358,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
                             type="checkbox" 
                             checked={selectedIds.includes(String(row.id))} 
                             onChange={() => toggleSelectOne(String(row.id))} 
-                            className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500 bg-transparent"
+                            className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500 bg-transparent cursor-pointer"
                           />
                           <StatusBadge status={String(row.status || (row.is_active ? 'actif' : 'inactif'))} />
                         </div>
@@ -338,14 +367,14 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
                           <button 
                             aria-label="Modifier" 
                             onClick={() => { setEditing(row); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
+                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                           >
                             <Pencil size={15} />
                           </button>
                           <button 
                             aria-label="Supprimer" 
                             onClick={() => setDeleting(row)} 
-                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400"
+                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                           >
                             <Trash2 size={15} />
                           </button>
@@ -379,7 +408,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
                   <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                     <tr>
                       <th className="p-3.5 w-10 text-center">
-                        <input type="checkbox" checked={selectedIds.length === filteredRows.length && filteredRows.length > 0} onChange={toggleSelectAll} className="rounded border-slate-300 dark:border-slate-700 bg-transparent" />
+                        <input type="checkbox" checked={selectedIds.length === filteredRows.length && filteredRows.length > 0} onChange={toggleSelectAll} className="rounded border-slate-300 dark:border-slate-700 bg-transparent cursor-pointer" />
                       </th>
                       <th className="p-3.5">Élément</th>
                       <th className="p-3.5">Aperçu</th>
@@ -391,7 +420,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
                     {filteredRows.map((row) => (
                       <tr key={String(row.id)} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition">
                         <td className="p-3.5 text-center">
-                          <input type="checkbox" checked={selectedIds.includes(String(row.id))} onChange={() => toggleSelectOne(String(row.id))} className="rounded border-slate-300 dark:border-slate-700 bg-transparent" />
+                          <input type="checkbox" checked={selectedIds.includes(String(row.id))} onChange={() => toggleSelectOne(String(row.id))} className="rounded border-slate-300 dark:border-slate-700 bg-transparent cursor-pointer" />
                         </td>
                         <td className="p-3.5 font-bold text-slate-900 dark:text-white">
                           {String(row.title || row.code || `Avis ${row.rating}/5`)}
@@ -404,10 +433,10 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
                         </td>
                         <td className="p-3.5 text-right">
                           <div className="inline-flex gap-1">
-                            <button onClick={() => { setEditing(row); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400">
+                            <button onClick={() => { setEditing(row); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 cursor-pointer">
                               <Pencil size={15} />
                             </button>
-                            <button onClick={() => setDeleting(row)} className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400">
+                            <button onClick={() => setDeleting(row)} className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer">
                               <Trash2 size={15} />
                             </button>
                           </div>
@@ -436,7 +465,7 @@ export function ResourceManager({ resource }: { resource: BackofficeResource }) 
   )
 }
 
-function ResourceField({ field, form }: { field: Field; form: ReturnType<typeof useForm<Record<string, unknown>>> }) { 
+function ResourceField({ field, form }: { field: Field; form: UseFormReturn<Record<string, unknown>> }) { 
   const error = form.formState.errors[field.key]?.message as string | undefined
   const watchedValue = form.watch(field.key)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -465,7 +494,7 @@ function ResourceField({ field, form }: { field: Field; form: ReturnType<typeof 
               <button 
                 type="button" 
                 onClick={() => form.setValue(field.key, '')} 
-                className="rounded-xl bg-red-600 p-2 text-white shadow-md hover:bg-red-700" 
+                className="rounded-xl bg-red-600 p-2 text-white shadow-md hover:bg-red-700 cursor-pointer" 
                 title="Supprimer l'image"
               >
                 <Trash2 size={16} />
@@ -516,7 +545,7 @@ function ResourceField({ field, form }: { field: Field; form: ReturnType<typeof 
       ) : field.type === 'richtext' ? (
         <RichTextEditor form={form} fieldKey={field.key} />
       ) : field.type === 'select' ? (
-        <select className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs font-medium text-slate-900 dark:text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10" {...form.register(field.key)}>
+        <select className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs font-medium text-slate-900 dark:text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 cursor-pointer" {...form.register(field.key)}>
           {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
       ) : (
@@ -528,20 +557,28 @@ function ResourceField({ field, form }: { field: Field; form: ReturnType<typeof 
   ) 
 }
 
-function RichTextEditor({ form, fieldKey }: { form: any; fieldKey: string }) {
+function RichTextEditor({ form, fieldKey }: { form: UseFormReturn<Record<string, unknown>>; fieldKey: string }) {
   const insertText = (tag: string) => {
-    const current = form.getValues(fieldKey) || ''
+    const current = String(form.getValues(fieldKey) || '')
     form.setValue(fieldKey, `${current} ${tag} `)
   }
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/10 transition bg-white dark:bg-slate-900">
       <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-2 py-1.5">
-        <button type="button" onClick={() => insertText('**gras**')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white" title="Gras"><Bold size={13} /></button>
-        <button type="button" onClick={() => insertText('*italique*')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white" title="Italique"><Italic size={13} /></button>
+        <button type="button" onClick={() => insertText('**gras**')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Gras">
+          <Bold size={13} />
+        </button>
+        <button type="button" onClick={() => insertText('*italique*')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Italique">
+          <Italic size={13} />
+        </button>
         <div className="h-3 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
-        <button type="button" onClick={() => insertText('- Liste')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white" title="Liste"><ListIcon size={13} /></button>
-        <button type="button" onClick={() => insertText('[Lien](https://)')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white" title="Lien"><Link2 size={13} /></button>
+        <button type="button" onClick={() => insertText('- Liste')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Liste">
+          <ListIcon size={13} />
+        </button>
+        <button type="button" onClick={() => insertText('[Lien](https://)')} className="rounded p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Lien">
+          <Link2 size={13} />
+        </button>
       </div>
       <textarea 
         className="w-full min-h-[140px] resize-y p-3 text-xs bg-transparent text-slate-900 dark:text-white outline-none" 
@@ -554,11 +591,26 @@ function RichTextEditor({ form, fieldKey }: { form: any; fieldKey: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const normalized = status.toLowerCase()
+  
   if (normalized === 'published' || normalized === 'approved' || normalized === 'actif') {
-    return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60"><CheckCircle2 size={10} /> {status}</span>
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60">
+        <CheckCircle2 size={10} /> {status}
+      </span>
+    )
   }
+  
   if (normalized === 'draft' || normalized === 'pending' || normalized === 'scheduled') {
-    return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60"><Clock size={10} /> {status}</span>
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60">
+        <Clock size={10} /> {status}
+      </span>
+    )
   }
-  return <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">{status}</span>
+  
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+      {status}
+    </span>
+  )
 }
