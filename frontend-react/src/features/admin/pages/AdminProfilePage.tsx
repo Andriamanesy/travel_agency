@@ -66,26 +66,26 @@ export function AdminProfilePage() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-100">Mon profil & sécurité</h1>
-        <p className="text-sm text-slate-400">Gérez vos informations personnelles et renforcez la sécurité de votre compte administrateur.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Mon profil & sécurité</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Gérez vos informations personnelles et renforcez la sécurité de votre compte administrateur.</p>
       </div>
 
       <div className="grid gap-8">
         {/* Section 1 : Informations personnelles */}
-        <div className="rounded-2xl border border-slate-800 bg-[#121214] p-6 sm:p-8 shadow-xl space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#121214] p-6 sm:p-8 shadow-sm dark:shadow-xl space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20">
               <User size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-200">Informations du compte</h2>
-              <p className="text-xs text-slate-400">Mettez à jour vos coordonnées visibles dans l'administration.</p>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Informations du compte</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Mettez à jour vos coordonnées visibles dans l'administration.</p>
             </div>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-4" autoComplete="off">
             {profileError && (
-              <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">
+              <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3 text-red-700 dark:text-red-400 text-sm">
                 <ShieldAlert size={18} className="shrink-0" />
                 <span>{profileError}</span>
               </div>
@@ -93,48 +93,48 @@ export function AdminProfilePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Nom complet</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Nom complet</label>
                 <input 
                   type="text" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                   autoComplete="off"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="Votre nom"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Adresse e-mail</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Adresse e-mail</label>
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="off"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="votre@email.com"
                 />
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-slate-800/60">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Mot de passe actuel (requis pour enregistrer)</label>
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Mot de passe actuel (requis pour enregistrer)</label>
               <input 
                 type="password" 
                 value={profilePassword}
                 onChange={(e) => setProfilePassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="w-full sm:w-1/2 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full sm:w-1/2 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                 placeholder="••••••••••••"
               />
             </div>
 
             <div className="flex items-center justify-between pt-2">
               {profileSuccess ? (
-                <div className="flex items-center gap-2 text-emerald-400 text-sm animate-in fade-in">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm animate-in fade-in">
                   <CheckCircle2 size={16} />
                   <span>Modifications enregistrées avec succès !</span>
                 </div>
@@ -142,7 +142,7 @@ export function AdminProfilePage() {
 
               <button 
                 type="submit"
-                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/20 ml-auto"
+                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/20 ml-auto cursor-pointer"
               >
                 <Save size={16} />
                 <span>Enregistrer</span>
@@ -152,61 +152,61 @@ export function AdminProfilePage() {
         </div>
 
         {/* Section 2 : Sécurité et mot de passe */}
-        <div className="rounded-2xl border border-slate-800 bg-[#121214] p-6 sm:p-8 shadow-xl space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#121214] p-6 sm:p-8 shadow-sm dark:shadow-xl space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20">
               <Lock size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-200">Sécurité & Mot de passe</h2>
-              <p className="text-xs text-slate-400">Modifiez votre mot de passe en renseignant votre mot de passe actuel.</p>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Sécurité & Mot de passe</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Modifiez votre mot de passe en renseignant votre mot de passe actuel.</p>
             </div>
           </div>
 
           <form onSubmit={handleUpdatePassword} className="space-y-4" autoComplete="off">
             {passwordError && (
-              <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">
+              <div className="flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3 text-red-700 dark:text-red-400 text-sm">
                 <ShieldAlert size={18} className="shrink-0" />
                 <span>{passwordError}</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Mot de passe actuel</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Mot de passe actuel</label>
               <input 
                 type="password" 
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="w-full sm:w-1/2 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full sm:w-1/2 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                 placeholder="••••••••••••"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Nouveau mot de passe</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Nouveau mot de passe</label>
                 <input 
                   type="password" 
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="••••••••••••"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Confirmer le nouveau mot de passe</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Confirmer le nouveau mot de passe</label>
                 <input 
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="••••••••••••"
                 />
               </div>
@@ -214,7 +214,7 @@ export function AdminProfilePage() {
 
             <div className="flex items-center justify-between pt-2">
               {passwordSuccess ? (
-                <div className="flex items-center gap-2 text-emerald-400 text-sm animate-in fade-in">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm animate-in fade-in">
                   <CheckCircle2 size={16} />
                   <span>Mot de passe modifié avec succès !</span>
                 </div>
@@ -222,7 +222,7 @@ export function AdminProfilePage() {
 
               <button 
                 type="submit"
-                className="flex items-center gap-2 rounded-xl bg-slate-800 border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors ml-auto"
+                className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors ml-auto cursor-pointer"
               >
                 <Lock size={16} />
                 <span>Mettre à jour le mot de passe</span>
