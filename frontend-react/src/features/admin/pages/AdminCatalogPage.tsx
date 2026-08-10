@@ -37,18 +37,7 @@ const configs: Record<CatalogEntity, { title: string; fields: Field[] }> = {
   },
   circuits: { 
     title: 'Circuits', 
-    fields: [
-      { key: 'destination_id', label: 'ID destination', required: true }, 
-      { key: 'title', label: 'Titre', required: true }, 
-      { key: 'description', label: 'Description', type: 'textarea', required: true }, 
-      { key: 'price', label: 'Prix (€)', type: 'number', required: true }, 
-      { key: 'original_price', label: 'Prix avant promo (€)', type: 'number' },
-      { key: 'duration_days', label: 'Durée (jours)', type: 'number', required: true }, 
-      { key: 'capacity', label: 'Capacité', type: 'number', required: true }, 
-      { key: 'cover_image', label: 'Image de couverture' }, 
-      { key: 'gallery_urls', label: 'Galerie (une URL par ligne)', type: 'textarea' }, 
-      { key: 'is_active', label: 'Actif dans le catalogue', type: 'checkbox' }
-    ] 
+    fields: [] // Géré par AdminCircuitsPage et CircuitForm
   },
   hotels: { 
     title: 'Hôtels', 
@@ -80,12 +69,25 @@ function blank(fields: Field[]) {
   return Object.fromEntries(fields.map((field) => [field.key, field.type === 'checkbox' ? true : ''])) 
 }
 
+/**
+ * 1. Composant Routeur d'Entités (Exposé à la route)
+ */
 export function AdminCatalogPage() {
   const { entity = '' } = useParams()
   const valid = catalogEntities.includes(entity as CatalogEntity)
   const type: CatalogEntity = valid ? (entity as CatalogEntity) : 'circuits'
-  const config = configs[type]
 
+  if (!valid) return <Navigate to="/admin/catalog/circuits" replace />
+  if (type === 'circuits') return <AdminCircuitsPage />
+
+  return <GenericCatalogPage type={type} />
+}
+
+/**
+ * 2. Composant de gestion générique (Catégories, Hôtels, Guides)
+ */
+function GenericCatalogPage({ type }: { type: CatalogEntity }) {
+  const config = configs[type]
   const { data, isPending, error } = useAdminCatalog(type)
   const actions = useAdminActions()
 
@@ -93,14 +95,10 @@ export function AdminCatalogPage() {
   const [values, setValues] = useState<Record<string, string | boolean>>(() => blank(config.fields))
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Réinitialise le formulaire lors du changement d'entité
   useEffect(() => {
     reset()
     setSearchTerm('')
   }, [type])
-
-  if (!valid) return <Navigate to="/admin/catalog/circuits" replace />
-  if (type === 'circuits') return <AdminCircuitsPage />
 
   const reset = () => { 
     setEditing(null)
@@ -139,7 +137,6 @@ export function AdminCatalogPage() {
 
   const items = (data?.[type] ?? []) as CatalogItem[]
 
-  // Filtrage des éléments
   const filteredItems = items.filter((item) => {
     const title = (item.name || item.title || item.email || '').toLowerCase()
     return title.includes(searchTerm.toLowerCase())
@@ -234,13 +231,13 @@ export function AdminCatalogPage() {
             )}
 
             {filteredItems.map((item) => {
-              const isActive = (item as any).is_active !== false
-              const imageUrl = (item as any).cover_image || (item as any).avatar_url
+              const isActive = (item as unknown as { is_active?: boolean }).is_active !== false
+              const imageUrl = (item as unknown as { cover_image?: string; avatar_url?: string }).cover_image || 
+                               (item as unknown as { cover_image?: string; avatar_url?: string }).avatar_url
 
               return (
                 <article key={item.id} className="flex items-center justify-between gap-4 p-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
-                    {/* Miniature de l'image si présente */}
                     {imageUrl && (
                       <img
                         src={imageUrl}
@@ -305,6 +302,9 @@ export function AdminCatalogPage() {
   )
 }
 
+/**
+ * 3. Composant spécifique Circuits
+ */
 function AdminCircuitsPage() {
   const { data, isPending, error } = useAdvancedCircuits()
   const [editing, setEditing] = useState<CircuitRecord | null>(null)
@@ -391,6 +391,9 @@ function AdminCircuitsPage() {
   )
 }
 
+/**
+ * 4. Composants auxiliaires de formulaire
+ */
 function AdminField({ 
   field, 
   value, 
@@ -400,7 +403,6 @@ function AdminField({
   value: string | boolean 
   onChange: (value: string | boolean) => void 
 }) { 
-  // Rendu spécifique pour le téléversement d'image avec aperçu
   if (field.key === 'cover_image' || field.key === 'avatar_url') {
     return (
       <ImageUploadField
@@ -488,7 +490,6 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
       </label>
 
       {value ? (
-        /* Zone d'aperçu lorsque l'image est définie */
         <div className="relative group rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 flex items-center gap-3">
           <img
             src={value}
@@ -518,7 +519,6 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
           </button>
         </div>
       ) : (
-        /* Zone de dépose / téléversement de fichier */
         <div
           onDragOver={(e) => {
             e.preventDefault()
@@ -553,7 +553,6 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
             <span className="text-[10px] text-slate-400">PNG, JPG, WEBP jusqu'à 5Mo</span>
           </div>
 
-          {/* Saisie d'URL alternative */}
           <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center gap-2 px-1">
             <LinkIcon size={13} className="text-slate-400 shrink-0" />
             <input
