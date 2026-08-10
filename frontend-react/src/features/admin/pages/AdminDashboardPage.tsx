@@ -42,7 +42,7 @@ export function AdminDashboardPage() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-600 dark:text-emerald-400">Pilotage</p>
           <h1 className="mt-2 text-3xl font-black text-slate-900 dark:text-white">Vue d’ensemble</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Suivez l’activité commerciale et les actions à traiter.</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Suivez l’activité commerciale et les actions à traiter.</p>
         </div>
         <Link to="/admin/bookings" className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors">
           Traiter les réservations
@@ -65,7 +65,7 @@ export function AdminDashboardPage() {
             <p className="mt-5 text-2xl font-black text-slate-900 dark:text-white">
               {analytics.isPending ? <Skeleton className="h-8 w-20" /> : value}
             </p>
-            <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">{label}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-600 dark:text-slate-300">{label}</p>
           </article>
         ))}
       </div>
@@ -74,7 +74,7 @@ export function AdminDashboardPage() {
         {/* Circuits populaires */}
         <section className="rounded-2xl bg-white dark:bg-[#121214] p-6 shadow-sm border border-slate-200/80 dark:border-slate-800/80 transition-colors">
           <h2 className="text-base font-black text-slate-900 dark:text-white">Circuits populaires</h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Réservations cumulées par circuit.</p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Réservations cumulées par circuit.</p>
           <div className="mt-6 space-y-4">
             {analytics.isPending ? (
               <>
@@ -87,7 +87,7 @@ export function AdminDashboardPage() {
                 const count = asFiniteNumber(item.bookings)
                 return (
                   <div key={`${item.title || 'offre'}-${index}`}>
-                    <div className="mb-1 flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <div className="mb-1 flex justify-between text-xs font-bold text-slate-900 dark:text-slate-100">
                       <span>{item.title || 'Offre supprimée'}</span>
                       <span>{count}</span>
                     </div>
@@ -98,7 +98,7 @@ export function AdminDashboardPage() {
                 )
               })
             ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">Pas encore de données.</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300">Pas encore de données.</p>
             )}
           </div>
         </section>
@@ -108,7 +108,7 @@ export function AdminDashboardPage() {
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 p-6">
             <div>
               <h2 className="text-base font-black text-slate-900 dark:text-white">Alertes opérationnelles</h2>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Demandes en attente de validation.</p>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Demandes en attente de validation.</p>
             </div>
             <Link className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline" to="/admin/bookings">
               Tout voir
@@ -127,14 +127,14 @@ export function AdminDashboardPage() {
             ) : pendingBookings.length ? (
               pendingBookings.map((booking) => (
                 <div className="border-b border-slate-100 dark:border-slate-800/80 p-5 last:border-0" key={booking.id}>
-                  <b className="text-xs font-bold text-slate-900 dark:text-slate-200">{booking.customer_name || booking.customer_email || 'Client'}</b>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <b className="text-xs font-bold text-slate-900 dark:text-slate-100">{booking.customer_name || booking.customer_email || 'Client'}</b>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                     {booking.offer_title || 'Offre non renseignée'} · départ le {booking.start_date || 'date non renseignée'}
                   </p>
                 </div>
               ))
             ) : (
-              <p className="p-6 text-xs text-slate-500 dark:text-slate-400">Aucune demande en attente.</p>
+              <p className="p-6 text-xs text-slate-600 dark:text-slate-300">Aucune demande en attente.</p>
             )}
           </div>
         </section>
