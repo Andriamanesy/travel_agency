@@ -15,19 +15,17 @@ import {
   FileText,
   Home,
   Shield,
-  type LucideIcon // <-- Ajout du type pour les icônes
+  type LucideIcon 
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-// Import fictif à adapter selon votre configuration
 import { useSessionStore } from '@/features/auth/store/session.store'
 
-// 1. Définition des types pour corriger l'erreur TS2339
 type NavigationItem = {
   to: string;
   label: string;
   icon: LucideIcon;
-  end?: boolean; // Le '?' signale que cette propriété est optionnelle
+  end?: boolean;
 };
 
 type NavigationGroup = {
@@ -35,7 +33,6 @@ type NavigationGroup = {
   items: NavigationItem[];
 };
 
-// 2. Hiérarchisation logique du menu avec le typage explicite
 const navigationGroups: NavigationGroup[] = [
   {
     title: 'Général',
@@ -72,14 +69,14 @@ const navigationGroups: NavigationGroup[] = [
 export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [dark, setDark] = useState(true) // Souvent par défaut en mode sombre pour les backoffices modernes
+  const [dark, setDark] = useState(true) 
   const user = useSessionStore((state) => state.user)
-
+  
   const sidebarWidth = collapsed ? 'w-20' : 'w-72'
   const sidebarClasses = `fixed inset-y-0 left-0 z-50 flex ${sidebarWidth} flex-col bg-[#0A0A0B] border-r border-slate-800/60 transition-all duration-300 ease-in-out lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${dark ? 'bg-[#0A0A0B] text-slate-300' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${dark ? 'dark bg-[#0A0A0B] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       {/* Overlay Mobile */}
       {mobileOpen && (
         <button 
@@ -112,10 +109,9 @@ export function AdminLayout() {
         </div>
 
         {/* Navigation List */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {navigationGroups.map((group, idx) => (
             <div key={idx} className="mb-6 last:mb-0">
-              {/* Titre de section */}
               {!collapsed ? (
                 <div className="mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500/80">
                   {group.title}
@@ -124,7 +120,6 @@ export function AdminLayout() {
                 <div className="mx-auto mb-2 mt-4 h-px w-8 bg-slate-800/60 first:mt-0 first:hidden" />
               )}
 
-              {/* Liens de la section */}
               <div className="space-y-1">
                 {group.items.map(({ to, label, icon: Icon, end }) => (
                   <NavLink 
@@ -144,7 +139,6 @@ export function AdminLayout() {
                   >
                     {({ isActive }) => (
                       <>
-                        {/* Indicateur Actif style Linear */}
                         {isActive && (
                           <span className="absolute left-0 top-1/2 h-1/2 w-[3px] -translate-y-1/2 rounded-r-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
                         )}
@@ -225,7 +219,7 @@ export function AdminLayout() {
 
             {/* User Profile */}
             <div className="flex items-center gap-3 cursor-pointer group">
-              <div className="flex flex-col items-end hidden sm:flex">
+              <div className="flex-col items-end hidden sm:flex">
                 <span className="text-sm font-semibold leading-none">{user?.name || 'Admin Principal'}</span>
                 <span className="text-xs text-slate-500 mt-1">Gérant</span>
               </div>
