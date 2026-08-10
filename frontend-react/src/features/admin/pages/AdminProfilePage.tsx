@@ -30,7 +30,6 @@ export function AdminProfilePage() {
       return
     }
 
-    // Simulation de validation et mise à jour de l'API avec le mot de passe actuel
     updateUser({ name, email })
     setProfileSuccess(true)
     setProfilePassword('')
@@ -57,7 +56,6 @@ export function AdminProfilePage() {
       return
     }
 
-    // Simulation de mise à jour du mot de passe (à connecter à votre API)
     setPasswordSuccess(true)
     setCurrentPassword('')
     setNewPassword('')
@@ -67,7 +65,6 @@ export function AdminProfilePage() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      {/* En-tête de page */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-100">Mon profil & sécurité</h1>
         <p className="text-sm text-slate-400">Gérez vos informations personnelles et renforcez la sécurité de votre compte administrateur.</p>
@@ -86,7 +83,7 @@ export function AdminProfilePage() {
             </div>
           </div>
 
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
+          <form onSubmit={handleUpdateProfile} className="space-y-4" autoComplete="off">
             {profileError && (
               <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">
                 <ShieldAlert size={18} className="shrink-0" />
@@ -102,6 +99,7 @@ export function AdminProfilePage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  autoComplete="off"
                   className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="Votre nom"
                 />
@@ -114,6 +112,7 @@ export function AdminProfilePage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="off"
                   className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="votre@email.com"
                 />
@@ -127,6 +126,7 @@ export function AdminProfilePage() {
                 value={profilePassword}
                 onChange={(e) => setProfilePassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="w-full sm:w-1/2 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                 placeholder="••••••••••••"
               />
@@ -163,7 +163,7 @@ export function AdminProfilePage() {
             </div>
           </div>
 
-          <form onSubmit={handleUpdatePassword} className="space-y-4">
+          <form onSubmit={handleUpdatePassword} className="space-y-4" autoComplete="off">
             {passwordError && (
               <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">
                 <ShieldAlert size={18} className="shrink-0" />
@@ -178,6 +178,7 @@ export function AdminProfilePage() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="w-full sm:w-1/2 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                 placeholder="••••••••••••"
               />
@@ -191,6 +192,7 @@ export function AdminProfilePage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
                   className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="••••••••••••"
                 />
@@ -203,6 +205,7 @@ export function AdminProfilePage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
                   className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="••••••••••••"
                 />
