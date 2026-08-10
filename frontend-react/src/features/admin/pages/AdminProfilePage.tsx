@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSessionStore } from '@/features/auth/store/session.store'
 import { 
-  User, Lock, CheckCircle2, ShieldAlert, Loader2, Eye, EyeOff, ShieldCheck 
+  CheckCircle2, ShieldAlert, Loader2, Eye, EyeOff, ShieldCheck 
 } from 'lucide-react'
 
 // --- Composant utilitaire pour la mise en page (Split Layout) ---
