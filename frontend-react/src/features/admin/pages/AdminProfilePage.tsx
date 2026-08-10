@@ -9,6 +9,8 @@ export function AdminProfilePage() {
   // États pour le formulaire de profil
   const [name, setName] = useState(user?.name || '')
   const [email, setEmail] = useState(user?.email || '')
+  const [profilePassword, setProfilePassword] = useState('')
+  const [profileError, setProfileError] = useState('')
   const [profileSuccess, setProfileSuccess] = useState(false)
 
   // États pour le formulaire de mot de passe
@@ -20,9 +22,18 @@ export function AdminProfilePage() {
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulation de mise à jour du profil (à connecter à votre API)
+    setProfileError('')
+    setProfileSuccess(false)
+
+    if (!profilePassword) {
+      setProfileError('Veuillez saisir votre mot de passe actuel pour confirmer ces modifications.')
+      return
+    }
+
+    // Simulation de validation et mise à jour de l'API avec le mot de passe actuel
     updateUser({ name, email })
     setProfileSuccess(true)
+    setProfilePassword('')
     setTimeout(() => setProfileSuccess(false), 3000)
   }
 
@@ -31,13 +42,18 @@ export function AdminProfilePage() {
     setPasswordError('')
     setPasswordSuccess(false)
 
+    if (!currentPassword) {
+      setPasswordError('Veuillez saisir votre mot de passe actuel.')
+      return
+    }
+
     if (newPassword !== confirmPassword) {
       setPasswordError('Les nouveaux mots de passe ne correspondent pas.')
       return
     }
 
     if (newPassword.length < 8) {
-      setPasswordError('Le mot de passe doit contenir au moins 8 caractères.')
+      setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères.')
       return
     }
 
@@ -71,6 +87,13 @@ export function AdminProfilePage() {
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-4">
+            {profileError && (
+              <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-red-400 text-sm">
+                <ShieldAlert size={18} className="shrink-0" />
+                <span>{profileError}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Nom complet</label>
@@ -95,6 +118,18 @@ export function AdminProfilePage() {
                   placeholder="votre@email.com"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-slate-800/60">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Mot de passe actuel (requis pour enregistrer)</label>
+              <input 
+                type="password" 
+                value={profilePassword}
+                onChange={(e) => setProfilePassword(e.target.value)}
+                required
+                className="w-full sm:w-1/2 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                placeholder="••••••••••••"
+              />
             </div>
 
             <div className="flex items-center justify-between pt-2">
@@ -124,7 +159,7 @@ export function AdminProfilePage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-slate-200">Sécurité & Mot de passe</h2>
-              <p className="text-xs text-slate-400">Assurez-vous d'utiliser un mot de passe sécurisé et unique.</p>
+              <p className="text-xs text-slate-400">Modifiez votre mot de passe en renseignant votre mot de passe actuel.</p>
             </div>
           </div>
 
@@ -143,7 +178,7 @@ export function AdminProfilePage() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full sm:w-1/2 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                 placeholder="••••••••••••"
               />
             </div>
