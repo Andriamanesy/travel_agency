@@ -13,7 +13,8 @@ import {
   Camera,
   AtSign,
   Video,
-  Check 
+  Check,
+  Upload 
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -31,8 +32,8 @@ const schema = z.object({
   vat_rate: z.number().min(0).max(100),
   cancellation_hours: z.number().int().min(0),
   
-  // Design & Branding
-  logo_url: z.string().url("URL du logo invalide").optional().or(z.literal('')),
+  // Design & Branding (Stocké en base64 après upload)
+  logo_url: z.string().optional().or(z.literal('')),
   primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Format hexadécimal requis (ex: #059669)").optional(),
   
   // Réseaux sociaux & Contact rapide
@@ -165,14 +166,14 @@ export function AdminSettingsPage() {
                   <div className="space-y-6 animate-fadeIn">
                     <div>
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white">Apparence et Identité visuelle</h2>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Personnalisez le logo et les couleurs principales de votre interface.</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Téléchargez le logo et personnalisez les couleurs principales de votre interface.</p>
                     </div>
                     
                     <div className="grid gap-8 md:grid-cols-2 pt-2">
                       <div className="space-y-4">
-                        <Field form={form} name="logo_url" label="URL du Logo principal" placeholder="https://..." />
+                        <ImageUploadField form={form} name="logo_url" label="Logo principal (Fichier image)" />
                         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 flex items-center justify-center min-h-[120px]">
-                          {currentLogo && !form.formState.errors.logo_url ? (
+                          {currentLogo ? (
                             <img 
                               src={currentLogo} 
                               alt="Aperçu du logo" 
@@ -182,7 +183,7 @@ export function AdminSettingsPage() {
                               }}
                             />
                           ) : (
-                            <span className="text-xs text-slate-400">Aucun logo (texte par défaut)</span>
+                            <span className="text-xs text-slate-400">Aucun logo sélectionné</span>
                           )}
                         </div>
                       </div>
@@ -322,6 +323,65 @@ function Field({
       )}
     </label>
   ) 
+}
+
+function ImageUploadField({ 
+  form, 
+  name, 
+  label 
+}: { 
+  form: ReturnType<typeof useForm<Values>>; 
+  name: keyof Values; 
+  label: string; 
+}) { 
+  const currentValue = form.watch(name) as string
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64String = reader.result as string
+      form.setValue(name, base64String, { shouldDirty: true, shouldValidate: true })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+        <Upload size={14} className="text-slate-400" />
+        {label}
+      </span>
+      <div className="flex items-center gap-3">
+        <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-emerald-500 transition text-sm font-medium text-slate-600 dark:text-slate-300">
+          <Upload size={16} className="text-slate-400" />
+          <span>{currentValue ? 'Changer le fichier...' : 'Sélectionner une image...'}</span>
+          <input 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            onChange={handleFileChange} 
+          />
+        </label>
+        {currentValue && (
+          <button 
+            type="button"
+            onClick={() => form.setValue(name, '', { shouldDirty: true, shouldValidate: true })}
+            className="px-3.5 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-xl border border-red-200 dark:border-red-900 transition cursor-pointer"
+          >
+            Effacer
+          </button>
+        )}
+      </div>
+      {form.formState.errors[name] && (
+        <span className="block text-xs font-medium text-red-600 dark:text-red-400 mt-1">
+          {form.formState.errors[name]?.message as string}
+        </span>
+      )}
+    </div>
+  )
 }
 
 function TextAreaField({ 
