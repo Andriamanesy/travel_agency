@@ -72,17 +72,16 @@ export function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dark, setDark] = useState(true) 
   const user = useSessionStore((state) => state.user)
-  const logout = useSessionStore((state) => state.clear)
+  const clearSession = useSessionStore((state) => state.clear)
   const navigate = useNavigate()
   
   const handleLogout = () => {
-    logout()
+    clearSession()
     navigate('/login')
   }
   
   const sidebarWidth = collapsed ? 'w-20' : 'w-72'
   
-  // Sidebar dynamique selon l'état `dark`
   const sidebarClasses = `fixed inset-y-0 left-0 z-50 flex ${sidebarWidth} flex-col transition-all duration-300 ease-in-out lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} ${
     dark 
       ? 'bg-[#0A0A0B] border-r border-slate-800/60 text-slate-300' 
