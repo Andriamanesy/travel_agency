@@ -115,12 +115,13 @@ export default function App() {
             <Route path="marketing" element={<AdminMarketingPage />} />
             <Route path="reviews" element={<AdminReviewsPage />} />
             <Route path="users" element={<AdminUsersPage />} />
-            <Route path="users/roles" element={<AdminRolesPage />} />
+            
+            {/* Remplacez ou ajoutez cette ligne : */}
+            <Route path="roles" element={<AdminRolesPage />} />
+            <Route path="users/roles" element={<Navigate to="/admin/roles" replace />} />
+            
             <Route path="access" element={<Navigate to="/admin/users" replace />} />
-            
-            {/* Route profil administrateur ajoutée ici */}
             <Route path="profile" element={<AdminProfilePage />} />
-            
             <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
         </Route>
