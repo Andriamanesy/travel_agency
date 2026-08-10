@@ -148,15 +148,17 @@ function AdminCircuitsPage() {
           </p>
         </div>
 
-        {editing && (
-          <button
-            onClick={() => setEditing(null)}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Créer un nouveau circuit</span>
-          </button>
-        )}
+        <button
+          onClick={() => setEditing(null)}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-md cursor-pointer ${
+            editing
+              ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+          }`}
+        >
+          <Plus size={16} />
+          <span>{editing ? 'Nouveau circuit (Réinitialiser)' : 'Créer un circuit'}</span>
+        </button>
       </div>
 
       {/* Cartes KPI */}
@@ -525,9 +527,9 @@ function GenericCatalogPage({ type }: { type: CatalogEntity }) {
             )}
 
             {filteredItems.map((item) => {
-              const isActive = (item as unknown as { is_active?: boolean }).is_active !== false
-              const imageUrl = (item as unknown as { cover_image?: string; avatar_url?: string }).cover_image || 
-                               (item as unknown as { cover_image?: string; avatar_url?: string }).avatar_url
+              const record = item as Record<string, any>
+              const isActive = record.is_active !== false
+              const imageUrl = record.cover_image || record.avatar_url
 
               return (
                 <article key={item.id} className="flex items-center justify-between gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
@@ -707,8 +709,18 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-              {value.startsWith('data:') ? '📷 Image téléversée (Base64)' : '🌐 Image Web (Lien)'}
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate flex items-center gap-1.5">
+              {value.startsWith('data:') ? (
+                <>
+                  <Upload size={13} className="text-emerald-600" />
+                  <span>Image téléversée (Base64)</span>
+                </>
+              ) : (
+                <>
+                  <LinkIcon size={13} className="text-emerald-600" />
+                  <span>Lien Web</span>
+                </>
+              )}
             </p>
             <p className="text-[10px] text-slate-400 truncate mt-0.5">
               {value}
@@ -738,12 +750,12 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
           }`}
         >
           <div className="flex flex-col items-center gap-1.5">
-            <div className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
-              {isAvatar ? <User size={16} /> : <Upload size={16} />}
+            <div className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+              {isAvatar ? <User size={18} /> : <Upload size={18} />}
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               <label className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
-                <span>Sélectionner un fichier</span>
+                <span>Parcourir</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -753,19 +765,9 @@ function ImageUploadField({ label, value, onChange, required, isAvatar }: ImageU
                   }}
                 />
               </label>
-              {' '}ou glisser-déposer
+              <span> ou glisser-déposer une image</span>
             </div>
-          </div>
-
-          <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-800 flex items-center gap-2">
-            <LinkIcon size={12} className="text-slate-400 shrink-0" />
-            <input
-              type="url"
-              value={value.startsWith('data:') ? '' : value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="Ou coller une URL d'image (https://...)"
-              className="w-full bg-transparent text-[11px] text-slate-900 dark:text-white placeholder-slate-400 outline-none"
-            />
+            <p className="text-[10px] text-slate-400">PNG, JPG, WEBP jusqu'à 5 MB</p>
           </div>
         </div>
       )}
