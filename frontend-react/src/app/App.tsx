@@ -89,6 +89,7 @@ export default function App() {
       <Route path="/terms" element={<Navigate to="/cgu" replace />} />
 
       <Route element={<ProtectedRoute />}>
+        {/* Routes utilisateur standard (avec MainLayout) */}
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
@@ -96,23 +97,25 @@ export default function App() {
           <Route path="/bookings/new" element={<NewBookingPage />} />
           <Route path="/booking/:tourId" element={<CircuitBookingPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
-          <Route element={<RoleRoute role="admin" />}>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="bookings" element={<AdminBookingsPage />} />
-              <Route path="circuits" element={<Navigate to="/admin/catalog/circuits" replace />} />
-              <Route path="destinations" element={<AdminDestinationsPage />} />
-              <Route path="catalog/:entity" element={<AdminCatalogPage />} />
-              <Route path="catalog" element={<Navigate to="/admin/catalog/circuits" replace />} />
-              <Route path="content" element={<AdminContentPage />} />
-              <Route path="content/home" element={<AdminHomeContentPage />} />
-              <Route path="marketing" element={<AdminMarketingPage />} />
-              <Route path="reviews" element={<AdminReviewsPage />} />
-              <Route path="users" element={<AdminUsersPage />} />
-              <Route path="users/roles" element={<AdminRolesPage />} />
-              <Route path="access" element={<Navigate to="/admin/users" replace />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
-            </Route>
+        </Route>
+
+        {/* Routes d'administration (Isolées avec AdminLayout, sans le MainLayout public) */}
+        <Route element={<RoleRoute role="admin" />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="bookings" element={<AdminBookingsPage />} />
+            <Route path="circuits" element={<Navigate to="/admin/catalog/circuits" replace />} />
+            <Route path="destinations" element={<AdminDestinationsPage />} />
+            <Route path="catalog/:entity" element={<AdminCatalogPage />} />
+            <Route path="catalog" element={<Navigate to="/admin/catalog/circuits" replace />} />
+            <Route path="content" element={<AdminContentPage />} />
+            <Route path="content/home" element={<AdminHomeContentPage />} />
+            <Route path="marketing" element={<AdminMarketingPage />} />
+            <Route path="reviews" element={<AdminReviewsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="users/roles" element={<AdminRolesPage />} />
+            <Route path="access" element={<Navigate to="/admin/users" replace />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
         </Route>
       </Route>
