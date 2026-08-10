@@ -35,6 +35,8 @@ import { AdminSettingsPage } from '@/features/admin/pages/AdminSettingsPage'
 import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage'
 import { AdminRolesPage } from '@/features/admin/pages/AdminRolesPage'
 import { AdminHomeContentPage } from '@/features/admin/pages/AdminHomeContentPage'
+// Import de la page de profil administrateur
+import { AdminProfilePage } from '@/features/admin/pages/AdminProfilePage'
 // Importez votre page de contact (ajustez le chemin selon l'emplacement de votre fichier)
 import { ContactPage } from '@/features/contact/pages/ContactPage'
 
@@ -115,6 +117,10 @@ export default function App() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="users/roles" element={<AdminRolesPage />} />
             <Route path="access" element={<Navigate to="/admin/users" replace />} />
+            
+            {/* Route profil administrateur ajoutée ici */}
+            <Route path="profile" element={<AdminProfilePage />} />
+            
             <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
         </Route>
