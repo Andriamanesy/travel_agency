@@ -4,11 +4,6 @@ import {
   Users, 
   CreditCard, 
   FileText, 
-  MessageSquare, 
-  AlertTriangle, 
-  History, 
-  CheckCircle2, 
-  XCircle, 
   Clock, 
   Plane, 
   Bed, 
@@ -26,10 +21,9 @@ import {
   UserCheck, 
   Utensils, 
   Phone, 
-  ArrowRight,
-  ChevronRight,
-  Tag,
-  Receipt
+  Receipt,
+  CheckCircle2,
+  Tag
 } from 'lucide-react'
 
 // ==========================================
@@ -106,7 +100,7 @@ export interface AuditLogEntry {
 // 2. COMPOSANT PRINCIPAL
 // ==========================================
 
-export function AdminBookingDetailPage() {
+export function AdminBookingsPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'travelers' | 'itinerary' | 'finances' | 'documents' | 'audit'>('overview')
   const [showSensitiveData, setShowSensitiveData] = useState(false)
   
@@ -117,7 +111,7 @@ export function AdminBookingDetailPage() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
 
   // Exemple de données de réservation
-  const [booking, setBooking] = useState({
+  const [booking] = useState({
     id: 'RES-2026-00125',
     status: 'confirmee' as BookingStatus,
     created_at: '2026-08-01 10:14',
@@ -254,10 +248,10 @@ export function AdminBookingDetailPage() {
       </div>
 
       {/* ==========================================
-          BANDEAU D'ALERTES COMPORTEMENTALES (KPI Alert)
+          BANDEAU D'ALERTES COMPORTEMENTALES
       ========================================== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {balanceRemaining > 0 && (
+        {!isPaidInFull && (
           <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-300 text-xs font-medium">
             <Clock size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
             <div>
@@ -270,7 +264,7 @@ export function AdminBookingDetailPage() {
         <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
           <ShieldAlert size={18} className="shrink-0 text-blue-600 dark:text-blue-400" />
           <div>
-            <p className="font-bold">Passerport(s) manquant(s)</p>
+            <p className="font-bold">Passeport(s) manquant(s)</p>
             <p className="text-[11px] opacity-80">Lucas Dupont (Enfant) n'a pas de passeport renseigné</p>
           </div>
         </div>
@@ -293,7 +287,7 @@ export function AdminBookingDetailPage() {
         <TabButton id="itinerary" label="Itinéraire & Prestations" icon={<MapPin size={15} />} active={activeTab} onClick={setActiveTab} />
         <TabButton id="finances" label="Finances & Paiements" icon={<CreditCard size={15} />} active={activeTab} onClick={setActiveTab} />
         <TabButton id="documents" label="Documents & E-mails" icon={<Send size={15} />} active={activeTab} onClick={setActiveTab} />
-        <TabButton id="audit" label="Notes & Historique Log" icon={<History size={15} />} active={activeTab} onClick={setActiveTab} />
+        <TabButton id="audit" label="Notes & Historique Log" icon={<Clock size={15} />} active={activeTab} onClick={setActiveTab} />
       </div>
 
       {/* ==========================================
@@ -301,7 +295,6 @@ export function AdminBookingDetailPage() {
       ========================================== */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Fiche Client & Contact */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -324,7 +317,6 @@ export function AdminBookingDetailPage() {
             </div>
           </div>
 
-          {/* Synthèse du Voyage */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-4 shadow-2xs">
             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
               <Calendar size={16} className="text-emerald-600" />
@@ -346,7 +338,6 @@ export function AdminBookingDetailPage() {
             </div>
           </div>
 
-          {/* Synthèse Financière */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-4 shadow-2xs">
             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
               <Receipt size={16} className="text-emerald-600" />
@@ -485,7 +476,6 @@ export function AdminBookingDetailPage() {
       ========================================== */}
       {activeTab === 'finances' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Décomposition Tarifaire */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-4">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">Décomposition de la cotation</h2>
             <div className="space-y-2 text-xs">
@@ -508,13 +498,12 @@ export function AdminBookingDetailPage() {
             </div>
           </div>
 
-          {/* Historique des paiements encaissés */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">Paiements Encaissés</h2>
               <button 
                 onClick={() => setIsPaymentModalOpen(true)}
-                className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <Plus size={12} /> Nouveau
               </button>
@@ -532,7 +521,7 @@ export function AdminBookingDetailPage() {
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5">{p.date} · Ref: {p.reference}</p>
                   </div>
-                  <button className="p-1 text-slate-400 hover:text-slate-600" title="Télécharger le reçu">
+                  <button className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer" title="Télécharger le reçu">
                     <Download size={15} />
                   </button>
                 </div>
@@ -574,7 +563,6 @@ export function AdminBookingDetailPage() {
       ========================================== */}
       {activeTab === 'audit' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Section Confidentialité : Notes Internes */}
           <div className="bg-amber-500/5 rounded-3xl p-6 border border-amber-500/20 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
@@ -582,7 +570,7 @@ export function AdminBookingDetailPage() {
               </h2>
               <button 
                 onClick={() => setIsNoteModalOpen(true)}
-                className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline"
+                className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
               >
                 + Ajouter une note
               </button>
@@ -601,7 +589,6 @@ export function AdminBookingDetailPage() {
             </div>
           </div>
 
-          {/* Section Traçabilité : Audit Log */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-4">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">Journal d'Audit & Traçabilité</h2>
             <div className="space-y-3 relative before:absolute before:inset-0 before:left-2.5 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
@@ -621,9 +608,32 @@ export function AdminBookingDetailPage() {
           MODALS / DRAWERS DE GESTION MÉTIER
       ========================================== */}
 
+      {/* Modal Reprogrammer */}
+      {isRescheduleModalOpen && (
+        <Modal title="Reprogrammer / Reporter le voyage" onClose={() => setIsRescheduleModalOpen(false)}>
+          <form className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold mb-1">Nouvelle date de départ</label>
+              <input type="date" defaultValue={booking.circuit.start_date} className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none" />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Impact sur le prix (€)</label>
+              <input type="number" placeholder="Ex: +150" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none" />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Raison du report</label>
+              <textarea rows={3} placeholder="Ex: Demande client pour motifs médicaux..." className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none resize-none" />
+            </div>
+            <button type="button" onClick={() => setIsRescheduleModalOpen(false)} className="w-full py-3 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold rounded-xl transition cursor-pointer">
+              Confirmer la reprogrammation
+            </button>
+          </form>
+        </Modal>
+      )}
+
       {/* Modal Paiement */}
       {isPaymentModalOpen && (
-        <Modal title="Enregistrer un Paiement Hors-Ligne / Manuel" onClose={() => setIsPaymentModalOpen(false)}>
+        <Modal title="Enregistrer un Paiement" onClose={() => setIsPaymentModalOpen(false)}>
           <form className="space-y-4 text-xs">
             <div>
               <label className="block font-bold mb-1">Montant (€)</label>
@@ -639,10 +649,10 @@ export function AdminBookingDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block font-bold mb-1">Référence / N° de transaction</label>
+              <label className="block font-bold mb-1">Référence / N° transaction</label>
               <input type="text" placeholder="Ex: VIR-89210-BNP" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none" />
             </div>
-            <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition">
+            <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition cursor-pointer">
               Valider l'encaissement
             </button>
           </form>
@@ -663,19 +673,30 @@ export function AdminBookingDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block font-bold mb-1">Politique de remboursement</label>
+              <label className="block font-bold mb-1">Remboursement</label>
               <select className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none">
                 <option>Aucun remboursement</option>
-                <option>Remboursement partiel (frais retenus)</option>
+                <option>Remboursement partiel</option>
                 <option>Remboursement intégral</option>
               </select>
             </div>
-            <label className="flex items-center gap-2 font-bold cursor-pointer">
-              <input type="checkbox" defaultChecked className="rounded" />
-              <span>Notifier le client par e-mail immédiatement</span>
-            </label>
-            <button type="button" onClick={() => setIsCancelModalOpen(false)} className="w-full py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition">
+            <button type="button" onClick={() => setIsCancelModalOpen(false)} className="w-full py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition cursor-pointer">
               Confirmer l'annulation
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal Note Internes */}
+      {isNoteModalOpen && (
+        <Modal title="Ajouter une note interne" onClose={() => setIsNoteModalOpen(false)}>
+          <form className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold mb-1">Note (non visible par le client)</label>
+              <textarea rows={4} placeholder="Notez une consigne de guidage, une particularité..." className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent outline-none resize-none" />
+            </div>
+            <button type="button" onClick={() => setIsNoteModalOpen(false)} className="w-full py-3 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition cursor-pointer">
+              Enregistrer la note
             </button>
           </form>
         </Modal>
@@ -685,11 +706,14 @@ export function AdminBookingDetailPage() {
   )
 }
 
+// Default export pour parer aux deux modes d'importation dans React Router
+export default AdminBookingsPage
+
 // ==========================================
 // COMPOSANTS AUXILIAIRES DE L'UI
 // ==========================================
 
-function TabButton({ id, label, icon, active, onClick }: { id: any; label: string; icon: any; active: any; onClick: any }) {
+function TabButton({ id, label, icon, active, onClick }: { id: string; label: string; icon: React.ReactNode; active: string; onClick: (id: any) => void }) {
   const isActive = active === id
   return (
     <button
@@ -744,13 +768,13 @@ function DocumentRow({ title, status, date }: { title: string; status: string; d
   )
 }
 
-function Modal({ title, children, onClose }: { title: string; children: any; onClose: () => void }) {
+function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 max-w-md w-full shadow-2xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <h3 className="font-black text-sm text-slate-900 dark:text-white">{title}</h3>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
+          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">✕</button>
         </div>
         {children}
       </div>
